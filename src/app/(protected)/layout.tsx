@@ -1,11 +1,29 @@
+import { auth } from "@/lib/auth/auth";
+import { redirect } from "next/navigation";
+import { Sidebar } from "@/components/layout/sidebar";
+import { Suspense } from "react";
+import Loading from "@/components/ui/loading";
 
-export default function Layout({children}: {children: React.ReactNode}) {
-      return (
-        <section>
-            <div className="bg-gray-800 text-white p-4 w-full">
-                Header
-            </div>
-            {children}
-        </section>
+export default async function ProtectedLayout({
+    children,
+}: {
+    children: React.ReactNode;
+}) {
+    const session = await auth();
+
+    if (!session) {
+        redirect("/login");
+    }
+
+    return (
+        <div className="flex  h-screen w-full overflow-hidden">
+            <Sidebar />
+
+            <main className="flex-1 overflow-auto">
+                <Suspense fallback={<Loading/>}>
+                {children}
+                </Suspense>
+            </main>
+        </div>
     );
 }

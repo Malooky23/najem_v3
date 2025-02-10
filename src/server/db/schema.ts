@@ -15,6 +15,7 @@ import {
   primaryKey,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
+import { relations } from 'drizzle-orm';
 
 export const userType = pgEnum("user_type", ["EMPLOYEE", "CUSTOMER", "DEMO"]);
 export const customerType = pgEnum("customer_type", ["INDIVIDUAL", "BUSINESS"]);
@@ -94,6 +95,26 @@ export const entityAddresses = pgTable("entity_addresses", {
     .notNull(),
 });
 
+//CUSTOMERS - Individual or Business
+export const customers = pgTable("customers", {
+  customerId: uuid("customer_id").defaultRandom().primaryKey().notNull(),
+  customerNumber: serial("customer_number").notNull(),
+  customerType: customerType("customer_type").notNull(),
+
+  notes: text(),
+  country: text().notNull(), //we need to specify customer country irregardles of address table.
+
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }),
+});
+
+// export const customersRelations =  relations(customers, ({one}) => ({
+//   individualCustomers: one(individualCustomers),
+//   businessCustomers: one(businessCustomers),
+// }));
+
 // Individual Customer Details
 export const individualCustomers = pgTable("individual_customers", {
   individualCustomerId: uuid("individual_customer_id")
@@ -111,6 +132,10 @@ export const individualCustomers = pgTable("individual_customers", {
   updatedAt: timestamp("updated_at", { withTimezone: true }),
 });
 
+// export const individualCustomersRelation =  relations(individualCustomers, ({one}) => ({
+//   customer: one(customers, {fields: [individualCustomers.individualCustomerId], references: [customers.customerId]})
+// }))
+
 // Business Customer Details
 export const businessCustomers = pgTable("business_customers", {
   businessCustomerId: uuid("business_customer_id")
@@ -127,20 +152,9 @@ export const businessCustomers = pgTable("business_customers", {
   updatedAt: timestamp("updated_at", { withTimezone: true }),
 });
 
-//CUSTOMERS - Individual or Business
-export const customers = pgTable("customers", {
-  customerId: uuid("customer_id").defaultRandom().primaryKey().notNull(),
-  customerNumber: serial("customer_number").notNull(),
-  customerType: customerType("customer_type").notNull(),
-
-  notes: text(),
-  country: text().notNull(), //we need to specify customer country irregardles of address table.
-
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .defaultNow()
-    .notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }),
-});
+// export const businessCustomersRelation =  relations(businessCustomers, ({one}) => ({
+//   customer: one(customers, {fields: [businessCustomers.businessCustomerId], references: [customers.customerId]})
+// }))
 
 // Relations
 
@@ -322,3 +336,98 @@ export type ItemStock = typeof itemStock.$inferSelect;
 export type InsertItemStock = typeof itemStock.$inferInsert;
 export type StockMovement = typeof stockMovements.$inferSelect;
 export type InsertStockMovement = typeof stockMovements.$inferInsert;
+
+export const customersRelations = relations(customers, ({ one, many }) => ({
+  individual: one(individualCustomers, {
+    fields: [customers.customerId],
+    references: [individualCustomers.individualCustomerId]
+  }),
+  business: one(businessCustomers, {
+    fields: [customers.customerId],
+    references: [businessCustomers.businessCustomerId]
+  }),
+  addresses: many(entityAddresses),
+  contacts: many(entityContactDetails),
+  users: many(users)
+}));
+
+// Individual Customer Relations
+export const individualCustomersRelations = relations(individualCustomers, ({ one }) => ({
+  customer: one(customers, {
+    fields: [individualCustomers.individualCustomerId],
+    references: [customers.customerId]
+  })
+}));
+
+// Business Customer Relations
+export const businessCustomersRelations = relations(businessCustomers, ({ one }) => ({
+  customer: one(customers, {
+    fields: [businessCustomers.businessCustomerId],
+    references: [customers.customerId]
+  })
+}));
+
+
+// User Relations
+export const usersRelations = relations(users, ({ one, many }) => ({
+  customer: one(customers, {
+    fields: [users.customerId],
+    references: [customers.customerId]
+  }),
+  loginAttempts: many(loginAttempts)
+}));
+
+// Contact Details Relations
+export const contactDetailsRelations = relations(contactDetails, ({ many }) => ({
+  entityRelations: many(entityContactDetails)
+}));
+
+
+
+// Entity Contact Details Relations
+export const entityContactDetailsRelations = relations(entityContactDetails, ({ one }) => ({
+  contactDetail: one(contactDetails, {
+    fields: [entityContactDetails.contactDetailsId],
+    references: [contactDetails.contactDetailsId]
+  }),
+  customer: one(customers, {
+    fields: [entityContactDetails.entityId],
+    references: [customers.customerId],
+  })
+    // You'll add similar relations for other entity types later:
+    // order: one(orders, { ... }),
+    // vendor: one(vendors, { ... }),
+}));
+
+
+// Address Details Relations
+export const addressDetailsRelations = relations(addressDetails, ({ many }) => ({
+  entityRelations: many(entityAddresses)
+}));
+
+// relations.ts
+export const entityAddressesRelations = relations(entityAddresses, ({ one }) => ({
+    address: one(addressDetails, {
+      fields: [entityAddresses.addressId],
+      references: [addressDetails.addressId]
+    }),
+    // For customer addresses
+    customer: one(customers, {
+      fields: [entityAddresses.entityId],
+      references: [customers.customerId]
+    })
+    // You'll add similar relations for other entity types later:
+    // order: one(orders, { ... }),
+    // vendor: one(vendors, { ... }),
+  }));
+
+
+
+
+// Login Attempts Relations
+export const loginAttemptsRelations = relations(loginAttempts, ({ one }) => ({
+  user: one(users, {
+    fields: [loginAttempts.userId],
+    references: [users.userId]
+  })
+}));

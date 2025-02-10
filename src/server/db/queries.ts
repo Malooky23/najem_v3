@@ -1,11 +1,23 @@
 import "server-only";
 
 import { db } from "./index";
-import {
-  users as usersSchema,
-} from "./schema";
-import { eq, isNull, and, sql } from "drizzle-orm";
-import type { User, AuthResult } from "next-auth";
+import * as schema from './schema';
+import { eq, isNull, and, sql, or } from "drizzle-orm";
+import type { User, AuthResult, Session } from "next-auth";
+
+
+export function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+const PSGetCustomers =  db.query.customers.findMany({
+  with: {
+    individual: true,
+    business: true,
+  },
+}).prepare("getCustomers");
+
+
 export const QUERIES = {
 
   authenticateUser: async function (
@@ -15,7 +27,7 @@ export const QUERIES = {
     userAgent: string
   ): Promise<User | null> {
     try {
-      const result =  await db.execute<{ auth_result: AuthResult }>(
+      const result = await db.execute<{ auth_result: AuthResult }>(
         sql`SELECT authenticate_user(${email}, ${password}, ${ip}::inet, ${userAgent}) as auth_result`
       )
 
@@ -41,15 +53,44 @@ export const QUERIES = {
       return null
     }
   },
-  
+
   getUserById: async function (userId: string) {
-    const user = await db.select().from(usersSchema).where(eq(usersSchema.userId, userId));
+    await delay(3000); // Add 1 second delay
+    const user = await db.select().from(schema.users).where(eq(schema.users.userId, userId));
     if (user.length === 0) {
       return null;
     }
     return user[0];
-  }
-};
+  },
+
+  getCustomers: async function (session: Session) {
+    if (!session) {
+      return null;
+    }
+
+    if (session.user.userType === 'EMPLOYEE') {
+      return await db.query.customers.findMany({
+        with: {
+          individual: true,
+          business: true,
+        },
+      });
+    }
+  },
+
+  testGetCustomers: async function () {
+    return await PSGetCustomers.execute();
+  },
+}
+
+
+
+
+
+
+
+
+
 
 // export const MUTATIONS = {
 //   createFile: async function (input: {
