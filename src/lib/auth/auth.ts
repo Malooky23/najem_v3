@@ -1,6 +1,21 @@
-import { QUERIES } from "@/server/db/queries";
-import NextAuth from "next-auth"
+import NextAuth, {CredentialsSignin} from "next-auth"
 import Credentials from "next-auth/providers/credentials"
+import {QUERIES} from '@/server/db/queries'
+import {
+  InvalidCredentialsError,
+  MissingCredentialsError,
+  DatabaseError,
+  UserNotFoundError,
+} from './errors'
+
+const errorMessages: Record<string, string> = {
+  CREDENTIALS_MISSING: "Please provide both email and password",
+  INVALID_CREDENTIALS: "Invalid email or password",
+  UNKNOWN_ERROR: "An unexpected error occurred",
+  USER_NOT_FOUND: "User not found",
+  DATABASE_ERROR: "Database error occurred",
+  Default: "Unable to sign in",
+}
 
 export const {
   handlers,
@@ -11,27 +26,53 @@ export const {
   session: { strategy: "jwt" },
   pages: {
     signIn: "/login",
-    // error: "/login",
+    error: "/error",
     signOut: "/",
   },
 
   providers: [
     Credentials({
       async authorize(credentials, req) {
+        try {
+          if (typeof credentials?.email !== 'string' || typeof credentials?.password !== 'string') {
+            throw new MissingCredentialsError()
+          }
 
-        if (typeof credentials?.email !== 'string' || typeof credentials?.password !== 'string') {
-          throw new Error("Invalid credentials: Email and password must be provided."); // Or return null if you prefer to handle it differently
+          const ip = req.headers?.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown"
+          const userAgent = req.headers?.get("user-agent") || "unknown"
+
+          try {
+            const result = await QUERIES.authenticateUser(
+              credentials.email,
+              credentials.password,
+              ip,
+              userAgent
+            )
+
+            if (!result) {
+              throw new InvalidCredentialsError()
+            }
+
+            return result
+          } catch (error) {
+            if (error instanceof Error) {
+              switch (error.message) {
+                case "USER_NOT_FOUND":
+                  throw new UserNotFoundError()
+                case "DATABASE_ERROR":
+                  throw new DatabaseError()
+                default:
+                  throw new InvalidCredentialsError()
+              }
+            }
+            throw new InvalidCredentialsError()
+          }
+        } catch (error) {
+          if (error instanceof CredentialsSignin) {
+            throw error
+          }
+          throw new InvalidCredentialsError()
         }
-
-        const ip = req.headers?.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown"
-        const userAgent = req.headers?.get("user-agent") || "unknown"
-
-        return QUERIES.authenticateUser(
-          credentials.email,
-          credentials.password,
-          ip,
-          userAgent
-        )
       },
     }),
   ],
@@ -66,4 +107,9 @@ export const {
     },
   },
 })
+
+// Helper function to get error message
+export function getAuthErrorMessage(error: string): string {
+  return errorMessages[error] || errorMessages.Default
+}
 

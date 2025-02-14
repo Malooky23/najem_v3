@@ -5,6 +5,7 @@ import { sidebarConfig } from "./config";
 import { SidebarLink } from "./sidebar-link";
 import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { usePathname } from 'next/navigation';
 
 export function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(true);
@@ -29,7 +30,7 @@ export function Sidebar() {
           <ChevronRight className="h-5 w-5" />
       </button>
 
-      <nav className="p-2 flex flex-col gap-1">
+      <nav className="p-2 flex flex-col gap-1 ">
         {sidebarConfig.links.map((link) => (
           <SidebarLink
             key={link.href}

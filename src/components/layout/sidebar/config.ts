@@ -1,4 +1,4 @@
-import { BoxesIcon, Home, Users2, WarehouseIcon } from "lucide-react";
+import { BoxesIcon, Home, TestTube2Icon, Users2, WarehouseIcon } from "lucide-react";
 // import { SidebarConfig } from "./types";
 
 export const sidebarConfig = {
@@ -9,14 +9,19 @@ export const sidebarConfig = {
       icon: Home,
     },
     {
-      href: "/warehouse/items",
-      label: "Items",
+      href: "/warehouse",
+      label: "Warehouse",
       icon: WarehouseIcon,
     },
     {
       href: "/customers",
       icon: Users2,
       label: "Customers",
+    },
+    {
+      href: "/test",
+      icon: TestTube2Icon,
+      label: "TEST",
     },
   ],
 }; 

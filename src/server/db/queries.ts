@@ -4,22 +4,10 @@ import { db } from "./index";
 import * as schema from './schema';
 import { eq, isNull, and, sql, or } from "drizzle-orm";
 import type { User, AuthResult, Session } from "next-auth";
-
-
-export function delay(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-const PSGetCustomers =  db.query.customers.findMany({
-  with: {
-    individual: true,
-    business: true,
-  },
-}).prepare("getCustomers");
-
+import { customers, individualCustomers, businessCustomers } from '@/server/db/schema';
+import { CustomerTypes } from '@/types/customer'
 
 export const QUERIES = {
-
   authenticateUser: async function (
     email: string,
     password: string,
@@ -33,8 +21,16 @@ export const QUERIES = {
 
       const authData = result.rows[0]?.auth_result
 
-      if (!authData?.user || authData.status !== 'success') {
-        throw new Error(authData?.message || 'Authentication failed')
+      if (!authData) {
+        throw new Error("DATABASE_ERROR")
+      }
+
+      if (authData.status !== 'success') {
+        throw new Error(authData.message || "INVALID_CREDENTIALS")
+      }
+
+      if (!authData.user) {
+        throw new Error("USER_NOT_FOUND")
       }
 
       // Transform the database result into a next-auth User object
@@ -50,12 +46,11 @@ export const QUERIES = {
       return user
     } catch (error) {
       console.error('Authentication error:', error)
-      return null
+      throw error // Re-throw the error to be handled by the authorize callback
     }
   },
 
-  getUserById: async function (userId: string) {
-    await delay(3000); // Add 1 second delay
+  getUserById: async function (userId: string, delayMs?: number) {
     const user = await db.select().from(schema.users).where(eq(schema.users.userId, userId));
     if (user.length === 0) {
       return null;
@@ -63,81 +58,103 @@ export const QUERIES = {
     return user[0];
   },
 
-  getCustomers: async function (session: Session) {
-    if (!session) {
-      return null;
-    }
+getCustomers: async function (delayMs?: number) {
+    try {
+      const result = db
+        .select({
+          customerId: customers.customerId,
+          customerNumber: customers.customerNumber,
+          customerType: customers.customerType,
+          country: customers.country,
+          individual: {
+            firstName: individualCustomers.firstName,
+            middleName: individualCustomers.middleName,
+            lastName: individualCustomers.lastName,
+          },
+          business: {
+            businessName: businessCustomers.businessName,
+          },
+        })
+        .from(customers)
+        .leftJoin(
+          individualCustomers,
+          eq(customers.customerId, individualCustomers.individualCustomerId)
+        )
+        .leftJoin(
+          businessCustomers,
+          eq(customers.customerId, businessCustomers.businessCustomerId)
+        )
+        .orderBy(customers.customerId);
 
-    if (session.user.userType === 'EMPLOYEE') {
-      return await db.query.customers.findMany({
-        with: {
-          individual: true,
-          business: true,
+      return result;
+    } catch (error) {
+      console.error('[GET_CUSTOMERS_ERROR]', error);
+      throw error;
+    }
+  },
+
+  getAllCustomersBasic: async function () {
+    // Optimized query with only necessary fields
+    return db.query.customers.findMany({
+      with: {
+        individual: {
+          columns: {
+            firstName: true,
+            middleName: true,
+            lastName: true,
+          }
         },
-      });
-    }
+        business: {
+          columns: {
+            businessName: true,
+          }
+        },
+      },
+      // Add ordering to use index
+      orderBy: (customers, { desc }) => [desc(customers.createdAt)]
+    })
   },
 
-  testGetCustomers: async function () {
-    return await PSGetCustomers.execute();
-  },
+  getAllCustomersFULL: async function () {
+    return db.query.customers.findMany({
+      with: {
+        individual: {
+          columns: {
+            firstName: true,
+            middleName: true,
+            lastName: true,
+            personalID: true
+          }
+        },
+        business: {
+          columns: {
+            businessName: true,
+            isTaxRegistered: true,
+            taxNumber: true,
+          }
+        },
+        contacts: {
+          with: {
+            contactDetail: true
+          },
+          columns: {}
+        },
+        addresses: {
+          with: {
+            address: true
+          },
+          columns: {}
+        },
+        users: true,
+
+      },
+      orderBy: (customers, { desc }) => [desc(customers.createdAt)]
+
+    })
+  }
+
 }
 
 
 
 
-
-
-
-
-
-
-// export const MUTATIONS = {
-//   createFile: async function (input: {
-//     file: {
-//       name: string;
-//       size: number;
-//       url: string;
-//       parent: number;
-//     };
-//     userId: string;
-//   }) {
-//     return await db.insert(filesSchema).values({
-//       ...input.file,
-//       ownerId: input.userId,
-//     });
-//   },
-
-//   onboardUser: async function (userId: string) {
-//     const rootFolder = await db
-//       .insert(foldersSchema)
-//       .values({
-//         name: "Root",
-//         parent: null,
-//         ownerId: userId,
-//       })
-//       .$returningId();
-
-//     const rootFolderId = rootFolder[0]!.id;
-
-//     await db.insert(foldersSchema).values([
-//       {
-//         name: "Trash",
-//         parent: rootFolderId,
-//         ownerId: userId,
-//       },
-//       {
-//         name: "Shared",
-//         parent: rootFolderId,
-//         ownerId: userId,
-//       },
-//       {
-//         name: "Documents",
-//         parent: rootFolderId,
-//         ownerId: userId,
-//       },
-//     ]);
-
-//     return rootFolderId;
-//   },
-// };

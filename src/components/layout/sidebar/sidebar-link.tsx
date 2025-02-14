@@ -24,8 +24,8 @@ export function SidebarLink({
     <Link
       href={href}
       className={cn(
-        "flex items-center gap-4 px-3 py-2 rounded-md transition-colors hover:bg-accent",
-        isActive && "bg-accent",
+        "flex items-center gap-4 px-3 py-2 rounded-md transition-colors hover:bg-accent hover:bg-green-300",
+        isActive && "bg-accent ",
       )}
     >
       <div className="w-6 h-6 flex items-center justify-center flex-shrink-0">

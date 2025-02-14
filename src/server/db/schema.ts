@@ -19,12 +19,7 @@ import { relations } from 'drizzle-orm';
 
 export const userType = pgEnum("user_type", ["EMPLOYEE", "CUSTOMER", "DEMO"]);
 export const customerType = pgEnum("customer_type", ["INDIVIDUAL", "BUSINESS"]);
-export const contactType = pgEnum("contact_type", [
-  "email",
-  "mobile",
-  "landline",
-  "other",
-]);
+export const contactType = pgEnum("contact_type", [ 'email', 'phone', 'mobile', 'landline', 'other']);
 export const entityType = pgEnum("entity_type", ["CUSTOMER", "USER"]);
 export const packingType = pgEnum("packing_type", [
   "SACK",
@@ -340,11 +335,13 @@ export type InsertStockMovement = typeof stockMovements.$inferInsert;
 export const customersRelations = relations(customers, ({ one, many }) => ({
   individual: one(individualCustomers, {
     fields: [customers.customerId],
-    references: [individualCustomers.individualCustomerId]
+    references: [individualCustomers.individualCustomerId],
+    relationName: "customer_individual" 
   }),
   business: one(businessCustomers, {
     fields: [customers.customerId],
-    references: [businessCustomers.businessCustomerId]
+    references: [businessCustomers.businessCustomerId],
+    relationName: "customer_business"
   }),
   addresses: many(entityAddresses),
   contacts: many(entityContactDetails),

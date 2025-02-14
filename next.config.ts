@@ -3,6 +3,7 @@ import type { NextConfig } from "next";
 /** @type {import("next").NextConfig} */
 const config = {
 
+
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -13,3 +14,9 @@ const config = {
 };
 
 export default config;
+
+// experimental: {
+//   serverActions: true,
+//   // useCache: true,
+//   // dynamicIO: true
+// },
