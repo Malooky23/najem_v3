@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth/auth";
 import { NavigationMenu } from "@radix-ui/react-navigation-menu";
 import { NavigationLinks } from "./navigation-links";
 import { UserMenu } from "./user-menu";
+import Image from 'next/image'
 
 // ... existing imports ...
 
@@ -13,13 +14,21 @@ export async function Header() {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 h-12 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="h-full flex items-center px-6">
+      {/* <div className="h-full flex items-center px-6"> */}
+      <div className="h-full flex items-center ">
         <NavigationMenu className="w-full grid grid-cols-3 items-center">
-          <div className="justify-self-start">
+          <div className="  flex flex-row justify-self-start">
+            <div className="mx-3 ">
+            <Image src='/favicon.ico' alt="logo" width={40} height={40} />
+            </div>
+            <div className="gap-2 flex items-center">
             <Link href="/dashboard" className="text-lg sm:text-xl font-bold truncate">
-              <span className="hidden sm:inline">logo</span>
+              <span className="hidden sm:inline">Najem Aleen</span>
               <span className="sm:hidden">NAS</span>
             </Link>
+            </div>
+
+
           </div>
           <div className="flex justify-items-center bg-purple-300">
             {session?.user && <NavigationLinks userType={userType} isAdmin={isAdmin} />}

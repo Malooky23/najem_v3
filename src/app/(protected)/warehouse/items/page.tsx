@@ -1,5 +1,6 @@
 import { Package2 } from 'lucide-react';
 import { ComingSoon } from '@/components/coming-soon';
+import { TableWrapper } from './table/table-wrapper';
 
 export default function ItemsPage() {
   return (
@@ -8,13 +9,10 @@ export default function ItemsPage() {
         <Package2 size={32} className="text-primary" />
         <h1 className="text-3xl font-bold">Items Management</h1>
       </div>
+
+      <TableWrapper/>
       
-      <div className="space-y-4">
-        <p className="text-muted-foreground">
-          Manage your warehouse inventory, add new items, update stock levels, and track item details.
-        </p>
-        <ComingSoon />
-      </div>
+
     </div>
   );
 }

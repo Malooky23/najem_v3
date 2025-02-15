@@ -1,8 +1,12 @@
+
 import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/auth/auth";
 import { QUERIES } from "@/server/db/queries";
 import { Suspense } from "react";
 import {LoadingSpinner} from "@/components/ui/loading-spinner";
+import { redirect } from "next/navigation";
+// import { copyUsers } from "@/scripts/copyUsers";
+// import CopyUsers from "./copyUsersButton";
 
 
 const UserDetailsCard = async () => {
@@ -26,13 +30,13 @@ const UserDetailsCard = async () => {
 
 export default async function Page() {
     const session = await auth();
-
     if (!session?.user) {
-        return <div>Unauthorized</div>
+        return redirect('/login')
     }
+    
     return (
         <div className="p-1  flex flex-col">
-
+    {/* <CopyUsers/> */}
             <div className="bg-amber-300 mt-1 mb-3 rounded-lg  p-4 flex items-center justify-between">
                 <h1 className="text-2xl pl-6 font-bold text-gray-900">Dashboard</h1>
                 <Button className="bg-amber-500 hover:bg-amber-600 text-white font-extrabold">CLICK ME</Button>

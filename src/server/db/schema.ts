@@ -16,6 +16,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { relations } from 'drizzle-orm';
+import {z} from 'zod'
 
 export const userType = pgEnum("user_type", ["EMPLOYEE", "CUSTOMER", "DEMO"]);
 export const customerType = pgEnum("customer_type", ["INDIVIDUAL", "BUSINESS"]);
@@ -249,9 +250,7 @@ export const items = pgTable("items", {
 });
 
 // Inventory tracking tables
-export const itemStock = pgTable(
-  "item_stock",
-  {
+export const itemStock = pgTable("item_stock",{
     itemId: uuid("item_id")
       .notNull()
       .references(() => items.itemId),
@@ -263,10 +262,10 @@ export const itemStock = pgTable(
       .defaultNow()
       .notNull(),
   },
-  (table) => ({
-    pk: primaryKey({ columns: [table.itemId, table.locationId] }),
-    quantityCheck: check("quantity_check", sql`current_quantity >= 0`),
-  })
+  // (table) => ({
+  //   pk: primaryKey({ columns: [table.itemId, table.locationId] }),
+  //   quantityCheck: check("quantity_check", sql`current_quantity >= 0`),
+  // })
 );
 
 export const stockMovements = pgTable("stock_movements", {

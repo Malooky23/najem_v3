@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { createBusinessCustomer, createIndividualCustomer } from "@/server/db/actions"
+import { createBusinessCustomer, createIndividualCustomer } from "./actions"
 // import { CONTACT_TYPE_OPTIONS } from "@/lib/constants/contact_details";
 import { COUNTRIES } from "@/lib/constants/countries";
 import { useToast } from "@/hooks/use-toast"
@@ -18,8 +18,26 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { contactsArraySchema, contactSchema } from "@/lib/validations/contact"
 import { z } from 'zod'
 import LocationSelector from "@/components/ui/location-input"
+import { cn } from "@/lib/utils"
+import { Textarea } from "@/components/ui/textarea"
 
+const businessCustomerSchema = z.object({
+  businessName: z.string().min(1, "Business name is required"),
+  country: z.string().min(1, "Country is required"),
+  contacts: contactsArraySchema,
+  notes: z.string().nullable().default(null)
 
+})
+
+const individualCustomerSchema = z.object({
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  middleName: z.string().optional(),
+  personalId: z.string().optional(),
+  country: z.string().min(1, "Country is required"),
+  contacts: contactsArraySchema,
+  notes: z.string().nullable().default(null)
+})
 
 async function submitCustomerForm(prevState: any, formData: FormData, options: {
   type: "individual" | "business",
@@ -39,19 +57,8 @@ async function submitCustomerForm(prevState: any, formData: FormData, options: {
   console.log('Form Errors:', form.formState.errors);
   console.log('Tax Registered:', isTaxRegistered);
 
-  if (!form.formState.isValid) {
-    console.log('Form Validation Failed:', {
-      errors: form.formState.errors,
-      dirtyFields: form.formState.dirtyFields,
-      touchedFields: form.formState.touchedFields
-    });
-    toast({
-      variant: "destructive",
-      title: "Error",
-      description: "Please fix the form errors before submitting.",
-    });
-    return { error: "Form validation failed" };
-  }
+
+
 
   try {
     const formObject: Record<string, any> = {};
@@ -106,6 +113,31 @@ async function submitCustomerForm(prevState: any, formData: FormData, options: {
 
     console.log('=== Final Form Object ===', formObject);
 
+    if (formObject.country == '') {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Select Country.",
+      });
+      return { error: "Select Country" };
+
+    }
+
+    // if (!form.formState.isValid) {
+    //   console.log(form)
+    //   console.log('Form Validation Failed:', {
+    //     errors: form.formState.errors,
+    //     dirtyFields: form.formState.dirtyFields,
+    //     touchedFields: form.formState.touchedFields
+    //   });
+    //   toast({
+    //     variant: "destructive",
+    //     title: "Error",
+    //     description: "Please fix the form errors before submitting.",
+    //   });
+    //   return { error: "Form validation failed" };
+    // }
+
     let result;
     if (type === 'business') {
       console.log('Submitting Business Customer...');
@@ -121,6 +153,11 @@ async function submitCustomerForm(prevState: any, formData: FormData, options: {
       console.log('Customer created successfully, invalidating queries...');
       queryClient.invalidateQueries({ queryKey: ['customers'] })
       onClose();
+      toast({
+        variant: "success",
+        title: "New Customer Created!",
+        description: "",
+      });
       return { success: true, message: "Customer created successfully" };
     }
 
@@ -160,26 +197,26 @@ export default function CustomerForm({ type, onClose }: { type: "individual" | "
           type: "email" as const,
           isPrimary: true
         }
-      ]
+      ],
     },
     mode: "onChange",
-    resolver: zodResolver(z.object({
-      contacts: contactsArraySchema
-    }))
+    resolver: zodResolver(
+      type === "business" ? businessCustomerSchema : individualCustomerSchema
+    )
   });
 
-  // Add form state logging
-  console.log('=== Form State ===', {
-    isDirty: form.formState.isDirty,
-    isValid: form.formState.isValid,
-    errors: form.formState.errors,
-    dirtyFields: form.formState.dirtyFields
-  });
+  // // Add form state logging
+  // console.log('=== Form State ===', {
+  //   isDirty: form.formState.isDirty,
+  //   isValid: form.formState.isValid,
+  //   errors: form.formState.errors,
+  //   dirtyFields: form.formState.dirtyFields
+  // });
 
-  // Log whenever form values change
-  form.watch((data) => {
-    console.log('=== Form Values Updated ===', data);
-  });
+  // // Log whenever form values change
+  // form.watch((data) => {
+  //   console.log('=== Form Values Updated ===', data);
+  // });
 
   const { fields, append, remove } = useFieldArray<ContactFormData>({
     control: form.control,
@@ -194,15 +231,6 @@ export default function CustomerForm({ type, onClose }: { type: "individual" | "
     }
   });
 
-  const canSubmit = form.formState.isValid && form.watch('contacts').some(contact =>
-    contact.data && contact.data.trim() !== '' &&
-    contactSchema.safeParse({
-      data: contact.data,
-      type: contact.type,
-      isPrimary: contact.isPrimary
-    }).success
-  );
-
   const [selectedCountry, setSelectedCountry] = useState<any>(null)
 
   const handleCountryChange = (country: any) => {
@@ -211,30 +239,76 @@ export default function CustomerForm({ type, onClose }: { type: "individual" | "
     // Note: the hidden input will automatically get included in the form submission
   }
 
+  const [focusCountry, setFocusCountry] = useState(false)
+
+  const handleSubmit = (e: React.FormEvent) => {
+
+    const formErrors = form.formState.errors;
+
+    const hasContactData = form.watch('contacts').some(contact =>
+      contact.data && contact.data.trim() !== '' &&
+      contactSchema.safeParse({
+        data: contact.data,
+        type: contact.type,
+        isPrimary: contact.isPrimary
+      }).success
+    );
+
+    if (!selectedCountry) {
+      e.preventDefault();
+      toast({
+        variant: "destructive",
+        title: "Validation Error",
+        description: "Please select a country.",
+      });
+      setFocusCountry(true)
+      setTimeout( () => {
+        setFocusCountry(false)
+      },6000)
+      return;
+    }
+
+    if (!hasContactData) {
+      e.preventDefault();
+      toast({
+        variant: "destructive",
+        title: "Validation Error",
+        description: "At least one valid contact is required.",
+      });
+      return;
+    }
+
+    if (Object.keys(formErrors).length > 0) {
+      e.preventDefault();
+      // Create an error message from all validation errors
+      const errorMessages = Object.entries(formErrors)
+        .map(([field, error]) => `${field}: ${error.message}`)
+        .join('\n');
+
+      toast({
+        variant: "destructive",
+        title: "Validation Errors",
+        description: "Please fix the following errors:\n" + errorMessages,
+      });
+      return;
+    }
+  };
+
   return (
     <form
       action={formAction}
       className="space-y-6"
-      onSubmit={(e) => {
-        if (!canSubmit) {
-          e.preventDefault();
-          toast({
-            variant: "destructive",
-            title: "Error",
-            description: "At least one valid contact is required.",
-          });
-        }
-      }}
+      onSubmit={handleSubmit}
     >
-      <div className="max-h-[80vh] flex-1 overflow-y-auto px-6">
+      <div className="max-h-[80vh] flex-1 overflow-y-auto px-6 ">
         <div className="space-y-6 pb-6 relative"> {/* Add relative positioning */}
           {/* Add hidden input for country */}
-          <input 
-            type="hidden" 
-            name="country" 
-            value={selectedCountry?.name || ''} 
+          <input
+            type="hidden"
+            name="country"
+            value={selectedCountry?.name || ''}
           />
-          
+
           {/* Basic Information */}
           <div className="space-y-4">
             {type === "business" ? (
@@ -243,33 +317,58 @@ export default function CustomerForm({ type, onClose }: { type: "individual" | "
                 <Input id="businessName" name="businessName" placeholder="Acme Corp" required />
               </div>
             ) : (
+
               <>
-                <div>
-                  <Label htmlFor="firstName">First Name <span className="text-red-500">*</span></Label>
+                {/* <div className="flex w-full items-stretch">
+                  <div className="flex-col items-stretch">
+                  <div><Label className="text-nowrap min-w-[150px]" htmlFor="firstName">First Name <span className="text-red-500">*</span></Label></div>
+                  <div><Label className="text-nowrap" htmlFor="middleName">Middle Name </Label></div>
+                  <div><Label className="w-[150px] text-nowrap" htmlFor="lastName">Last Name <span className="text-red-500">*</span></Label></div>
+                  <div><Label className="w-[150px] text-nowrap" htmlFor="personalId">Personal ID</Label></div>
+                    <div><Label className="" >Location <span className="text-red-500">*</span></Label></div>
+                  </div>
+                  <div className="flex-col">
+                    <Input id="firstName" name="firstName" placeholder="John" required />
+                    <Input id="middleName" name="middleName" placeholder="Doe" />
+                    <Input id="lastName" name="lastName" placeholder="Smith" required />
+                    <Input id="personalId" name="personalId" placeholder="1234567890" />
+                  </div>
+
+                </div> */}
+
+
+
+                <div className="flex space-x-2 items-center">
+
+                  <Label className="text-nowrap min-w-[150px]" htmlFor="firstName">First Name <span className="text-red-500">*</span></Label>
                   <Input id="firstName" name="firstName" placeholder="John" required />
-                </div>
-                <div>
-                  <Label htmlFor="middleName">Middle Name </Label>
+                  <Label className="text-nowrap" htmlFor="middleName">Middle Name </Label>
                   <Input id="middleName" name="middleName" placeholder="Doe" />
                 </div>
-                <div>
-                  <Label htmlFor="lastName">Last Name <span className="text-red-500">*</span></Label>
+                {/* <div className="flex space-x-2 items-center">
+
+                </div> */}
+                <div className="flex space-x-2 items-center">
+                  <Label className="w-[150px] text-nowrap" htmlFor="lastName">Last Name <span className="text-red-500">*</span></Label>
                   <Input id="lastName" name="lastName" placeholder="Smith" required />
-                </div>
-                <div>
-                  <Label htmlFor="personalId">Personal ID</Label>
+                  <Label className="w-[150px] text-nowrap" htmlFor="personalId">Personal ID</Label>
                   <Input id="personalId" name="personalId" placeholder="1234567890" />
                 </div>
+                {/* <div className="flex space-x-2 items-center">
+                  <Label className="w-[150px]" htmlFor="personalId">Personal ID</Label>
+                  <Input id="personalId" name="personalId" placeholder="1234567890" />
+                </div> */}
               </>
             )}
-            <div className="space-y-2 z-10"> {/* Add z-index */}
-              <Label>Location <span className="text-red-500">*</span></Label>
-              <LocationSelector
-              isStateNeeded={false}
-                onCountryChange={handleCountryChange}
-                onStateChange={() => {}} // We can ignore state changes
-              />
-
+            <div className={cn("flex items-center space-x-2 z-10 ", focusCountry ? "animate-flash-red  border-4 border-red-500" : "")}>
+              <Label className="w-[150px]" >Location <span className="text-red-500">*</span></Label>
+              <div className="flex-1">
+                <LocationSelector 
+                  isStateNeeded={false}
+                  onCountryChange={handleCountryChange}
+                  onStateChange={() => { }}
+                />
+              </div>
             </div>
             {type === "business" && (
               <>
@@ -322,6 +421,16 @@ export default function CustomerForm({ type, onClose }: { type: "individual" | "
             </AccordionItem>
           </Accordion>
 
+          <Accordion type="single" collapsible>
+            <AccordionItem value="notes">
+              <AccordionTrigger>Add Notes?</AccordionTrigger>
+              <AccordionContent>
+                <Textarea id="notes" name="notes"
+                />
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+
           {/* <div className="flex items-center space-x-2">
             <Switch
               id="addAddress"
@@ -354,7 +463,7 @@ export default function CustomerForm({ type, onClose }: { type: "individual" | "
           </Button>
           <Button
             type="submit"
-            disabled={isPending || !canSubmit}
+            disabled={isPending}
           >
             {isPending ? (
               <>

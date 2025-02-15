@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth/auth";
 import { LoginForm } from "./login-form";
 import { redirect } from "next/navigation";
+import { TableWrapper } from "@/app/(protected)/customers/table/table-wrapper";
 
 export default async function LoginPage() {
   const session = await auth();
@@ -20,6 +21,7 @@ export default async function LoginPage() {
         <div className="text-center text-sm text-gray-600 mt-4">
          Don't have an account? <a href="/signup" className="text-primary hover:underline">Sign up</a>
         </div>
+        <TableWrapper/>
       </div>
     </main>
   );

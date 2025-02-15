@@ -21,7 +21,7 @@ export default function CustomerModalWrapper() {
         <Button onClick={() => openModal("business")}>New Business </Button>
       </div>
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className=" max-h-[80%] overflow-auto max-w-3xl  flex flex-col">
+        <DialogContent className=" max-h-[80%] overflow-auto   flex flex-col max-w-[60vw] mx-auto ">
           <DialogHeader>
             <DialogTitle>Create New {customerType === "business" ? "Business" : "Individual"} Customer</DialogTitle>
           </DialogHeader>
@@ -32,3 +32,4 @@ export default function CustomerModalWrapper() {
   )
 }
 
+// max-w-3xl

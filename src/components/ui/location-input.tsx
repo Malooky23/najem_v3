@@ -109,7 +109,7 @@ const LocationSelector = ({
   }
 
   return (
-    <div className="flex gap-4 relative">
+    <div className="flex gap-4 relative ">
       {/* Country Selector */}
       <Popover modal={true} open={openCountryDropdown} onOpenChange={setOpenCountryDropdown}>
         <PopoverTrigger asChild>
