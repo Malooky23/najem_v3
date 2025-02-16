@@ -1,312 +1,276 @@
-// // // "use client";
+"use client"
+import { useState, useTransition } from "react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { signUpSchema, SignUpValues } from "@/lib/validations/auth"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { signUp } from "@/server/actions/signup"
+import { redirect } from "next/navigation"
+import { CheckCircleIcon, XCircleIcon } from "lucide-react"
+import { cn } from "@/lib/utils" // Assuming you have a utils file with cn
 
-// // // import { useRouter } from 'next/navigation';
-// // // import { useEffect } from 'react';
-// // // import { useFormStatus } from 'react-dom';
-// // // import { useActionState } from 'react';
-// // // import { Button } from "@/components/ui/button";
-// // // import { Input } from "@/components/ui/input";
-// // // import { Label } from "@/components/ui/label";
-// // // import { useToast } from "@/hooks/use-toast";
-// // // import { signupAction } from "@/app/actions/auth/signup";
-// // // import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-// // // import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-// // // import { Link } from 'lucide-react';
+// export  function SignupForm() {
+//   const [isPending, startTransition] = useTransition()
+//   const [formMessage, setFormMessage] = useState<{ type: 'success' | 'error' | null, message: string | null }>({ type: null, message: null });
+//   const [passwordCriteria, setPasswordCriteria] = useState({
+//     minLength: false,
+//     uppercase: false,
+//     lowercase: false,
+//     number: false,
+//     specialChar: false,
+//   });
+//   const [showPasswordAnalysis, setShowPasswordAnalysis] = useState(false);
 
-// // // const USER_TYPE_OPTIONS = [
-// // //   { value: "EMPLOYEE", label: "Employee" },
-// // //   { value: "CUSTOMER", label: "Customer" },
-// // //   { value: "DEMO", label: "Demo" }
-// // // ];
+//   const form = useForm<SignUpValues>({
+//     resolver: zodResolver(signUpSchema),
+//     defaultValues: {
+//       firstName: "",
+//       lastName: "",
+//       email: "",
+//       password: "",
+//       userType: "CUSTOMER",
+//     },
+//   })
 
-// // // function SubmitButton() {
-// // //   const { pending } = useFormStatus();
-// // //   return (
-// // //     <Button type="submit" disabled={pending}>
-// // //       {pending ? "Signing up..." : "Sign Up"}
-// // //     </Button>
-// // //   );
-// // // }
-
-// // // export function SignupForm() {
-// // //   const router = useRouter();
-// // //   const { toast } = useToast();
-// // //   const [state, formAction] = useActionState(signupAction, null);
-
-// // //   useEffect(() => {
-// // //     if (state?.error) {
-// // //       toast({
-// // //         variant: "destructive",
-// // //         title: "Signup failed",
-// // //         description: state.error,
-// // //       });
-// // //     } else if (state?.success) {
-// // //       toast({
-// // //         title: "Signup successful",
-// // //         description: state.message,
-// // //       });
-// // //       router.push('/login');
-// // //     }
-// // //   }, [state, toast, router]);
-
-// //   // return (
-// //   // <form action={formAction} className="space-y-4">
-// //   //   <div className="space-y-2">
-// //   //     <Label htmlFor="email">Email</Label>
-// //   //     <Input
-// //   //       id="email"
-// //   //       name="email"
-// //   //       type="email"
-// //   //       placeholder="example@email.com"
-// //   //       required
-// //   //     />
-// //   //   </div>
-
-// //   //   <div className="space-y-2">
-// //   //     <Label htmlFor="password">Password</Label>
-// //   //     <Input
-// //   //       id="password"
-// //   //       name="password"
-// //   //       type="password"
-// //   //       required
-// //   //     />
-// //   //   </div>
-
-// //   //   <div className="space-y-2">
-// //   //     <Label htmlFor="firstName">First Name</Label>
-// //   //     <Input
-// //   //       id="firstName"
-// //   //       name="firstName"
-// //   //       placeholder="John"
-// //   //       required
-// //   //     />
-// //   //   </div>
-
-// //   //   <div className="space-y-2">
-// //   //     <Label htmlFor="lastName">Last Name</Label>
-// //   //     <Input
-// //   //       id="lastName"
-// //   //       name="lastName"
-// //   //       placeholder="Doe"
-// //   //       required
-// //   //     />
-// //   //   </div>
-
-// //   //   <div className="space-y-2">
-// //   //     <Label htmlFor="userType">User Type</Label>
-// //   //     <SelectContent 
-// //   //       id="userType"
-// //   //       name="userType"
-// //   //       className="w-full p-2 border rounded-md"
-// //   //       defaultValue="CUSTOMER"
-// //   //     >
-// //   //       {USER_TYPE_OPTIONS.map(option => (
-// //   //         <SelectItem key={option.value} value={option.value}>
-// //   //           {option.label}
-// //   //         </SelectItem>
-// //   //       ))}
-// //   //     </SelectContent>
-// //   //   </div>
-
-// //   //   <SubmitButton />
-// //   // </form>
-// //   // );
-// //   // }
-  
-// //   "use client"
-
-// // import Link from "next/link"
-// // import { zodResolver } from "@hookform/resolvers/zod"
-// // import { useForm } from "react-hook-form"
-// // import { z } from "zod"
-
-// // import { toast } from "@/hooks/use-toast"
-// // import { Button } from "@/components/ui/button"
-// // import {
-// //   Form,
-// //   FormControl,
-// //   FormDescription,
-// //   FormField,
-// //   FormItem,
-// //   FormLabel,
-// //   FormMessage,
-// // } from "@/components/ui/form"
-// // import {
-// //   Select,
-// //   SelectContent,
-// //   SelectItem,
-// //   SelectTrigger,
-// //   SelectValue,
-// // } from "@/components/ui/select"
-
-// // const FormSchema = z.object({
-// //   email: z
-// //     .string({
-// //       required_error: "Please select an email to display.",
-// //     })
-// //     .email(),
-// // })
-
-// // export function SignupForm() {
-// //   const form = useForm<z.infer<typeof FormSchema>>({
-// //     resolver: zodResolver(FormSchema),
-// //   })
-
-// //   function onSubmit(data: z.infer<typeof FormSchema>) {
-// //     toast({
-// //       title: "You submitted the following values:",
-// //       description: (
-// //         <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-// //           <code className="text-white">{JSON.stringify(data, null, 2)}</code>
-// //         </pre>
-// //       ),
-// //     })
-// //   }
-
-// //   return (
-// //     <Form {...form}>
-// //       <form onSubmit={form.handleSubmit(onSubmit)} className="w-2/3 space-y-6">
-// //         <FormField
-// //           control={form.control}
-// //           name="email"
-// //           render={({ field }) => (
-// //             <FormItem>
-// //               <FormLabel>Email</FormLabel>
-// //               <Select onValueChange={field.onChange} defaultValue={field.value}>
-// //                 <FormControl>
-// //                   <SelectTrigger>
-// //                     <SelectValue placeholder="Select a verified email to display" />
-// //                   </SelectTrigger>
-// //                 </FormControl>
-// //                 <SelectContent>
-// //                   <SelectItem value="m@example.com">m@example.com</SelectItem>
-// //                   <SelectItem value="m@google.com">m@google.com</SelectItem>
-// //                   <SelectItem value="m@support.com">m@support.com</SelectItem>
-// //                 </SelectContent>
-// //               </Select>
-// //               <FormDescription>
-// //                 You can manage email addresses in your{" "}
-// //                 <Link href="/examples/forms">email settings</Link>.
-// //               </FormDescription>
-// //               <FormMessage />
-// //             </FormItem>
-// //           )}
-// //         />
-// //         <Button type="submit">Submit</Button>
-// //       </form>
-// //     </Form>
-// //   )
-// // }
+//   const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#\$%\^&\*])(?=.{8,})/;
 
 
-// "use client"
-
-// import { useActionState } from "react"
-// import { signUp } from "./actions"
-// import { useState } from "react"
-
-// const initialState = {
-//   message: "",
-// }
-
-// export function SignupForm() {
-//   const [state, formAction, pending] = useActionState(signUp, initialState)
-//   const [errors, setErrors] = useState<{ [key: string]: string }>({})
-
-//   const validateForm = (formData: FormData) => {
-//     const newErrors: { [key: string]: string } = {}
-
-//     const email = formData.get("email") as string
-//     const password = formData.get("password") as string
-
-//     if (!email) {
-//       newErrors.email = "Email is required"
-//     } else if (!/\S+@\S+\.\S+/.test(email)) {
-//       newErrors.email = "Email is invalid"
+//   const checkPasswordStrength = (password: string) => {
+//     setPasswordCriteria({
+//       minLength: password.length >= 8,
+//       uppercase:  /(?=.*[A-Z])/.test(password),
+//       lowercase:  /(?=.*[a-z])/.test(password),
+//       number:     /(?=.*\d)/.test(password),
+//       specialChar:/(?=.*[!@#\$%\^&\*])/.test(password),
+//     });
+//     if (password.length > 0) {
+//       setShowPasswordAnalysis(true);
+//     } else {
+//       setShowPasswordAnalysis(false);
 //     }
+//   };
 
-//     if (!password) {
-//       newErrors.password = "Password is required"
-//     } else if (password.length < 6) {
-//       newErrors.password = "Password must be at least 6 characters"
-//     }
+//   const allCriteriaMet = () => {
+//     return Object.values(passwordCriteria).every(Boolean);
+//   };
 
-//     setErrors(newErrors)
+//   function onSubmit(values: SignUpValues) {
+//     setFormMessage({ type: null, message: null });
+//     startTransition(async () => {
+//       const result = await signUp(values)
+//       if (result.success) {
+//         setFormMessage({ type: 'success', message: result.message!+' Redirecting to login page' });
+//         form.reset()
+//         await new Promise((resolve) => setTimeout(resolve, 2000))
+//         redirect('/login')
 
-//     return Object.keys(newErrors).length === 0
+//       } else {
+//         if (result.message) {
+//           setFormMessage({ type: 'error', message: result.message });
+//         } else {
+//           setFormMessage({ type: null, message: null });
+//         }
+//         Object.entries(result.errors || {}).forEach(([key, value]) => {
+//           form.setError(key as keyof SignUpValues, {
+//             type: "manual",
+//             message: value as unknown as string,
+//           })
+//         })
+//       }
+//     })
 //   }
 
 //   return (
-//     <div className="max-w-md mx-auto mt-10">
-//       <form
-//         action={async (formData: FormData) => {
-//           if (validateForm(formData)) {
-//              formAction(formData)
-//           }
-//         }}
-//         className="space-y-4"
-//       >
-//         <div>
-//           <label htmlFor="email" className="block mb-1">
-//             Email
-//           </label>
-//           <input type="email" id="email" name="email" className="w-full px-3 py-2 border rounded" />
-//           {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
-//         </div>
-//         <div>
-//           <label htmlFor="password" className="block mb-1">
-//             Password
-//           </label>
-//           <input type="password" id="password" name="password" className="w-full px-3 py-2 border rounded" />
-//           {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
-//         </div>
-//         <button
-//           type="submit"
-//           disabled={pending}
-//           className="w-full bg-blue-500 text-white py-2 rounded disabled:bg-blue-300"
-//         >
-//           {pending ? "Signing up..." : "Sign Up"}
-//         </button>
-//       </form>
-//       {state.message && <p className="mt-4 text-green-500 text-center">{state.message}</p>}
+//     <div className="min-h-screen bg-gray-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+//       <Card className="w-full max-w-md mx-auto">
+//         <CardHeader>
+//           <CardTitle className="text-2xl font-bold text-center">Create your account</CardTitle>
+//           <CardDescription className="text-center">Enter your information to sign up</CardDescription>
+//         </CardHeader>
+//         <CardContent>
+//           <Form {...form}>
+//             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+//               <div className="grid grid-cols-2 gap-4">
+//                 <FormField
+//                   control={form.control}
+//                   name="firstName"
+//                   render={({ field }) => (
+//                     <FormItem>
+//                       <FormLabel>First name</FormLabel>
+//                       <FormControl>
+//                         <Input {...field} />
+//                       </FormControl>
+//                       <FormMessage />
+//                     </FormItem>
+//                   )}
+//                 />
+//                 <FormField
+//                   control={form.control}
+//                   name="lastName"
+//                   render={({ field }) => (
+//                     <FormItem>
+//                       <FormLabel>Last name</FormLabel>
+//                       <FormControl>
+//                         <Input {...field} />
+//                       </FormControl>
+//                       <FormMessage />
+//                     </FormItem>
+//                   )}
+//                 />
+//               </div>
+//               <FormField
+//                 control={form.control}
+//                 name="email"
+//                 render={({ field }) => (
+//                   <FormItem>
+//                     <FormLabel>Email</FormLabel>
+//                     <FormControl>
+//                       <Input type="email" {...field} />
+//                     </FormControl>
+//                     <FormMessage />
+//                   </FormItem>
+//                 )}
+//               />
+//               <FormField
+//                 control={form.control}
+//                 name="password"
+//                 render={({ field }) => (
+//                   <FormItem>
+//                     <FormLabel>Password</FormLabel>
+//                     <FormControl>
+//                       <Input
+//                         type="password"
+//                         {...field}
+//                         onFocus={() => setShowPasswordAnalysis(true)}
+//                         onChange={(e) => {
+//                           field.onChange(e);
+//                           checkPasswordStrength(e.target.value);
+//                         }}
+//                       />
+//                     </FormControl>
+//                     <FormMessage />
+//                   </FormItem>
+//                 )}
+//               />
+
+//               {/* Animated Password Criteria Checklist */}
+//               <div className="mt-2 overflow-hidden transition-all duration-300 ease-in-out" style={{ maxHeight: showPasswordAnalysis && !allCriteriaMet() ? '500px' : '0px' }}>
+//                 <div className="space-y-2 ">
+//                   <FormLabel className="text-sm font-medium">Password must contain:</FormLabel>
+//                   <ul className="list-none pl-0 ml-0 space-y-1">
+//                     <li className={cn("flex items-center", passwordCriteria.minLength ? "text-green-500" : "text-gray-500")}>
+//                       {passwordCriteria.minLength ? <CheckCircleIcon className="mr-2 h-4 w-4" /> : <XCircleIcon className="mr-2 h-4 w-4 text-red-500" />}
+//                       At least 8 characters
+//                     </li>
+//                     <li className={cn("flex items-center", passwordCriteria.uppercase ? "text-green-500" : "text-gray-500")}>
+//                       {passwordCriteria.uppercase ? <CheckCircleIcon className="mr-2 h-4 w-4" /> : <XCircleIcon className="mr-2 h-4 w-4 text-red-500" />}
+//                       One uppercase letter
+//                     </li>
+//                     <li className={cn("flex items-center", passwordCriteria.lowercase ? "text-green-500" : "text-gray-500")}>
+//                       {passwordCriteria.lowercase ? <CheckCircleIcon className="mr-2 h-4 w-4" /> : <XCircleIcon className="mr-2 h-4 w-4 text-red-500" />}
+//                       One lowercase letter
+//                     </li>
+//                     <li className={cn("flex items-center", passwordCriteria.number ? "text-green-500" : "text-gray-500")}>
+//                       {passwordCriteria.number ? <CheckCircleIcon className="mr-2 h-4 w-4" /> : <XCircleIcon className="mr-2 h-4 w-4 text-red-500" />}
+//                       One number
+//                     </li>
+//                     <li className={cn("flex items-center", passwordCriteria.specialChar ? "text-green-500" : "text-gray-500")}>
+//                       {passwordCriteria.specialChar ? <CheckCircleIcon className="mr-2 h-4 w-4" /> : <XCircleIcon className="mr-2 h-4 w-4 text-red-500" />}
+//                       One special symbol (!@#$%^&*)
+//                     </li>
+//                   </ul>
+//                 </div>
+//               </div>
+
+
+//               <FormField
+//                 control={form.control}
+//                 name="userType"
+//                 render={({ field }) => (
+//                   <FormItem>
+//                     <FormLabel>User type</FormLabel>
+//                     <FormControl>
+//                       <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex space-x-4">
+//                         <FormItem className="flex items-center space-x-2">
+//                           <FormControl>
+//                             <RadioGroupItem value="EMPLOYEE" />
+//                           </FormControl>
+//                           <FormLabel className="font-normal">Employee</FormLabel>
+//                         </FormItem>
+//                         <FormItem className="flex items-center space-x-2">
+//                           <FormControl>
+//                             <RadioGroupItem value="CUSTOMER" />
+//                           </FormControl>
+//                           <FormLabel className="font-normal">Customer</FormLabel>
+//                         </FormItem>
+//                         <FormItem className="flex items-center space-x-2">
+//                           <FormControl>
+//                             <RadioGroupItem value="DEMO" />
+//                           </FormControl>
+//                           <FormLabel className="font-normal">Demo</FormLabel>
+//                         </FormItem>
+//                       </RadioGroup>
+//                     </FormControl>
+//                     <FormMessage />
+//                   </FormItem>
+//                 )}
+//               />
+//               <Button type="submit" className="w-full" disabled={isPending}>
+//                 {isPending ? "Signing up..." : "Sign Up"}
+//               </Button>
+//             </form>
+//           </Form>
+//           {formMessage.message && (
+//             <div className={`mt-6 p-4 border-l-4 ${formMessage.type === 'success' ? 'bg-green-50 border-green-400' : 'bg-red-50 border-red-400'}`}>
+//               <div className="flex">
+//                 <div className="flex-shrink-0">
+//                   {formMessage.type === 'success' ? (
+//                     <CheckCircleIcon className="h-5 w-5 text-green-400" aria-hidden="true" />
+//                   ) : (
+//                     <XCircleIcon className="h-5 w-5 text-red-400" aria-hidden="true" />
+//                   )}
+//                 </div>
+//                 <div className="ml-3">
+//                   <p className={`text-sm font-medium ${formMessage.type === 'success' ? 'text-green-800' : 'text-red-800'}`}>{formMessage.message}</p>
+//                 </div>
+//               </div>
+//             </div>
+//           )}
+//         </CardContent>
+//       </Card>
 //     </div>
 //   )
 // }
 
-"use client"
-
-import { useState } from "react"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { signUp } from "./actions"
-import { useTransition } from "react"
-// import { CheckCircleIcon } from "@heroicons/react/24/solid"
-import { CheckCircle2 as CheckCircleIcon } from "lucide-react"
-
-import { Button } from "@/components/ui/button"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import {z} from "zod"
-import { redirect } from "next/navigation"
-
-export const signUpSchema = z.object({
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
-  userType: z.enum(["EMPLOYEE", "CUSTOMER", "DEMO"]).default("CUSTOMER"),
-})
-
-export type SignUpValues = z.infer<typeof signUpSchema>
-
-
-
+// import { useState, useTransition } from "react"
+// import { useForm } from "react-hook-form"
+// import { zodResolver } from "@hookform/resolvers/zod"
+// import { signUpSchema, SignUpValues } from "@/lib/validations/auth"
+// import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+// import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+// import { Input } from "@/components/ui/input"
+// import { Button } from "@/components/ui/button"
+// import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+// import { signUp } from "@/lib/actions/auth-actions"
+// import { redirect } from "next/navigation"
+// import { CheckCircleIcon, XCircleIcon } from "lucide-react"
+// import { cn } from "@/lib/utils" // Assuming you have a utils file with cn
 
 export  function SignupForm() {
   const [isPending, startTransition] = useTransition()
-  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [formMessage, setFormMessage] = useState<{ type: 'success' | 'error' | null, message: string | null }>({ type: null, message: null });
+  const [passwordCriteria, setPasswordCriteria] = useState({
+    minLength: false,
+    uppercase: false,
+    lowercase: false,
+    number: false,
+    specialChar: false,
+  });
+  const [showPasswordAnalysis, setShowPasswordAnalysis] = useState(false);
 
   const form = useForm<SignUpValues>({
     resolver: zodResolver(signUpSchema),
@@ -319,18 +283,39 @@ export  function SignupForm() {
     },
   })
 
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#\$%\^&\*])(?=.{8,})/;
+
+
+  const checkPasswordStrength = (password: string) => {
+    setPasswordCriteria({
+      minLength: password.length >= 8,
+      uppercase:  /(?=.*[A-Z])/.test(password),
+      lowercase:  /(?=.*[a-z])/.test(password),
+      number:     /(?=.*\d)/.test(password),
+      specialChar:/(?=.*[!@#\$%\^&\*])/.test(password),
+    });
+  };
+
+  const allCriteriaMet = () => {
+    return Object.values(passwordCriteria).every(Boolean);
+  };
+
   function onSubmit(values: SignUpValues) {
-    setSuccessMessage(null)
+    setFormMessage({ type: null, message: null });
     startTransition(async () => {
       const result = await signUp(values)
       if (result.success) {
-        setSuccessMessage(result.message!+' Redirecting to login page')
+        setFormMessage({ type: 'success', message: result.message!+' Redirecting to login page' });
         form.reset()
         await new Promise((resolve) => setTimeout(resolve, 2000))
         redirect('/login')
 
       } else {
-        // Handle errors
+        if (result.message) {
+          setFormMessage({ type: 'error', message: result.message });
+        } else {
+          setFormMessage({ type: null, message: null });
+        }
         Object.entries(result.errors || {}).forEach(([key, value]) => {
           form.setError(key as keyof SignUpValues, {
             type: "manual",
@@ -399,12 +384,60 @@ export  function SignupForm() {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input type="password" {...field} />
+                      <Input
+                        type="password"
+                        {...field}
+                        onBlur={(e) => { // Show analysis on blur (when user moves away)
+                          checkPasswordStrength(e.target.value);
+                          if (e.target.value.length > 0) {
+                            setShowPasswordAnalysis(true);
+                          } else {
+                            setShowPasswordAnalysis(false);
+                          }
+                        }}
+                        onChange={(e) => {
+                          field.onChange(e);
+                          checkPasswordStrength(e.target.value); // No real-time check anymore
+                        }}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
+              {/* Animated Password Criteria Checklist */}
+              <div className="mt-2 overflow-hidden transition-all duration-500 ease-in-out" style={{ maxHeight: showPasswordAnalysis && !allCriteriaMet() ? '500px' : '0px' }}>
+                <div className="space-y-2 ">
+                  <FormLabel className="text-sm font-medium">Password must contain:</FormLabel>
+                  <ul className="list-none pl-0 ml-0 space-y-0">
+                    <li className={cn("flex items-center", passwordCriteria.minLength ? "text-green-500" : "text-gray-500")}>
+                      {passwordCriteria.minLength ? <CheckCircleIcon className="mr-2 h-4 w-4" /> : <XCircleIcon className="mr-2 h-4 w-4 text-red-500" />}
+                      At least 8 characters
+                    </li>
+                    <li className={cn("flex items-center", passwordCriteria.uppercase ? "text-green-500" : "text-gray-500")}>
+                      {passwordCriteria.uppercase ? <CheckCircleIcon className="mr-2 h-4 w-4" /> : <XCircleIcon className="mr-2 h-4 w-4 text-red-500" />}
+                      One uppercase letter
+                    </li>
+                    <li className={cn("flex items-center", passwordCriteria.lowercase ? "text-green-500" : "text-gray-500")}>
+                      {passwordCriteria.lowercase ? <CheckCircleIcon className="mr-2 h-4 w-4" /> : <XCircleIcon className="mr-2 h-4 w-4 text-red-500" />}
+                      One lowercase letter
+                    </li>
+                    <li className={cn("flex items-center", passwordCriteria.number ? "text-green-500" : "text-gray-500")}>
+                      {passwordCriteria.number ? <CheckCircleIcon className="mr-2 h-4 w-4" /> : <XCircleIcon className="mr-2 h-4 w-4 text-red-500" />}
+                      One number
+                    </li>
+                    <li className={cn("flex items-center", passwordCriteria.specialChar ? "text-green-500" : "text-gray-500")}>
+                      {passwordCriteria.specialChar ? <CheckCircleIcon className="mr-2 h-4 w-4" /> : <XCircleIcon className="mr-2 h-4 w-4 text-red-500" />}
+                      One special symbol (!@#$%^&*)
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+                <div className="bg-purple-200 p-1 rounded-md text-center items-center justify-center">
+                DEV ONLY
+
               <FormField
                 control={form.control}
                 name="userType"
@@ -412,8 +445,8 @@ export  function SignupForm() {
                   <FormItem>
                     <FormLabel>User type</FormLabel>
                     <FormControl>
-                      <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex space-x-4">
-                        <FormItem className="flex items-center space-x-2">
+                      <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex space-x-4 ">
+                        <FormItem className="flex items-center space-x-2 ">
                           <FormControl>
                             <RadioGroupItem value="EMPLOYEE" />
                           </FormControl>
@@ -437,19 +470,24 @@ export  function SignupForm() {
                   </FormItem>
                 )}
               />
+              </div>
               <Button type="submit" className="w-full" disabled={isPending}>
                 {isPending ? "Signing up..." : "Sign Up"}
               </Button>
             </form>
           </Form>
-          {successMessage && (
-            <div className="mt-6 bg-green-50 border-l-4 border-green-400 p-4">
+          {formMessage.message && (
+            <div className={`mt-6 p-4 border-l-4 ${formMessage.type === 'success' ? 'bg-green-50 border-green-400' : 'bg-red-50 border-red-400'}`}>
               <div className="flex">
                 <div className="flex-shrink-0">
-                  <CheckCircleIcon className="h-5 w-5 text-green-400" aria-hidden="true" />
+                  {formMessage.type === 'success' ? (
+                    <CheckCircleIcon className="h-5 w-5 text-green-400" aria-hidden="true" />
+                  ) : (
+                    <XCircleIcon className="h-5 w-5 text-red-400" aria-hidden="true" />
+                  )}
                 </div>
                 <div className="ml-3">
-                  <p className="text-sm font-medium text-green-800">{successMessage}</p>
+                  <p className={`text-sm font-medium ${formMessage.type === 'success' ? 'text-green-800' : 'text-red-800'}`}>{formMessage.message}</p>
                 </div>
               </div>
             </div>
@@ -459,4 +497,3 @@ export  function SignupForm() {
     </div>
   )
 }
-
