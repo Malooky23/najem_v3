@@ -1,7 +1,7 @@
 'use client'
 
-import { DataTable } from "./data-table"
-import { columns } from "./columns"
+import { DataTable } from "./customer-data-table"
+import { columns } from "./customer-columns"
 import { useCustomers } from "@/hooks/data-fetcher"
 import { Skeleton } from "@/components/ui/skeleton"
 import type { EnrichedCustomer } from "@/types/customer"
@@ -38,16 +38,3 @@ export function TableWrapper() {
   return <DataTable columns={columns} data={data} isLoading={false} />
 }
 
-function LoadingState() {
-  return (
-    <div className="space-y-3">
-      <div className="rounded-md border">
-        <div className="p-4 space-y-4">
-          {Array.from({ length: 50 }).map((_, i) => (
-            <Skeleton key={i} className="h-4 w-full" />
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}

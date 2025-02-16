@@ -17,14 +17,14 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { DataTablePagination } from "./pagination-controls"
-import type { EnrichedCustomer } from "@/types/customer"
+import type { EnrichedItemsSchema } from "@/types/items"
 import { toast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
 
 
 interface DataTableProps<TValue> {
-  columns: ColumnDef<EnrichedCustomer, any>[]
+  columns: ColumnDef<typeof EnrichedItemsSchema, any>[]
   data: any
   isLoading?: boolean
 }
@@ -36,11 +36,11 @@ export function ItemsTable<TValue>({
 }: DataTableProps<TValue>) {
   
   const columnWidths: { [key: string]: string } = {
-    customerNumber: '80px',
-    customerType: '100px',
+    itemNumber: '80px',
+    // customerType: '100px',
     // displayName: '300px',
     // country: '50px',
-    actions: '50px',
+    // actions: '50px',
   };
 
   const table = useReactTable({
@@ -57,6 +57,7 @@ export function ItemsTable<TValue>({
 
   return (
     <div className="flex flex-col h-full rounded-md">
+      
       <div className="rounded-md border flex-1 relative">
         <div className="absolute inset-0 overflow-auto rounded-md ">
 
@@ -76,6 +77,7 @@ export function ItemsTable<TValue>({
                         // className="min-w-[50px] overflow-hidden whitespace-nowrap text-ellipsis rounded-xl bg-slate-200"
                         className="min-w-[50px] overflow-hidden whitespace-nowrap text-ellipsis text-slate-600 text-m "
                       >
+                        
                         {header.isPlaceholder
                           ? null
                           : flexRender(

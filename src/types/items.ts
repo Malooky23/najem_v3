@@ -31,19 +31,22 @@ export const ItemSchema = z.object({
   itemBarcode: z.string().nullable(),
   itemCountryOfOrigin: z.string().nullable(),
   dimensions: z.object({
-    width: z.number(),
-    height: z.number(),
-    length: z.number()
-  }).nullable(),
+    width: z.number().optional().nullable(),
+    height: z.number().optional().nullable(),
+    length: z.number().optional().nullable(),
+  }).optional().nullable(),
   weightGrams: z.number().nullable(),
   customerId: z.string(),
   notes: z.string().nullable(),
   createdBy: z.string(),
   createdAt: z.date(),
-  updatedAt: z.string().nullable(),
-  isDeleted: z.boolean().default(false) 
+  updatedAt: z.date().nullable(),
+  isDeleted: z.boolean().default(false).nullable(),
 })
 
-import { type Item } from "@/server/db/schema";
+export const EnrichedItemsSchema = ItemSchema.extend({
+  customerDisplayName: z.string(), // Add the new field here, define its type
+});
 
-export type ItemZod = z.infer<typeof ItemSchema>
+export type ItemSchemaType = z.infer< typeof ItemSchema>
+export type EnrichedItemsType = z.infer< typeof EnrichedItemsSchema>

@@ -1,6 +1,6 @@
 "use client"
 
-import { EnrichedCustomer } from "@/types/customer"
+import { EnrichedItemsSchema } from "@/types/items"
 import { ColumnDef } from "@tanstack/react-table"
 import {
   DropdownMenu,
@@ -21,22 +21,22 @@ interface ColumnMeta {
   width?: string;
 }
 
-export const columns: ColumnDef<EnrichedCustomer, ColumnMeta>[] = [
+export const itemsColumns: ColumnDef<typeof EnrichedItemsSchema, ColumnMeta>[] = [
   {
-    accessorKey: "customerNumber",
+    accessorKey: "itemNumber",
     header: () => <div className="text-left">#</div>,
   },
   {
-    accessorKey: "customerType",
-    header: "Type",
-  },
-  {
-    accessorKey: "displayName",
+    accessorKey: "itemName",
     header: "Name",
   },
   {
-    accessorKey: "country",
-    header: "Country",
+    accessorKey: "itemType",
+    header: "Type",
+  },
+  {
+    accessorKey: "customerDisplayName",
+    header: "Customer Name",
   },
   {
     id: "actions",
@@ -54,7 +54,7 @@ export const columns: ColumnDef<EnrichedCustomer, ColumnMeta>[] = [
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(payment.customerId)}
+              onClick={() => null}
             >
               Copy payment ID
             </DropdownMenuItem>

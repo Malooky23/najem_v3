@@ -1,36 +1,36 @@
 import { auth } from "@/lib/auth/auth";
-import { QUERIES } from "@/server/db/queries";
+import { customerService } from '@/server/services/customer-services';
 import { NextResponse } from "next/server";
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
     const session = await auth();
-  
-    if (!session) {
+    if (!session || session.user.userType !== 'EMPLOYEE') {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
       );
     }
+    const customers = await customerService.getAllCustomers();
+    return NextResponse.json(customers);
 
-    // const url = new URL(request.url);
-    // const delayMs = parseInt(url.searchParams.get('delay') || '0');
-    // console.log(delayMs)
-    const customers = await QUERIES.getCustomers();
-    
-    return NextResponse.json({
-      data: customers,
-      status: "success"
-    });
-    
-  } catch (error) {
-    console.error("Error fetching customers:", error);
+  } catch (error: any) {
+    console.error("API Error fetching customers:", error);
     return NextResponse.json(
-      { 
-        error: "Failed to fetch customers",
-        details: error instanceof Error ? error.message : "Unknown error"
-      },
+      { message: "Failed to fetch customers" },
       { status: 500 }
     );
   }
 }
+// catch (error) {
+//   console.error("Error fetching customers:", error);
+//   return NextResponse.json(
+//     {
+//       error: "Failed to fetch customers",
+//       details: error instanceof Error ? error.message : "Unknown error"
+//     },
+//     { status: 500 }
+//   );
+// }
+// }
+
