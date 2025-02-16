@@ -3,10 +3,10 @@ import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 
 // Paths that don't require authentication
-const publicPaths = ["/login", "/signup", "/api/auth", '/customers']
+const publicPaths = ["/login", "/signup", "/api/auth"] 
 
 // Protected route patterns
-const protectedRoutes = ["/protected", "/dashboard", "/admin" ];
+const protectedRoutes = ["/protected", "/dashboard", "/admin", "/customers", "/warehouse" ]; // ADD '/customers' and '/warehouse/items' here to protect page routes
 
 export async function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl;

@@ -1,9 +1,12 @@
 import { auth } from "@/lib/auth/auth";
 import { customerService } from '@/server/services/customer-services';
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    if(request){
+      console.log(request)
+    }
     const session = await auth();
     if (!session || session.user.userType !== 'EMPLOYEE') {
       return NextResponse.json(
