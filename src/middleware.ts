@@ -23,7 +23,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Check if it's a protected page route
-  const isProtectedPage = protectedRoutes.some((route) => pathname.startsWith(route));
+  // const isProtectedPage = protectedRoutes.some((route) => pathname.startsWith(route));
   
   // Get the token
   const token = await getToken({ 
@@ -31,19 +31,21 @@ export async function middleware(request: NextRequest) {
     secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET,
   });
 
-  console.log('Token present:', !!token);
-  console.log('Is protected page:', isProtectedPage);
+  console.log('Request:', request)
+
+  console.log('Token :', token);
+  // console.log('Is protected page:', isProtectedPage);
 
   // If it's a protected page and no token exists, redirect to login
-  if (isProtectedPage && !token) {
-    console.log('Access denied - redirecting to login');
-    const callbackUrl = encodeURIComponent(pathname + search);
-    const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('callbackUrl', callbackUrl);
+  // if (isProtectedPage && !token) {
+  //   console.log('Access denied - redirecting to login');
+  //   const callbackUrl = encodeURIComponent(pathname + search);
+  //   const loginUrl = new URL('/login', request.url);
+  //   loginUrl.searchParams.set('callbackUrl', callbackUrl);
     
-    console.log('Redirecting to:', loginUrl.toString());
-    return NextResponse.redirect(loginUrl);
-  }
+  //   console.log('Redirecting to:', loginUrl.toString());
+  //   return NextResponse.redirect(loginUrl);
+  // }
 
   // Handle API routes
   // if (pathname.startsWith("/api")) {
