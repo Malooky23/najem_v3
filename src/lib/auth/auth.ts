@@ -7,6 +7,7 @@ import {
   DatabaseError,
   UserNotFoundError,
 } from './errors'
+// import authConfig from "./auth.config"
 
 const errorMessages: Record<string, string> = {
   CREDENTIALS_MISSING: "Please provide both email and password",
@@ -29,9 +30,9 @@ export const {
     error: "/error",
     signOut: "/",
   },
-
   providers: [
-    Credentials({
+    Credentials
+    ({
       async authorize(credentials, req) {
         try {
           if (typeof credentials?.email !== 'string' || typeof credentials?.password !== 'string') {
@@ -76,7 +77,6 @@ export const {
       },
     }),
   ],
-
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
@@ -106,6 +106,7 @@ export const {
       return session
     },
   },
+  // ...authConfig
 })
 
 // Helper function to get error message
