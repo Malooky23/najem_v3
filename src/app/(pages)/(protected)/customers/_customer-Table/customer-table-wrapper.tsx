@@ -3,7 +3,6 @@
 import { DataTable } from "./customer-data-table"
 import { columns } from "./customer-columns"
 import { useCustomers } from "@/hooks/data-fetcher"
-import { Skeleton } from "@/components/ui/skeleton"
 import type { EnrichedCustomer } from "@/types/customer"
 
 const generateFakeLoadingData = (count: number): EnrichedCustomer[] => {

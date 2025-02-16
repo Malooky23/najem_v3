@@ -2,7 +2,7 @@
 import {  useQuery } from "@tanstack/react-query";
 import { type ItemSchemaType } from "@/types/items";
 import { EnrichedCustomer } from "@/types/customer";
-import { getSession } from 'next-auth/react'; // Import getSession
+// import { getSession } from 'next-auth/react'; // Import getSession
 import {auth} from '@/lib/auth/auth'
 
 
@@ -32,7 +32,7 @@ export function useItems() {
   return useQuery<ItemSchemaType[]>({
     queryKey: ['items'],
     queryFn: async () => {
-      const session = await getSession(); // Get session on client-side
+      const session = await auth(); // Get session on client-side
 
       const res = await fetch('/api/items', {
         headers: {
