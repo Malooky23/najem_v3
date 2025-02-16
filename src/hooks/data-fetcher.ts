@@ -2,15 +2,15 @@
 import {  useQuery } from "@tanstack/react-query";
 import { type ItemSchemaType } from "@/types/items";
 import { EnrichedCustomer } from "@/types/customer";
-// import { getSession } from 'next-auth/react'; // Import getSession
-import {auth} from '@/lib/auth/auth'
+import { getSession } from 'next-auth/react'; // Import getSession
+
 
 
 export function useCustomers() {
   return useQuery<EnrichedCustomer[]>({
       queryKey: ['customers'],
       queryFn: async () => {
-        const session = await auth()
+        const session = await getSession()
           const res = await fetch('/api/customers',{
             headers: {
               'Authorization': `Bearer ${session}` // Include token in header
@@ -32,7 +32,7 @@ export function useItems() {
   return useQuery<ItemSchemaType[]>({
     queryKey: ['items'],
     queryFn: async () => {
-      const session = await auth(); // Get session on client-side
+      const session = await getSession(); // Get session on client-side
 
       const res = await fetch('/api/items', {
         headers: {
