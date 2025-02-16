@@ -2,12 +2,20 @@
 import {  useQuery } from "@tanstack/react-query";
 import { type ItemSchemaType } from "@/types/items";
 import { EnrichedCustomer } from "@/types/customer";
+import { getSession } from 'next-auth/react'; // Import getSession
+import {auth} from '@/lib/auth/auth'
+
 
 export function useCustomers() {
   return useQuery<EnrichedCustomer[]>({
       queryKey: ['customers'],
       queryFn: async () => {
-          const res = await fetch('/api/customers'); // Call API route
+        const session = await auth()
+          const res = await fetch('/api/customers',{
+            headers: {
+              'Authorization': `Bearer ${session}` // Include token in header
+          }
+          }); // Call API route
           if (!res.ok) {
               throw new Error('Failed to fetch customers');
           }
@@ -24,8 +32,14 @@ export function useItems() {
   return useQuery<ItemSchemaType[]>({
     queryKey: ['items'],
     queryFn: async () => {
-      const res = await fetch('/api/items'); // Call API route
-      if (!res.ok) {
+      const session = await getSession(); // Get session on client-side
+
+      const res = await fetch('/api/items', {
+        headers: {
+            'Authorization': `Bearer ${session}` // Include token in header
+        }
+    });
+if (!res.ok) {
         let errorResponse;
         try {
           errorResponse = await res.json(); // Try to parse JSON response
