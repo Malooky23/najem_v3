@@ -13,14 +13,15 @@ import {
   json,
   check,
   primaryKey,
+  foreignKey,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { relations } from 'drizzle-orm';
-import {z} from 'zod'
+import { z } from 'zod'
 
 export const userType = pgEnum("user_type", ["EMPLOYEE", "CUSTOMER", "DEMO"]);
 export const customerType = pgEnum("customer_type", ["INDIVIDUAL", "BUSINESS"]);
-export const contactType = pgEnum("contact_type", [ 'email', 'phone', 'mobile', 'landline', 'other']);
+export const contactType = pgEnum("contact_type", ['email', 'phone', 'mobile', 'landline', 'other']);
 export const entityType = pgEnum("entity_type", ["CUSTOMER", "USER"]);
 export const packingType = pgEnum("packing_type", [
   "SACK",
@@ -217,7 +218,7 @@ export const locations = pgTable("locations", {
 export const items = pgTable("items", {
   itemId: uuid("item_id").defaultRandom().primaryKey().notNull(),
   itemNumber: serial("item_number").notNull(),
-  itemName: text("item_name").notNull(),
+  itemName: text("item_name").notNull().unique(),
   itemType: text("item_type"),
   itemBrand: text("item_brand"),
   itemModel: text("item_model"),
@@ -227,23 +228,17 @@ export const items = pgTable("items", {
   weightGrams: integer("weight_grams"),
   // packingType: text("packing_type").default("NONE"),
 
-  customerId: uuid("customer_id")
-    .notNull()
-    .references(() => customers.customerId, { onDelete: "restrict" }),
+  customerId: uuid("customer_id").notNull().references(() => customers.customerId, { onDelete: "restrict" }),
 
   notes: text(),
-  createdBy: uuid("created_by")
-    .notNull()
-    .references(() => users.userId, { onDelete: "restrict" }),
+  createdBy: uuid("created_by").notNull().references(() => users.userId, { onDelete: "restrict" }),
 
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .defaultNow()
-    .notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 
   updatedAt: timestamp("updated_at", { withTimezone: true }),
   isDeleted: boolean().default(false),
-  
-  
+
+
   // THIS IS NOT WORKING
   //   updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(
   //     () => sql`CURRENT_TIMESTAMP`
@@ -251,18 +246,18 @@ export const items = pgTable("items", {
 });
 
 // Inventory tracking tables
-export const itemStock = pgTable("item_stock",{
-    itemId: uuid("item_id")
-      .notNull()
-      .references(() => items.itemId),
-    locationId: uuid("location_id")
-      .notNull()
-      .references(() => locations.locationId),
-    currentQuantity: integer("current_quantity").notNull().default(0),
-    lastUpdated: timestamp("last_updated", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
-  },
+export const itemStock = pgTable("item_stock", {
+  itemId: uuid("item_id")
+    .notNull()
+    .references(() => items.itemId),
+  locationId: uuid("location_id")
+    .notNull()
+    .references(() => locations.locationId),
+  currentQuantity: integer("current_quantity").notNull().default(0),
+  lastUpdated: timestamp("last_updated", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+},
   // (table) => ({
   //   pk: primaryKey({ columns: [table.itemId, table.locationId] }),
   //   quantityCheck: check("quantity_check", sql`current_quantity >= 0`),
@@ -294,6 +289,72 @@ export const deletedItems = pgTable('deleted_items', {
   itemId: uuid('item_id').primaryKey().notNull(),
   deletedAt: timestamp('deleted_at').defaultNow(),
 });
+
+export const orderStatus = pgEnum("order_status", ['DRAFT', 'PENDING', 'PROCESSING', 'READY', 'COMPLETED', 'CANCELLED'])
+export const orderType = pgEnum("order_type", ['CUSTOMER_ORDER', ])
+export const deliveryMethod = pgEnum("delivery_method", ['NONE', 'PICKUP', 'DELIVERY'])
+
+
+export const orders = pgTable("orders", {
+  orderId: uuid("order_id").primaryKey().notNull(),
+  orderNumber: serial("order_number").notNull(),
+  customerId: uuid("customer_id").notNull(),
+  orderType: orderType("order_type").notNull().default('CUSTOMER_ORDER'),
+  movement: movementType().notNull(),
+  packingType: packingType("packing_type").notNull().default('NONE'),
+  deliveryMethod: deliveryMethod("delivery_method").notNull().default('NONE'),
+  status: orderStatus().default('PENDING').notNull(),
+  addressId: uuid("address_id"),
+  fulfilledAt: timestamp("fulfilled_at", { withTimezone: true }),
+  notes: text(),
+
+  createdBy: uuid("created_by").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true}),
+  isDeleted: boolean().default(false),
+
+},
+  (table) => [
+    foreignKey({
+      columns: [table.createdBy],
+      foreignColumns: [users.userId],
+      name: "orders_creator_id_fkey"
+    }).onDelete("restrict"),
+    foreignKey({
+      columns: [table.customerId],
+      foreignColumns: [customers.customerId],
+      name: "orders_cus_id_fkey"
+    }).onDelete("restrict"),
+    foreignKey({
+      columns: [table.addressId],
+      foreignColumns: [addressDetails.addressId],
+      name: "orders_address_id_fkey"
+    }).onDelete("set null"),
+    unique("orders_order_number_key").on(table.orderNumber),
+  ]);
+
+
+  export const orderItems = pgTable("order_items", {
+    orderItemsId: uuid("order_items_id").defaultRandom().primaryKey().notNull(),
+    orderId: uuid("order_id").notNull(),
+    itemId: uuid("item_id").notNull(),
+    quantity: integer().notNull(),
+    createdAt: timestamp("created_at", {withTimezone: true}).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", {withTimezone: true})
+  }, (table) => [
+    foreignKey({
+        columns: [table.orderId],
+        foreignColumns: [orders.orderId],
+        name: "order_items_order_id_fkey"
+    }).onDelete("cascade"),
+    foreignKey({
+        columns: [table.itemId],
+        foreignColumns: [items.itemId],
+        name: "order_items_item_id_fkey"
+    }).onDelete("restrict"),
+    check("order_items_quantity_check", sql`quantity
+    > 0`),
+  ]);
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
@@ -336,7 +397,7 @@ export const customersRelations = relations(customers, ({ one, many }) => ({
   individual: one(individualCustomers, {
     fields: [customers.customerId],
     references: [individualCustomers.individualCustomerId],
-    relationName: "customer_individual" 
+    relationName: "customer_individual"
   }),
   business: one(businessCustomers, {
     fields: [customers.customerId],
@@ -391,9 +452,9 @@ export const entityContactDetailsRelations = relations(entityContactDetails, ({ 
     fields: [entityContactDetails.entityId],
     references: [customers.customerId],
   })
-    // You'll add similar relations for other entity types later:
-    // order: one(orders, { ... }),
-    // vendor: one(vendors, { ... }),
+  // You'll add similar relations for other entity types later:
+  // order: one(orders, { ... }),
+  // vendor: one(vendors, { ... }),
 }));
 
 
@@ -404,19 +465,19 @@ export const addressDetailsRelations = relations(addressDetails, ({ many }) => (
 
 // relations.ts
 export const entityAddressesRelations = relations(entityAddresses, ({ one }) => ({
-    address: one(addressDetails, {
-      fields: [entityAddresses.addressId],
-      references: [addressDetails.addressId]
-    }),
-    // For customer addresses
-    customer: one(customers, {
-      fields: [entityAddresses.entityId],
-      references: [customers.customerId]
-    })
-    // You'll add similar relations for other entity types later:
-    // order: one(orders, { ... }),
-    // vendor: one(vendors, { ... }),
-  }));
+  address: one(addressDetails, {
+    fields: [entityAddresses.addressId],
+    references: [addressDetails.addressId]
+  }),
+  // For customer addresses
+  customer: one(customers, {
+    fields: [entityAddresses.entityId],
+    references: [customers.customerId]
+  })
+  // You'll add similar relations for other entity types later:
+  // order: one(orders, { ... }),
+  // vendor: one(vendors, { ... }),
+}));
 
 
 

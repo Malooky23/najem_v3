@@ -24,6 +24,7 @@ import { DataTablePagination } from "@/components/pagination-controls"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Input } from "@/components/ui/input"
 import React from "react"
+import { cn } from "@/lib/utils"
 
 interface DataTableProps<TData> {
   columns: ColumnDef<TData, any>[]
@@ -36,6 +37,7 @@ interface DataTableProps<TData> {
   columnWidths?: { [key: string]: string }
   onRowClick?: (row: TData) => void
   pageSize?: number
+  rowClassName?: (row: TData) => string
 }
 
 export function DataTable<TData>({
@@ -46,6 +48,7 @@ export function DataTable<TData>({
   columnWidths = {},
   onRowClick,
   pageSize = 10,
+  rowClassName,
 }: DataTableProps<TData>) {
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
@@ -123,7 +126,9 @@ export function DataTable<TData>({
                 table.getRowModel().rows.map((row) => (
                   <TableRow
                     key={row.id}
-                    className="hover:bg-slate-200"
+                    className={cn(
+                      rowClassName ? rowClassName(row.original) : "hover:bg-slate-200"
+                    )}
                     data-state={row.getIsSelected() && "selected"}
                     onClick={() => onRowClick?.(row.original)}
                   >
