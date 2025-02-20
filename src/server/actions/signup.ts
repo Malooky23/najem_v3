@@ -17,11 +17,13 @@ type SignUpValues = z.infer<typeof signUpSchema>
 interface NewUserResponse{
     success: boolean,
     user_id?: string,
-    error_code?:string,
+    // error_code?:string,
     error_message?:string
+    message?: string
+    errors?: string | object
 }
 
-export async function signUp(values: SignUpValues) {
+export async function signUp(values: SignUpValues):Promise<NewUserResponse> {
     // Validate the input
     const result = signUpSchema.safeParse(values)
 

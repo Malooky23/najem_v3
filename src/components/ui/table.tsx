@@ -30,6 +30,36 @@ const TableHeader = React.forwardRef<
 ))
 TableHeader.displayName = "TableHeader"
 
+// const Table = React.forwardRef<
+//   HTMLTableElement,
+//   React.HTMLAttributes<HTMLTableElement>
+// >(({ className, ...props }, ref) => (
+//   <div className="relative w-full overflow-auto min-h-[200px] bg-amber-700"> {/* Container div */}
+//     <table
+//       ref={ref}
+//       className={cn("w-full caption-bottom text-sm", className)} // Removed overflow-auto
+//       {...props}
+//     />
+//   </div>
+// ));
+// Table.displayName = "Table";
+
+
+// const TableHeader = React.forwardRef<
+//   HTMLTableSectionElement,
+//   React.HTMLAttributes<HTMLTableSectionElement>
+// >(({ className, ...props }, ref) => (
+//   <thead
+//     ref={ref}
+//     className={cn(
+//       "[&_tr]:border-b bg-background sticky top-0 z-10 " , // Sticky styles here
+//       className
+//     )}
+//     {...props}
+//   />
+// ));
+// TableHeader.displayName = "TableHeader";
+
 const TableBody = React.forwardRef<
   HTMLTableSectionElement,
   React.HTMLAttributes<HTMLTableSectionElement>

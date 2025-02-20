@@ -80,9 +80,8 @@ const LocationSelector = ({
   onCountryChange,
   onStateChange,
 }: LocationSelectorProps) => {
-  const [selectedCountry, setSelectedCountry] = useState<CountryProps | null>(
-    null,
-  )
+  
+  const [selectedCountry, setSelectedCountry] = useState<CountryProps | null>(null)
   const [selectedState, setSelectedState] = useState<StateProps | null>(null)
   const [openCountryDropdown, setOpenCountryDropdown] = useState(false)
   const [openStateDropdown, setOpenStateDropdown] = useState(false)

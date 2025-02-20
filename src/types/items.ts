@@ -1,25 +1,34 @@
 import { z } from "zod";
+import { type InsertItem, items, type Item } from "@/server/db/schema";
+
+export const emptyStringToNull = z.string().optional().nullable().nullish().transform((val) => val === '' ? null : val);
+
+
+export const itemTypes = z.enum(["SACK", "PALLET", "CARTON", "OTHER", "BOX", "EQUIPMENT", "CAR"])
 
 export const createItemsSchema = z.object({
-  itemName: z.string().min(1, "Required"),
-  itemType: z.enum(["SACK", "PALLET", "CARTON", "OTHER", "NONE"]),
-  itemBrand: z.string().optional(),
-  itemModel: z.string().optional(),
-  itemBarcode: z.string().optional(),
-  itemCountryOfOrigin: z.string().optional(),
-  weightGrams: z.number().nonnegative().optional(),
+  itemType: itemTypes,
+  itemName: z.string().min(3, {message:"Item Name too short, min 3 characters"}),
+  itemBrand: emptyStringToNull,
+  itemModel: emptyStringToNull,
+  itemBarcode: emptyStringToNull,
+  itemCountryOfOrigin: emptyStringToNull,
+  weightGrams: z.coerce.number().nonnegative().optional().nullable(),
   dimensions: z
-    .object({
-      width: z.number().nonnegative(),
-      height: z.number().nonnegative(),
-      depth: z.number().nonnegative(),
-    })
-    .optional(),
-  notes: z.string().optional(),
+  .object({
+    width: z.coerce.number().nonnegative().optional(),
+    height: z.coerce.number().nonnegative().optional(),
+    length: z.coerce.number().nonnegative().optional(),
+  })
+  .optional().nullable(),
+  customerId: z.string().min(35, {message: "please select a customer"}),
+  notes: emptyStringToNull,
+  createdBy: z.string(),
+
 });
 
 
-
+  
 export const ItemSchema = z.object({
   itemId: z.string(),
   itemNumber: z.number(),
@@ -31,11 +40,11 @@ export const ItemSchema = z.object({
   itemBarcode: z.string().nullable(),
   itemCountryOfOrigin: z.string().nullable(),
   dimensions: z.object({
-    width: z.number().optional().nullable(),
-    height: z.number().optional().nullable(),
-    length: z.number().optional().nullable(),
+    width: z.coerce.number().optional().nullable(),
+    height: z.coerce.number().optional().nullable(),
+    length: z.coerce.number().optional().nullable(),
   }).optional().nullable(),
-  weightGrams: z.number().nullable(),
+  weightGrams: z.coerce.number().nullable(),
   customerId: z.string(),
   notes: z.string().nullable(),
   createdBy: z.string(),
@@ -50,3 +59,8 @@ export const EnrichedItemsSchema = ItemSchema.extend({
 
 export type ItemSchemaType = z.infer< typeof ItemSchema>
 export type EnrichedItemsType = z.infer< typeof EnrichedItemsSchema>
+export type CreateItemsSchemaType = z.infer< typeof createItemsSchema>
+
+import {createInsertSchema,} from 'drizzle-zod'
+
+export const insertItemZod = createInsertSchema(items)

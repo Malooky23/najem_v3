@@ -16,7 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { DataTablePagination } from "./pagination-controls"
+import { DataTablePagination } from "@/components/pagination-controls"
 import type { EnrichedCustomer } from "@/types/customer"
 import { toast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"

@@ -1,6 +1,5 @@
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { CreateCustomerButton } from '@/components/OLD-create-customer-modal-wrapper';
 import { TableWrapper } from './_customer-Table/customer-table-wrapper';
 import CustomerModalWrapper from './CustomerModalWrapper';
 

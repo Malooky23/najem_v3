@@ -18,19 +18,19 @@ export async function Header() {
       <div className="h-full flex items-center ">
         <NavigationMenu className="w-full grid grid-cols-3 items-center">
           <div className="  flex flex-row justify-self-start">
+            <Link href="/dashboard" className="text-lg sm:text-xl font-bold truncate">
             <div className="mx-3 ">
             <Image src='/favicon.ico' alt="logo" width={40} height={40} />
             </div>
             <div className="gap-2 flex items-center">
-            <Link href="/dashboard" className="text-lg sm:text-xl font-bold truncate">
-              <span className="hidden sm:inline">Najem Aleen</span>
-              <span className="sm:hidden">NAS</span>
-            </Link>
+              {/* <span className="hidden sm:inline">Najem Aleen</span> */}
+              {/* <span className="sm:hidden">NAS</span> */}
             </div>
+            </Link>
 
 
           </div>
-          <div className="flex justify-items-center bg-purple-300">
+          <div className="flex justify-items-center ">
             {session?.user && <NavigationLinks userType={userType} isAdmin={isAdmin} />}
           </div>
 

@@ -8,7 +8,10 @@ export const GET = auth(async function GET(req) {
           if(req.auth.user.userType === 'EMPLOYEE'){
             const customers = await customerService.getAllCustomers();
             return NextResponse.json(customers);
-
+          }
+          if(req.auth.user.userType === 'CUSTOMER'){
+            const customers = await customerService.getSingleCustomer(req.auth.user.customerId?? "");
+            return NextResponse.json(customers);
           }
         }
         return NextResponse.json({ message: "Unauthorized" }, { status: 401 })

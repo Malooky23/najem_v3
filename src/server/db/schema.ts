@@ -243,6 +243,7 @@ export const items = pgTable("items", {
   updatedAt: timestamp("updated_at", { withTimezone: true }),
   isDeleted: boolean().default(false),
   
+  
   // THIS IS NOT WORKING
   //   updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(
   //     () => sql`CURRENT_TIMESTAMP`

@@ -33,7 +33,10 @@ export const QUERIES = {
         throw new Error("USER_NOT_FOUND")
       }
 
-      // Transform the database result into a next-auth User object
+      let checkCustomerId = "EMPTY"
+      if (!authData.user.customer_id){
+        checkCustomerId = "NOT FOUND"
+      }
       const user: User = {
         id: authData.user.user_id,
         email: authData.user.email,
@@ -148,6 +151,44 @@ getCustomers: async function (delayMs?: number) {
         users: true,
 
       },
+      orderBy: (customers, { desc }) => [desc(customers.createdAt)]
+
+    })
+  },
+  getSingleCustomersFULL: async function (customerId:string) {
+    return db.query.customers.findFirst({
+      with: {
+        individual: {
+          columns: {
+            firstName: true,
+            middleName: true,
+            lastName: true,
+            personalID: true
+          }
+        },
+        business: {
+          columns: {
+            businessName: true,
+            isTaxRegistered: true,
+            taxNumber: true,
+          }
+        },
+        contacts: {
+          with: {
+            contactDetail: true
+          },
+          columns: {}
+        },
+        addresses: {
+          with: {
+            address: true
+          },
+          columns: {}
+        },
+        users: true,
+
+      },
+      where: eq(customers.customerId, customerId),
       orderBy: (customers, { desc }) => [desc(customers.createdAt)]
 
     })

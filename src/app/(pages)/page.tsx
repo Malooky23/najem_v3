@@ -1,6 +1,20 @@
 import Link from "next/link";
+// import { useSession } from "next-auth/react" //CLIENT
+import { redirect } from "next/navigation";
+import {auth} from '@/lib/auth/auth'
 
-export default function Home() {
+// export default function Home() {
+export default async function Home() {
+  // const { data: session } = useSession()
+  const session = await auth()
+
+  console.log(session?.user.userType )
+  if (session){
+    redirect('/dashboard')
+  }else{
+    redirect('/login')
+
+  }
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-white to-gray-50">
       <div className="container flex flex-col items-center gap-16 px-4 py-16 ">

@@ -75,7 +75,8 @@ BEGIN
       'first_name', user_record.first_name,
       'last_name', user_record.last_name,
       'is_admin', user_record.is_admin,
-      'user_type', user_record.user_type
+      'user_type', user_record.user_type,
+      'customer_id', user_record.customer_id
     )
   );
 EXCEPTION

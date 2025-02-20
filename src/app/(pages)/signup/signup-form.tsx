@@ -12,6 +12,7 @@ import { signUp } from "@/server/actions/signup"
 import { redirect } from "next/navigation"
 import { CheckCircleIcon, XCircleIcon } from "lucide-react"
 import { cn } from "@/lib/utils" // Assuming you have a utils file with cn
+import Link from "next/link"
 
 // export  function SignupForm() {
 //   const [isPending, startTransition] = useTransition()
@@ -260,7 +261,7 @@ import { cn } from "@/lib/utils" // Assuming you have a utils file with cn
 // import { CheckCircleIcon, XCircleIcon } from "lucide-react"
 // import { cn } from "@/lib/utils" // Assuming you have a utils file with cn
 
-export  function SignupForm() {
+export function SignupForm() {
   const [isPending, startTransition] = useTransition()
   const [formMessage, setFormMessage] = useState<{ type: 'success' | 'error' | null, message: string | null }>({ type: null, message: null });
   const [passwordCriteria, setPasswordCriteria] = useState({
@@ -289,10 +290,10 @@ export  function SignupForm() {
   const checkPasswordStrength = (password: string) => {
     setPasswordCriteria({
       minLength: password.length >= 8,
-      uppercase:  /(?=.*[A-Z])/.test(password),
-      lowercase:  /(?=.*[a-z])/.test(password),
-      number:     /(?=.*\d)/.test(password),
-      specialChar:/(?=.*[!@#\$%\^&\*])/.test(password),
+      uppercase: /(?=.*[A-Z])/.test(password),
+      lowercase: /(?=.*[a-z])/.test(password),
+      number: /(?=.*\d)/.test(password),
+      specialChar: /(?=.*[!@#\$%\^&\*])/.test(password),
     });
   };
 
@@ -305,7 +306,7 @@ export  function SignupForm() {
     startTransition(async () => {
       const result = await signUp(values)
       if (result.success) {
-        setFormMessage({ type: 'success', message: result.message!+' Redirecting to login page' });
+        setFormMessage({ type: 'success', message: result.message! + ' Redirecting to login page' });
         form.reset()
         await new Promise((resolve) => setTimeout(resolve, 2000))
         redirect('/login')
@@ -435,41 +436,41 @@ export  function SignupForm() {
                 </div>
               </div>
 
-                <div className="bg-purple-200 p-1 rounded-md text-center items-center justify-center">
+              <div className="bg-purple-200 p-1 rounded-md text-center items-center justify-center">
                 DEV ONLY
 
-              <FormField
-                control={form.control}
-                name="userType"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>User type</FormLabel>
-                    <FormControl>
-                      <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex space-x-4 ">
-                        <FormItem className="flex items-center space-x-2 ">
-                          <FormControl>
-                            <RadioGroupItem value="EMPLOYEE" />
-                          </FormControl>
-                          <FormLabel className="font-normal">Employee</FormLabel>
-                        </FormItem>
-                        <FormItem className="flex items-center space-x-2">
-                          <FormControl>
-                            <RadioGroupItem value="CUSTOMER" />
-                          </FormControl>
-                          <FormLabel className="font-normal">Customer</FormLabel>
-                        </FormItem>
-                        <FormItem className="flex items-center space-x-2">
-                          <FormControl>
-                            <RadioGroupItem value="DEMO" />
-                          </FormControl>
-                          <FormLabel className="font-normal">Demo</FormLabel>
-                        </FormItem>
-                      </RadioGroup>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="userType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>User type</FormLabel>
+                      <FormControl>
+                        <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex space-x-4 ">
+                          <FormItem className="flex items-center space-x-2 ">
+                            <FormControl>
+                              <RadioGroupItem value="EMPLOYEE" />
+                            </FormControl>
+                            <FormLabel className="font-normal">Employee</FormLabel>
+                          </FormItem>
+                          <FormItem className="flex items-center space-x-2">
+                            <FormControl>
+                              <RadioGroupItem value="CUSTOMER" />
+                            </FormControl>
+                            <FormLabel className="font-normal">Customer</FormLabel>
+                          </FormItem>
+                          <FormItem className="flex items-center space-x-2">
+                            <FormControl>
+                              <RadioGroupItem value="DEMO" />
+                            </FormControl>
+                            <FormLabel className="font-normal">Demo</FormLabel>
+                          </FormItem>
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
               <Button type="submit" className="w-full" disabled={isPending}>
                 {isPending ? "Signing up..." : "Sign Up"}
@@ -487,9 +488,18 @@ export  function SignupForm() {
                   )}
                 </div>
                 <div className="ml-3">
-                  <p className={`text-sm font-medium ${formMessage.type === 'success' ? 'text-green-800' : 'text-red-800'}`}>{formMessage.message}</p>
+                  <p className={`text-sm font-medium ${formMessage.type === 'success' ? 'text-green-800' : 'text-red-800'}`}>{formMessage.message} </p>
+                  <div className=" flex-1 flex-row justify-apart text-sm font-medium text-slate-800  ">
+                  {formMessage.message === 'Email already exists' ? 
+                  <>
+                     <Link className="hover:underline"href={'/login'}> Go to Login? </Link>
+                     <Link className="hover:underline"href={'/forgot-password'}> Forgot Password? </Link>
+                  </>
+                     : null}
+                  </div>
                 </div>
               </div>
+
             </div>
           )}
         </CardContent>
