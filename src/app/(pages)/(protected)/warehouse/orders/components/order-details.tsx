@@ -1,16 +1,12 @@
 "use client"
-import {cn} from '@/lib/utils'
-interface Order {
-  orderId: string
-  orderNumber: string
-  customerName: string
-  status: string
-  date: string
-  total: number
-}
+import { cn } from '@/lib/utils'
+import { EnrichedOrders } from '@/types/orders'
+import { parse, format, } from 'date-fns'
+import { formatInTimeZone, toDate } from "date-fns-tz";
+import { date } from 'drizzle-orm/mysql-core';
 
 interface OrderDetailsProps {
-  order: Order | null
+  order: EnrichedOrders | null
   isMobile?: boolean
 }
 
@@ -27,12 +23,29 @@ export function OrderDetails({ order, isMobile = false }: OrderDetailsProps) {
     const colors: { [key: string]: string } = {
       "PENDING": "bg-yellow-100 text-yellow-800",
       "PROCESSING": "bg-blue-100 text-blue-800",
-      "SHIPPED": "bg-green-100 text-green-800",
-      "DELIVERED": "bg-purple-100 text-purple-800",
+      "READY": "bg-green-100 text-green-800",
+      "COMPLETED": "bg-purple-100 text-purple-800",
       "CANCELLED": "bg-red-100 text-red-800",
     }
     return colors[status] || "bg-gray-100 text-gray-800"
   }
+  // const dateString = '2025-02-20 21:39:48.568325+01';
+
+  // // 1. Parse the date string
+  // const parsedDate = parse(order.createdAt!.toString(), 'yyyy-MM-dd HH:mm:ss.SSSSSSXXX', new Date());
+  // const parsedDate = order.created_at
+  // console.log("DATE",parsedDate)
+
+  // // 2. Specify the timezone for conversion (e.g., Europe/Stockholm)
+  // const timeZone = 'Europe/Stockholm';
+  // const zonedDate = utcToZonedTime(parsedDate, timeZone);
+
+  // // 3. Format the date for display in the specified timezone
+  // const formattedDateInTimeZone = format(parsedDate, 'yyyy-MM-dd HH:mm:ss zzzz',  timeZone );
+
+  // // 4. Format the date for display with the original offset
+  // const formattedDateWithOffset = format(parsedDate, 'yyyy-MM-dd HH:mm:ss XXX');
+  // const testTime = formatInTimeZone(toDate(order.createdAt!),"Asia/Dubai","EEE, dd-MM-yyyy  HH:mm a")
 
   return (
     <div className={cn(
@@ -53,33 +66,57 @@ export function OrderDetails({ order, isMobile = false }: OrderDetailsProps) {
               {order.status}
             </p>
           </div>
+          <div>
+            <h3 className="text-sm font-medium text-gray-500">Movement Type</h3>
+            <p className="mt-1 text-lg font-medium">{order.movement || 'N/A'}</p>
+          </div>
+          <div>
+            <h3 className="text-sm font-medium text-gray-500">Delivery Method</h3>
+            <p className="mt-1 text-lg font-medium">{order.deliveryMethod || 'N/A'}</p>
+          </div>
+          <div>
+            <h3 className="text-sm font-medium text-gray-500">Packing Type</h3>
+            <p className="mt-1 text-lg font-medium">{order.packingType || 'N/A'}</p>
+          </div>
+          <div>
+            <h3 className="text-sm font-medium text-gray-500">Order Type</h3>
+            <p className="mt-1 text-lg font-medium">{order.orderType || 'N/A'}</p>
+          </div>
         </div>
 
         <div>
           <h3 className="text-sm font-medium text-gray-500">Customer</h3>
-          <p className="mt-1 text-lg font-medium">{order.customerName}</p>
+          <p className="mt-1 text-lg font-medium">{order.customerName || 'N/A'}</p>
         </div>
 
         <div>
           <h3 className="text-sm font-medium text-gray-500">Date</h3>
           <p className="mt-1 text-lg font-medium">
-            {new Date(order.date).toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric'
-            })}
-          </p>
+          { formatInTimeZone(toDate(order.createdAt),"Asia/Dubai","EEE, dd-MM-yyyy  HH:mm a") }
+                    </p>
         </div>
 
-        <div>
-          <h3 className="text-sm font-medium text-gray-500">Total</h3>
-          <p className="mt-1 text-lg font-medium">
-            {new Intl.NumberFormat("en-US", {
-              style: "currency",
-              currency: "USD",
-            }).format(order.total)}
-          </p>
-        </div>
+        {order.items && order.items.length > 0 && (
+          <div>
+            <h3 className="text-lg font-medium mb-4">Order Items</h3>
+            <div className="space-y-4">
+              {order.items.map((item) => (
+                <div key={item.itemId} className="border rounded p-4">
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-500">Item</h4>
+                      <p className="text-sm">{item.itemName}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-500">Quantity</h4>
+                      <p className="text-sm">{item.quantity}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="mt-8">
           <h3 className="text-lg font-medium mb-4">Actions</h3>
@@ -98,4 +135,8 @@ export function OrderDetails({ order, isMobile = false }: OrderDetailsProps) {
       </div>
     </div>
   )
+}
+
+function utcToZonedTime(parsedDate: Date, timeZone: string) {
+  throw new Error('Function not implemented.');
 }

@@ -23,6 +23,7 @@ import { Textarea } from "@/components/ui/textarea"
 
 const businessCustomerSchema = z.object({
   businessName: z.string().min(1, "Business name is required"),
+  displayName: z.string().max(100, "Display name must be at most 100 characters"),
   country: z.string().min(1, "Country is required"),
   contacts: contactsArraySchema,
   notes: z.string().nullable().default(null)
@@ -33,6 +34,7 @@ const individualCustomerSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
   middleName: z.string().optional(),
+  displayName: z.string().max(100, "Display name must be at most 100 characters"),
   personalId: z.string().optional(),
   country: z.string().min(1, "Country is required"),
   contacts: contactsArraySchema,
@@ -262,9 +264,9 @@ export default function CustomerForm({ type, onClose }: { type: "individual" | "
         description: "Please select a country.",
       });
       setFocusCountry(true)
-      setTimeout( () => {
+      setTimeout(() => {
         setFocusCountry(false)
-      },6000)
+      }, 6000)
       return;
     }
 
@@ -308,6 +310,11 @@ export default function CustomerForm({ type, onClose }: { type: "individual" | "
             name="country"
             value={selectedCountry?.name || ''}
           />
+
+          <div>
+            <Label htmlFor="displayName">Display Name <span className="text-red-500">*</span></Label>
+            <Input id="displayName" name="displayName" placeholder="sorta like a username" required />
+          </div>
 
           {/* Basic Information */}
           <div className="space-y-4">
@@ -363,7 +370,7 @@ export default function CustomerForm({ type, onClose }: { type: "individual" | "
             <div className={cn("flex items-center space-x-2 z-10 ", focusCountry ? "animate-flash-red  border-4 border-red-500" : "")}>
               <Label className="w-[150px]" >Location <span className="text-red-500">*</span></Label>
               <div className="flex-1">
-                <LocationSelector 
+                <LocationSelector
                   isStateNeeded={false}
                   onCountryChange={handleCountryChange}
                   onStateChange={() => { }}

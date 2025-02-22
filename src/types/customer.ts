@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { AddressDetails, ContactDetails } from '@/server/db/schema'
+import { max } from "drizzle-orm";
 
 export const customerTypes = z.enum(["BUSINESS", "INDIVIDUAL"]);
 export type CustomerTypes = z.infer<typeof customerTypes>;
@@ -34,6 +35,7 @@ export const customerSchema = z.object({
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date().nullable(),
   country: z.string(),
+  displayName: z.string().max(100),
   individual: z.object({
     firstName: z.string(),
     middleName: z.string().nullable(),
@@ -53,11 +55,11 @@ export const customerSchema = z.object({
   })).nullable(),
 }).transform((customer) => ({
   ...customer,
-  displayName: customer.customerType === 'BUSINESS' 
-    ? customer.business?.businessName 
-    : customer.individual 
-      ? `${customer.individual.firstName}${customer.individual.middleName ? ' ' + customer.individual.middleName : ''} ${customer.individual.lastName}`
-      : 'Unknown'
+  // displayName: customer.customerType === 'BUSINESS' 
+  //   ? customer.business?.businessName 
+  //   : customer.individual 
+  //     ? `${customer.individual.firstName}${customer.individual.middleName ? ' ' + customer.individual.middleName : ''} ${customer.individual.lastName}`
+  //     : 'Unknown'
 }));
 
 // Derive types from the schema

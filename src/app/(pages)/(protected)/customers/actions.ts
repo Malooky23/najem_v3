@@ -15,6 +15,7 @@ const createIndividualCustomerSchema = z.object({
   firstName: z.string().min(1, "First name must be at least 1 characters"),
   middleName: z.string().optional(),
   lastName: z.string().min(1, "Last name must be at least 1 characters"),
+  displayName: z.string().max(100, "Display name must be at most 100 characters"),
   personalId: z.string().optional().nullish(),
   country: z.string().min(2, "Country is required"),
   addAddress: z.boolean().default(false),
@@ -37,6 +38,7 @@ const createBusinessCustomerSchema = z.object({
     businessName: z
       .string()
       .min(2, "Business name must be at least 2 characters"),
+    displayName: z.string().max(100, "Display name must be at most 100 characters"),
     country: z.string().min(2, "Country is required"),
     isTaxRegistered: z.boolean().default(false),
     taxNumber: z

@@ -5,21 +5,13 @@ import { ColumnDef } from "@tanstack/react-table"
 import { toast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
 import { useMemo } from "react"
-
-interface Order {
-  orderId: string
-  orderNumber: string
-  customerName: string
-  status: string
-  date: string
-  total: number
-}
+import { EnrichedOrders } from "@/types/orders"
 
 interface OrdersTableProps {
-  columns: ColumnDef<Order, any>[]
-  data: Order[]
+  columns: ColumnDef<EnrichedOrders, any>[]
+  data: EnrichedOrders[]
   isLoading?: boolean
-  onRowClick?: (order: Order) => void
+  onRowClick?: (order: EnrichedOrders) => void
   selectedId?: string
   isCompact?: boolean
 }
@@ -86,7 +78,7 @@ export function OrdersTable({
       filterableColumns={filterableColumns}
       pageSize={isCompact ? 25 : 50}
       onRowClick={(row) => {
-        const order = row as Order
+        const order = row as EnrichedOrders
         if (onRowClick) {
           onRowClick(order)
         }
@@ -94,7 +86,7 @@ export function OrdersTable({
       rowClassName={(row) => 
         cn(
           "hover:bg-slate-200 cursor-pointer",
-          selectedId === (row as Order).orderId && "bg-blue-50 hover:bg-blue-100"
+          selectedId === (row as EnrichedOrders).orderId && "bg-blue-50 hover:bg-blue-100"
         )
       }
     />

@@ -1,29 +1,31 @@
 'use client';
-import {  useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { type ItemSchemaType } from "@/types/items";
 import { EnrichedCustomer } from "@/types/customer";
-import { getSession } from 'next-auth/react'; // Import getSession
+import { EnrichedOrders } from "@/types/orders";
+import { getSession } from 'next-auth/react';
+import { getOrders } from "@/server/actions/orders";
 
 
 
 export function useCustomers() {
   return useQuery<EnrichedCustomer[]>({
-      queryKey: ['customers'],
-      queryFn: async () => {
-        const session = await getSession()
-          const res = await fetch('/api/customers',{
-            headers: {
-              'Authorization': `Bearer ${session}` // Include token in header
-          }
-          }); // Call API route
-          if (!res.ok) {
-              throw new Error('Failed to fetch customers');
-          }
-          return res.json();
-      },
-      refetchOnMount: false,
-      refetchOnWindowFocus: false,
-      staleTime: 100 * 100 * 100 * 100,
+    queryKey: ['customers'],
+    queryFn: async () => {
+      const session = await getSession()
+      const res = await fetch('/api/customers', {
+        headers: {
+          'Authorization': `Bearer ${session}` // Include token in header
+        }
+      }); // Call API route
+      if (!res.ok) {
+        throw new Error('Failed to fetch customers');
+      }
+      return res.json();
+    },
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    staleTime: 100 * 100 * 100 * 100,
   });
 }
 
@@ -36,10 +38,10 @@ export function useItems() {
 
       const res = await fetch('/api/items', {
         headers: {
-            'Authorization': `Bearer ${session}` // Include token in header
+          'Authorization': `Bearer ${session}` // Include token in header
         }
-    });
-if (!res.ok) {
+      });
+      if (!res.ok) {
         let errorResponse;
         try {
           errorResponse = await res.json(); // Try to parse JSON response
@@ -58,8 +60,32 @@ if (!res.ok) {
   });
 }
 
+export function useOrders() {
+  return useQuery<EnrichedOrders[]>({
+    queryKey: ['orders'],
+    queryFn: async () => {
+      const result = await getOrders();
+      if (!result.success) {
+        console.log("(!result.success)", result);
+        throw new Error(result.error || 'Failed to fetch orders');
+      }
+      if (result.data === undefined) {
+        console.log("result.data === undefined", result);
 
+        throw new Error(result.error || 'Failed to fetch orders');
+      } else {
+        console.log("SUCCESS", result);
 
+        return result.data.orders;
+
+      }
+
+    },
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    staleTime: 100 * 100 * 100 * 100,
+  });
+}
 
 // export function useItemsOLD() {
 //   return useQuery<ItemSchemaType[]>({

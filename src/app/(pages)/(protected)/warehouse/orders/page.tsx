@@ -1,5 +1,4 @@
 "use client"
-
 import { useState, useEffect } from "react"
 import { OrdersTable } from "./components/orders-table"
 import { ordersColumns } from "./components/orders-columns"
@@ -8,48 +7,13 @@ import { Button } from "@/components/ui/button"
 import { X } from "lucide-react"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import { cn } from "@/lib/utils"
-
-// Example data - replace with your actual data fetching logic
-const exampleOrders = [
-  {
-    orderId: "1",
-    orderNumber: "ORD001",
-    customerName: "John Doe",
-    status: "PENDING",
-    date: "2024-02-20",
-    total: 299.99
-  },
-  {
-    orderId: "2",
-    orderNumber: "ORD002",
-    customerName: "Jane Smith",
-    status: "PROCESSING",
-    date: "2024-02-19",
-    total: 149.50
-  },
-  {
-    orderId: "3",
-    orderNumber: "ORD003",
-    customerName: "Bob Johnson",
-    status: "SHIPPED",
-    date: "2024-02-18",
-    total: 499.99
-  }
-]
-
-interface Order {
-  orderId: string
-  orderNumber: string
-  customerName: string
-  status: string
-  date: string
-  total: number
-}
+import { useOrders } from "@/hooks/data-fetcher"
+import { type EnrichedOrders  } from "@/types/orders"
+import { CreateOrderDialog } from "./components/create-order-dialog"
 
 export default function OrdersPage() {
-  const isLoading = false
-  const data = exampleOrders
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
+  const { data, isLoading, error } = useOrders()
+  const [selectedOrder, setSelectedOrder] = useState<EnrichedOrders | null>(null)
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
   const isMobile = useMediaQuery("(max-width: 768px)")
 
@@ -60,7 +24,7 @@ export default function OrdersPage() {
     }
   }, [isMobile])
 
-  const handleOrderClick = (order: Order) => {
+  const handleOrderClick = (order: EnrichedOrders) => {
     setSelectedOrder(order)
     setIsDetailsOpen(true)
   }
@@ -72,12 +36,22 @@ export default function OrdersPage() {
     }
   }
 
+  if (error) {
+    return (
+      <div className="p-4 rounded-md border border-red-200 bg-red-50 text-red-700">
+        Error loading orders: {error instanceof Error ? error.message : 'Unknown error'}
+      </div>
+    )
+  }
+  console.log(isMobile)
+
   return (
     <div className="p-2 mx-6 h-[calc(100vh-4rem)] flex flex-col">
       <div className="flex justify-between mb-4">
-        <h1 className="text-2xl font-bold text-gray-900">Orders</h1>
-        {/* Add your create order button or other actions here */}
+        <h1 className="text-2xl font-semibold">Orders</h1>
+        <CreateOrderDialog isMobile={isMobile}/>
       </div>
+      {/* <pre>{JSON.stringify(data, null, 2)}</pre> */}
 
       <div className="flex gap-4 flex-1 min-h-0">
         {/* Table section - responsive width */}
@@ -90,7 +64,7 @@ export default function OrdersPage() {
         >
           <OrdersTable
             columns={ordersColumns}
-            data={data}
+            data={data || []}
             isLoading={isLoading}
             onRowClick={handleOrderClick}
             selectedId={selectedOrder?.orderId}

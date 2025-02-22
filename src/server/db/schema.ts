@@ -17,9 +17,9 @@ import {
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { relations } from 'drizzle-orm';
-import { z } from 'zod'
+import { string, z } from 'zod'
 
-export const userType = pgEnum("user_type", ["EMPLOYEE", "CUSTOMER", "DEMO"]);
+export const userType = pgEnum("user_type", ["EMPLOYEE", "CUSTOMER", "DEMO"])
 export const customerType = pgEnum("customer_type", ["INDIVIDUAL", "BUSINESS"]);
 export const contactType = pgEnum("contact_type", ['email', 'phone', 'mobile', 'landline', 'other']);
 export const entityType = pgEnum("entity_type", ["CUSTOMER", "USER"]);
@@ -96,6 +96,7 @@ export const entityAddresses = pgTable("entity_addresses", {
 export const customers = pgTable("customers", {
   customerId: uuid("customer_id").defaultRandom().primaryKey().notNull(),
   customerNumber: serial("customer_number").notNull(),
+  displayName: varchar("display_name", {length:100}).notNull(),
   customerType: customerType("customer_type").notNull(),
 
   notes: text(),
@@ -296,7 +297,7 @@ export const deliveryMethod = pgEnum("delivery_method", ['NONE', 'PICKUP', 'DELI
 
 
 export const orders = pgTable("orders", {
-  orderId: uuid("order_id").primaryKey().notNull(),
+  orderId: uuid("order_id").primaryKey().defaultRandom().notNull(),
   orderNumber: serial("order_number").notNull(),
   customerId: uuid("customer_id").notNull(),
   orderType: orderType("order_type").notNull().default('CUSTOMER_ORDER'),

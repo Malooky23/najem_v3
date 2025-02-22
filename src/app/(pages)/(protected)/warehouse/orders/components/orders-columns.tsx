@@ -12,16 +12,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { EnrichedOrders } from "@/types/orders"
+import { formatInTimeZone, toDate } from "date-fns-tz"
 
-// Example order type - replace with your actual order type
-interface Order {
-  orderId: string
-  orderNumber: string
-  customerName: string
-  status: string
-  date: string
-  total: number
-}
 
 const StatusCell = ({ status }: { status: string }) => {
   const getStatusStyles = (status: string) => {
@@ -43,7 +36,7 @@ const StatusCell = ({ status }: { status: string }) => {
   )
 }
 
-export const ordersColumns: ColumnDef<Order>[] = [
+export const ordersColumns: ColumnDef<EnrichedOrders>[] = [
   {
     id: "select",
     header: ({ table }) => (
@@ -88,7 +81,13 @@ export const ordersColumns: ColumnDef<Order>[] = [
     header: "Customer",
   },
   {
-    accessorKey: "date",
+    accessorKey: "createdAt",
+    cell: ({ row }) => {
+      return (
+        <div className=" ">
+          { formatInTimeZone(toDate(row.getValue("createdAt")),"Asia/Dubai","EEE, dd-MM-yyyy") }
+
+        </div>)},
     header: ({ column }) => {
       return (
         <Button
@@ -99,28 +98,6 @@ export const ordersColumns: ColumnDef<Order>[] = [
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       )
-    },
-  },
-  {
-    accessorKey: "total",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Total
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      )
-    },
-    cell: ({ row }) => {
-      const amount = parseFloat(row.getValue("total"))
-      const formatted = new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-      }).format(amount)
-      return <div className="text-right font-medium">{formatted}</div>
     },
   },
   {
