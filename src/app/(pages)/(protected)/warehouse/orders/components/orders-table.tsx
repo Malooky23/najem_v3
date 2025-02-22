@@ -47,7 +47,7 @@ export function OrdersTable({
       // In compact mode, only show essential columns
       return columns.filter(column => {
         const id = (column as { accessorKey?: string }).accessorKey || (column as { id?: string }).id
-        return ['orderNumber', 'status'].includes(id || '')
+        return ['orderNumber', 'customerName', 'status'].includes(id || '')
       })
     }
     return columns

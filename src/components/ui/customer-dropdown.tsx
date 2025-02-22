@@ -1,5 +1,5 @@
 
-import React, { use, useState } from 'react'
+import React, { use, useEffect, useState } from 'react'
 import { Check, ChevronsUpDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
@@ -41,6 +41,14 @@ const CustomerSelector = ({
   const formContextValue = useFormContext();
   // console.log("useFormContext Value:", formContextValue); // ADD THIS LINE
 
+  useEffect(() => {
+    if (value) {
+      const customer = customersInput.find(c => c.customerId === value);
+      if (customer) {
+        setSelectedCustomer(customer);
+      }
+    }
+  }, [value, customersInput]);
 
   const handleCustomerSelect = (customer: EnrichedCustomer | null) => {
     onChange?.(customer!.customerId)

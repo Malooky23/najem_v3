@@ -46,7 +46,7 @@ export default function OrdersPage() {
   console.log(isMobile)
 
   return (
-    <div className="p-2 mx-6 h-[calc(100vh-4rem)] flex flex-col">
+    <div className="p-2 mx-6 h-[calc(100vh-4rem)] h-[90vh]flex flex-col ">
       <div className="flex justify-between mb-4">
         <h1 className="text-2xl font-semibold">Orders</h1>
         <CreateOrderDialog isMobile={isMobile}/>
@@ -81,7 +81,7 @@ export default function OrdersPage() {
             )}
           >
             <Button
-              variant="ghost"
+              variant="default"
               size="icon"
               className={cn(
                 "absolute right-2",
@@ -89,7 +89,7 @@ export default function OrdersPage() {
               )}
               onClick={handleCloseDetails}
             >
-              <X className="h-4 w-4" />
+              <X className="h-6 w-6" />
             </Button>
             <OrderDetails 
               order={selectedOrder} 

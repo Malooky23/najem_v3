@@ -17,6 +17,8 @@ import { Input } from "@/components/ui/input";
 import { Plus, Minus } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ItemRow } from "./ItemRow";
+import { useMediaQuery } from "@/hooks/use-media-query";
+import { SelectionButton } from "@/components/ui/selectionButton";
 
 async function submitOrderForm(formData: FormData) {
     try {
@@ -25,9 +27,12 @@ async function submitOrderForm(formData: FormData) {
         // Ensure all form fields are captured
         const requiredFields = ['customerId', 'movement', 'packingType', 'deliveryMethod', 'status', 'orderType', 'notes'];
 
+
         formData.forEach((value, key) => {
             if (key === 'items') {
                 try {
+                    console.log("cap Items::::::+++++_____________________")
+                    console.log("cap Items::::::", formObject[key])
 
                     formObject[key] = JSON.parse(value as string);
                 } catch (e) {
@@ -73,12 +78,18 @@ export default function OrderForm({ onClose }: { onClose: () => void }) {
     const { data: customerList, isSuccess: isCustomersSuccess, isLoading: isCustomersLoading, isError: isCustomersError } = useCustomers();
     const { data: itemsList, isLoading: isItemsLoading, isError: isItemsError } = useItems();
     const queryClient = useQueryClient();
+    const isDesktop = useMediaQuery("(min-width: 768px)");
 
     const customersWithItems = customerList?.filter(customer =>
         itemsList?.some(item => item.customerId === customer.customerId)
     ) ?? [];
 
     const [state, formAction, isPending] = useActionState(async (prevState: any, formData: FormData) => {
+
+        formData.forEach((value, key) => {
+            console.log(`00000000000: ${key}: ${value}`);
+        });
+
         console.log('Submitting form...', formData);
         const result = await submitOrderForm(formData);
         if (result.success) {
@@ -90,7 +101,7 @@ export default function OrderForm({ onClose }: { onClose: () => void }) {
     }, null);
 
 
-      
+
     const form = useForm<CreateOrderInput>({
         resolver: zodResolver(createOrderSchema),
         defaultValues: {
@@ -106,7 +117,8 @@ export default function OrderForm({ onClose }: { onClose: () => void }) {
     const { fields, append, remove } = useFieldArray({
         control: form.control,
         name: "items",
-      })
+    })
+
 
     if (isCustomersError) {
         return (
@@ -124,6 +136,8 @@ export default function OrderForm({ onClose }: { onClose: () => void }) {
         )
     }
 
+    // console.log(form.watch())
+
     return (
 
 
@@ -132,6 +146,9 @@ export default function OrderForm({ onClose }: { onClose: () => void }) {
                 //   action={formAction} 
                 action={async (data) => { // Make formAction async
                     console.log('shit')
+                    console.log(data.forEach((value, key) => {
+                        console.log(`${key}: ${value}`);
+                    }))
                     if (!form.getValues("customerId")) { // Manual check for customerId
                         form.setError("customerId", {
                             type: "manual",
@@ -145,280 +162,246 @@ export default function OrderForm({ onClose }: { onClose: () => void }) {
                 }}
                 className="flex flex-col   overflow-y-auto ">
 
-                <div className="h-[vmax] space-y-6 px-6 py-2  overflow-scroll">
-                    {/* <div className="space-y-6 px-6 py-6 bg-amber-300 overflow-scroll"> */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 ">
-                        <FormField
-                            control={form.control}
-                            name="customerId"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Customer</FormLabel>
-                                    <FormControl>
-                                        <CustomerSelector
-                                            customersInput={customersWithItems}
-                                            value={field.value}
-                                            onChange={field.onChange}
-                                            isRequired={true}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField
-                            control={form.control}
-                            name="movement"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Movement Type</FormLabel>
-                                    <Select onValueChange={field.onChange} {...field}>
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Select movement type" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            <SelectItem value="IN">IN</SelectItem>
-                                            <SelectItem value="OUT">OUT</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField
-                            control={form.control}
-                            name="packingType"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Packing Type</FormLabel>
-                                    <Select onValueChange={field.onChange} {...field} >
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Select packing type" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            <SelectItem value="NONE">None</SelectItem>
-                                            <SelectItem value="SACK">Sack</SelectItem>
-                                            <SelectItem value="PALLET">Pallet</SelectItem>
-                                            <SelectItem value="CARTON">Carton</SelectItem>
-                                            <SelectItem value="OTHER">Other</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <input type="hidden" name="orderType" value="CUSTOMER_ORDER" />
-                        <FormField
-                            control={form.control}
-                            name="status"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>status</FormLabel>
-                                    <Select onValueChange={field.onChange} {...field}>
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Select status" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            <SelectItem value="DRAFT">DRAFT</SelectItem>
-                                            <SelectItem value="PENDING">PENDING</SelectItem>
-                                            <SelectItem value="PROCESSING">PROCESSING</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="deliveryMethod"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Delivery Method</FormLabel>
-                                    <Select onValueChange={field.onChange} {...field}>
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Select delivery method" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            <SelectItem value="NONE">None</SelectItem>
-                                            <SelectItem value="PICKUP">Pickup</SelectItem>
-                                            <SelectItem value="DELIVERY">Delivery</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                    </div>
-
-                    <FormField
-                        control={form.control}
-                        name="notes"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Notes</FormLabel>
-                                <FormControl>
-                                    <Textarea
-                                        placeholder="Add any additional notes here"
-                                        {...field}
-                                    />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-
-                    {/* <div className="space-y-4">
-                        <FormLabel>Items</FormLabel>
-                        <div className="space-y-4">
-                            {form.watch('items')?.map((_, index) => (
-                                <div key={index} className="flex gap-4 items-end">
-                                    <FormField
-                                        control={form.control}
-                                        name={`items.${index}.itemId`}
-                                        render={({ field }) => (
-                                            <FormItem className="flex-1">
-                                                <FormLabel>Item</FormLabel>
-                                                <Select
-                                                    onValueChange={(value) => {
-                                                        field.onChange(value);
-                                                        const currentCustomerId = form.watch('customerId');
-                                                        if (!currentCustomerId || currentCustomerId === "") {
-                                                            const selectedItem = itemsList?.find(item => item.itemId === value);
-                                                            if (selectedItem?.customerId) {
-                                                                form.setValue('customerId', selectedItem.customerId);
-                                                            }
-                                                        }
-                                                    }}
-                                                    {...field}
+                <div className="h-[vmax] space-y-6 px-4 sm:px-6 py-2 overflow-scroll">
+                    <div className="grid grid-cols-1 md:grid-cols-[2fr,3fr] gap-4 md:gap-6">
+                        {/* Left Column - Form Fields */}
+                        <div className="space-y-4 md:space-y-6">
+                            <div className="grid grid-cols-1 gap-4 md:gap-6">
+                                
+                            <FormField
+                                    control={form.control}
+                                    name="movement"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Movement Type</FormLabel>
+                                            <div className="flex justify-center gap-4 ">
+                                                <SelectionButton
+                                                    value="IN"
+                                                    selected={field.value === "IN"}
+                                                    onClick={() => field.onChange("IN")}
+                                                    color="green"
+                                                    
                                                 >
-                                                    <FormControl>
-                                                        <SelectTrigger>
-                                                            <SelectValue placeholder="Select an item" />
-                                                        </SelectTrigger>
-                                                    </FormControl>
-                                                    <SelectContent>
-                                                        {itemsList
-                                                            ?.filter(item => {
-                                                                const selectedCustomerId = form.watch('customerId');
-                                                                return !selectedCustomerId || item.customerId === selectedCustomerId;
-                                                            })
-                                                            .map((item) => (
-                                                                <SelectItem key={item.itemId} value={item.itemId}>
-                                                                    {item.itemName}
-                                                                </SelectItem>
-                                                            ))}
-                                                    </SelectContent>
-                                                </Select>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={form.control}
-                                        name={`items.${index}.quantity`}
-                                        render={({ field }) => (
-                                            <FormItem className="w-32">
-                                                <FormLabel>Quantity</FormLabel>
+                                                    IN
+                                                </SelectionButton>
+                                                <SelectionButton
+                                                    value="OUT"
+                                                    selected={field.value === "OUT"}
+                                                    onClick={() => field.onChange("OUT")}
+                                                    color="red"
+                                                >
+                                                    OUT
+                                                </SelectionButton>
+                                            </div>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <FormField
+                                    control={form.control}
+                                    name="customerId"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Customer</FormLabel>
+                                            <FormControl>
+                                                <CustomerSelector
+                                                    customersInput={customersWithItems}
+                                                    value={field.value}
+                                                    onChange={field.onChange}
+                                                    isRequired={true}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                {/* <FormField
+                                    control={form.control}
+                                    name="movement"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Movement Type</FormLabel>
+                                            <Select onValueChange={field.onChange} {...field}>
                                                 <FormControl>
-                                                    <Input
-                                                        type="number"
-                                                        min="1"
-                                                        placeholder="Quantity"
-                                                        {...field}
-                                                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                                                    />
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Select movement type" />
+                                                    </SelectTrigger>
                                                 </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="icon"
-                                        className="mb-2"
-                                        onClick={() => {
-                                            const items = form.getValues('items').filter((_, i) => i !== index);
-                                            form.setValue('items', items);
-                                        }}
-                                    >
-                                        <Minus className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                            ))}
-                            <Button
-                                type="button"
-                                variant="outline"
-                                className="w-full"
-                                onClick={() => {
-                                    const items = form.getValues('items') || [];
-                                    form.setValue('items', [...items, { itemId: '', quantity: 1 }]);
-                                }}
-                            >
-                                <Plus className="h-4 w-4 mr-2" />
-                                Add Item
-                            </Button>
+                                                <SelectContent>
+                                                    <SelectItem value="IN">IN</SelectItem>
+                                                    <SelectItem value="OUT">OUT</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <FormField
+                                    control={form.control}
+                                    name="movement"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Movement Type</FormLabel>
+                                            <div className="flex justify-center gap-4 ">
+                                                <SelectionButton
+                                                    value="IN"
+                                                    selected={field.value === "IN"}
+                                                    onClick={() => field.onChange("IN")}
+                                                    color="green"
+
+                                                >
+                                                    IN
+                                                </SelectionButton>
+                                                <SelectionButton
+                                                    value="OUT"
+                                                    selected={field.value === "OUT"}
+                                                    onClick={() => field.onChange("OUT")}
+                                                    color="red"
+                                                >
+                                                    OUT
+                                                </SelectionButton>
+                                            </div>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                /> */}
+
+                                <FormField
+                                    control={form.control}
+                                    name="packingType"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Packing Type</FormLabel>
+                                            <Select onValueChange={field.onChange} {...field} >
+                                                <FormControl>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Select packing type" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    <SelectItem value="NONE">None</SelectItem>
+                                                    <SelectItem value="SACK">Sack</SelectItem>
+                                                    <SelectItem value="PALLET">Pallet</SelectItem>
+                                                    <SelectItem value="CARTON">Carton</SelectItem>
+                                                    <SelectItem value="OTHER">Other</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <input type="hidden" name="orderType" value="CUSTOMER_ORDER" />
+
+                                <FormField
+                                    control={form.control}
+                                    name="status"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Status</FormLabel>
+                                            <Select onValueChange={field.onChange} {...field}>
+                                                <FormControl>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Select status" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    <SelectItem value="DRAFT">DRAFT</SelectItem>
+                                                    <SelectItem value="PENDING">PENDING</SelectItem>
+                                                    <SelectItem value="PROCESSING">PROCESSING</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <FormField
+                                    control={form.control}
+                                    name="deliveryMethod"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Delivery Method</FormLabel>
+                                            <Select onValueChange={field.onChange} {...field}>
+                                                <FormControl>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Select delivery method" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    <SelectItem value="NONE">None</SelectItem>
+                                                    <SelectItem value="PICKUP">Pickup</SelectItem>
+                                                    <SelectItem value="DELIVERY">Delivery</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <FormField
+                                    control={form.control}
+                                    name="notes"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Notes</FormLabel>
+                                            <FormControl>
+                                                <Textarea
+                                                    placeholder="Add any additional notes here"
+                                                    {...field}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
                         </div>
-                    </div> */}
 
-                    <div className="space-y-4">
-                        <FormLabel>Items</FormLabel>
-                        <table className="w-full border-collapse overflow-y-scroll">
-                            <thead>
-                                <tr className="bg-gray-100">
-                                    <th className="py-2 px-4 text-left">#</th>
-                                    <th className="py-2 px-4 text-left">Item</th>
-                                    <th className="py-2 px-4 text-left">Quantity</th>
-                                    <th className="py-2 px-4 text-left">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {fields.map((field, index) => (
-                                    <ItemRow
-                                        key={field.id}
-                                        index={index}
-                                        itemId={field.itemId}
-                                        quantity={field.quantity}
-                                        items={itemsList!}
-                                        onItemChange={(value) => form.setValue(`items.${index}.itemId`, value)}
-                                        onQuantityChange={(value) => form.setValue(`items.${index}.quantity`, value)}
-                                        onRemove={() => remove(index)}
-                                        // onRemove={() => {
-                                        //     const items = form.getValues('items').filter((_, i) => i !== index);
-                                        //     form.setValue('items', items);
-                                        // }}
-                                    />
-                                ))}
-                            </tbody>
-                        </table>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            className="w-full"
-                            onClick={() => append({ itemId: "", quantity: 1 })}
-                            // onClick={() => {
-                            //     const items = form.getValues('items') || [];
-                            //     form.setValue('items', [...items, { itemId: '', quantity: 1 }]);
-                            // }}
-                        >
-                            <Plus className="h-4 w-4 mr-2" />
-                            Add Item
-                        </Button>
+                        {/* Right Column - Items Section */}
+                        <div className="space-y-4 lg:max-h-[calc(100vh-20rem)] overflow-auto ">
+                            {/* <FormLabel className="hidden md:block sticky top-1 bg-white z-10">Items</FormLabel> */}
+                            <div className="border rounded-lg p-2 sm:p-0  ">
+                                <table className="w-full border-collapse ">
+                                    <thead className="hidden md:table-header-group">
+                                        <tr className="bg-gray-100">
+                                            <th className="py-2 px-4 text-left w-12">#</th>
+                                            <th className="py-2 px-4 text-left">Item</th>
+                                            <th className="py-2 px-4 text-center w-24">Quantity</th>
+                                            <th className="py-2 px-4 text-left w-1"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {fields.map((field, index) => (
+                                            <ItemRow
+                                                key={field.id}
+                                                index={index}
+                                                itemId={form.watch(`items.${index}.itemId`)}
+                                                quantity={form.watch(`items.${index}.quantity`)}
+                                                items={itemsList!}
+                                                onItemChange={(value: string) => form.setValue(`items.${index}.itemId`, value)}
+                                                onQuantityChange={(value: string) => form.setValue(`items.${index}.quantity`, parseInt(value))}
+                                                onRemove={() => remove(index)}
+                                            />
+                                        ))}
+                                    </tbody>
+                                </table>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="w-[calc(100%-2rem)] m-4"
+                                    onClick={() => append({ itemId: "", quantity: 1 })}
+                                >
+                                    <Plus className="h-4 w-4 mr-2" />
+                                    Add Item
+                                </Button>
+                            </div>
+                        </div>
                     </div>
-
                 </div>
-
 
                 {state?.error && (
                     <div className="text-red-500 text-sm">{state.error}</div>
@@ -426,7 +409,7 @@ export default function OrderForm({ onClose }: { onClose: () => void }) {
 
 
                 {/* <div className="border-t px-6 py-4 sticky bottom-0 bg-white"> */}
-                <div className="border-t px-6 py-4 sticky bottom-0 bg-slate-100">
+                <div className="border-t px-4 sm:px-6 py-4 sticky bottom-0 bg-slate-100">
                     <div className="flex justify-end gap-2">
                         <Button
                             type="button"

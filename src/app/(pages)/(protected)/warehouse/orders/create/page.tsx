@@ -67,98 +67,108 @@ export default function CreateOrderPage() {
   }
 
   return (
-    <div className="container mx-auto p-10">
-      <Card>
+    <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10">
+      <Card className="w-full">
         <CardHeader>
           <CardTitle>Create New Order</CardTitle>
           <CardDescription>Fill in the details to create a new order</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Customer <span className="text-red-500">*</span></label>
+                    <CustomerSelector
+                      customersInput={customerList ?? []}
+                      value={form.watch('customerId')}
+                      onChange={(value) => form.setValue('customerId', value ?? "")}
+                      isRequired={true}
+                    />
+                  </div>
 
-              <div className="space-y-2">
-              <label>Customer</label>
-                <CustomerSelector
-                  customersInput={customerList ?? []}
-                  value={form.watch('customerId')}
-                  onChange={(value) => form.setValue('customerId', value?? "")}
-                  isRequired={true}
-                />
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Movement Type</label>
+                    <Select
+                      onValueChange={(value) => form.setValue("movement", value as "IN" | "OUT")}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select movement type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="IN">IN</SelectItem>
+                        <SelectItem value="OUT">OUT</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Packing Type</label>
+                    <Select
+                      onValueChange={(value) => form.setValue("packingType", value as any)}
+                      defaultValue="NONE"
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select packing type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="NONE">None</SelectItem>
+                        <SelectItem value="SACK">Sack</SelectItem>
+                        <SelectItem value="PALLET">Pallet</SelectItem>
+                        <SelectItem value="CARTON">Carton</SelectItem>
+                        <SelectItem value="OTHER">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label>Movement Type</label>
-                  <Select
-                    onValueChange={(value) => form.setValue("movement", value as "IN" | "OUT")}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select movement type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="IN">IN</SelectItem>
-                      <SelectItem value="OUT">OUT</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Delivery Method</label>
+                    <Select
+                      onValueChange={(value) => form.setValue("deliveryMethod", value as any)}
+                      defaultValue="NONE"
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select delivery method" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="NONE">None</SelectItem>
+                        <SelectItem value="PICKUP">Pickup</SelectItem>
+                        <SelectItem value="DELIVERY">Delivery</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                <div className="space-y-2">
-                  <label>Packing Type</label>
-                  <Select
-                    onValueChange={(value) => form.setValue("packingType", value as any)}
-                    defaultValue="NONE"
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select packing type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="NONE">None</SelectItem>
-                      <SelectItem value="SACK">Sack</SelectItem>
-                      <SelectItem value="PALLET">Pallet</SelectItem>
-                      <SelectItem value="CARTON">Carton</SelectItem>
-                      <SelectItem value="OTHER">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Notes</label>
+                    <Textarea
+                      placeholder="Add any additional notes here"
+                      className="min-h-[120px]"
+                      {...form.register("notes")}
+                    />
+                  </div>
                 </div>
-
-                <div className="space-y-2">
-                  <label>Delivery Method</label>
-                  <Select
-                    onValueChange={(value) => form.setValue("deliveryMethod", value as any)}
-                    defaultValue="NONE"
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select delivery method" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="NONE">None</SelectItem>
-                      <SelectItem value="PICKUP">Pickup</SelectItem>
-                      <SelectItem value="DELIVERY">Delivery</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label>Notes</label>
-                <Textarea
-                  placeholder="Add any additional notes here"
-                  {...form.register("notes")}
-                />
               </div>
 
               {/* TODO: Add dynamic items section */}
               
-              <div className="flex justify-end space-x-4">
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-4 sm:gap-3 pt-4">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => router.back()}
+                  className="w-full sm:w-auto"
                 >
                   Cancel
                 </Button>
-                <Button type="submit">Create Order</Button>
+                <Button 
+                  type="submit"
+                  className="w-full sm:w-auto"
+                >
+                  Create Order
+                </Button>
               </div>
             </form>
           </Form>
