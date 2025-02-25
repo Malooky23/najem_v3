@@ -75,12 +75,14 @@ interface Item {
     itemName: string;
     customerId: string;
     quantity?: number;
+    itemLocationId?: string;
 }
 
 interface ItemRowProps extends React.HTMLAttributes<HTMLTableRowElement> {
     index: number;
     itemId: string;
     quantity: number;
+    itemLocationId?: string;
     items: Item[];
     onItemChange: (value: string) => void;
     onQuantityChange: (value: string) => void;
@@ -91,6 +93,7 @@ export const ItemRow: React.FC<ItemRowProps> = ({
     index,
     itemId,
     quantity,
+    itemLocationId,
     items,
     onItemChange,
     onQuantityChange,
@@ -110,17 +113,19 @@ export const ItemRow: React.FC<ItemRowProps> = ({
     }));
 
     return (
-        <tr className="border-b flex flex-col md:table-row gap-4 p-4 md:p-0 bg-background">
+        <tr className="border-b flex flex-col md:table-row gap-4 p-4 md:p-0 bg-background ">
             <td className="py-2 px-4 text-center hidden md:table-cell">{index + 1}</td>
             <td className="py-2 px-0 md:px-4 w-full block md:table-cell">
                 <div className="flex items-center gap-2">
                     <span className="md:hidden font-medium min-w-[24px]">{index + 1}.</span>
                     <div className="flex-1">
                         <ComboboxForm
+
+                            isModal={true}
                             name={`items.${index}.itemId`}
                             options={itemOptions}
                             placeholder="Select an item"
-                            className="w-full"
+                            className="w-full z-50"
                             onChange={(value) => {
                                 const currentCustomerId = form.watch('customerId');
                                 if (!currentCustomerId || currentCustomerId === "") {
@@ -129,6 +134,7 @@ export const ItemRow: React.FC<ItemRowProps> = ({
                                         form.setValue('customerId', selectedItem.customerId);
                                     }
                                 }
+
                             }}
                         />
                         <input 
@@ -136,10 +142,15 @@ export const ItemRow: React.FC<ItemRowProps> = ({
                             name={`items.${index}.itemId`} 
                             value={form.watch(`items.${index}.itemId`)} 
                         />
+                        <input 
+                            type="hidden" 
+                            name={`items.${index}.itemLocationId`} 
+                            value={'4e176e92-e833-44f5-aea9-0537f980fb4b'} 
+                        />
                     </div>
                 </div>
             </td>
-            <td className="py-2 px-0 md:px-4 block md:table-cell">
+            <td className="py-2 px-0  md:px-4 block md:table-cell">
                 <FormField
                     control={form.control}
                     name={`items.${index}.quantity`}
@@ -160,9 +171,9 @@ export const ItemRow: React.FC<ItemRowProps> = ({
                                             <Minus className="h-4 w-4" />
                                         </Button>
                                         <Input
-                                            type="number"
+                                            // type="number"
                                             placeholder="Quantity"
-                                            className="w-16 md:w-12 text-center"
+                                            className="w-16 md:w-14 text-center"
                                             min="1"
                                             {...field}
                                             onChange={(e) => field.onChange(Number.parseInt(e.target.value) || 1)}

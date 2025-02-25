@@ -19,6 +19,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { ItemRow } from "./ItemRow";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { SelectionButton } from "@/components/ui/selectionButton";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 async function submitOrderForm(formData: FormData) {
     try {
@@ -160,43 +162,126 @@ export default function OrderForm({ onClose }: { onClose: () => void }) {
                         formAction(data) // Call server action if customerId is selected
                     })
                 }}
-                className="flex flex-col   overflow-y-auto ">
+                className="  ">
 
-                <div className="h-[vmax] space-y-6 px-4 sm:px-6 py-2 overflow-scroll">
+                {/* <div className="h-[vmax] space-y-6 px-4 sm:px-6 py-2 overflow-scroll"> */}
+                {/* Remove h-[vmax] and overflow-scroll */}
+                {/* <div className="flex-1 space-y-6 px-4 sm:px-6 py-2">  */}
+                <div className=" space-y-6 px-4 sm:px-6 py-2 ">
                     <div className="grid grid-cols-1 md:grid-cols-[2fr,3fr] gap-4 md:gap-6">
                         {/* Left Column - Form Fields */}
                         <div className="space-y-4 md:space-y-6">
                             <div className="grid grid-cols-1 gap-4 md:gap-6">
-                                
-                            <FormField
-                                    control={form.control}
-                                    name="movement"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Movement Type</FormLabel>
-                                            <div className="flex justify-center gap-4 ">
-                                                <SelectionButton
+                                <div className="grid grid-cols-2 gap-4 md:gap-6">
+
+                                    <input
+                                        type="hidden"
+                                        name="movement"
+                                        value={form.watch("movement")}
+                                    />
+                                    {/* <input
+                                        type="hidden"
+                                        name="itemLocationId"
+                                        value="4e176e92-e833-44f5-aea9-0537f980fb4b"
+                                    /> */}
+
+                                    <FormField
+                                        control={form.control}
+                                        name="movement"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Movement Type</FormLabel>
+                                                <div className="flex justify-center gap-4 ">
+
+
+                                                    {/* <SelectionButton
                                                     value="IN"
                                                     selected={field.value === "IN"}
-                                                    onClick={() => field.onChange("IN")}
+                                                    onClick={() => form.setValue("movement", "IN")}
+                                                    // onClick={() => field.onChange("IN")}
                                                     color="green"
-                                                    
+
                                                 >
                                                     IN
-                                                </SelectionButton>
-                                                <SelectionButton
+                                                </SelectionButton> */}
+
+                                                    <Badge
+                                                        variant="outline"
+                                                        className={cn(
+                                                            "px-4 py-1 cursor-pointer rounded-full transition-all bg-green-50  hover:shadow-md  text-base",
+                                                            field.value === "IN"
+                                                                ? "bg-green-500 hover:bg-green-600 text-white border-0"
+                                                                : "hover:bg-green-100",
+                                                        )}
+                                                        onClick={() => form.setValue("movement", "IN")}
+                                                    >
+                                                        IN
+                                                    </Badge>
+
+
+
+                                                    {/* <SelectionButton
                                                     value="OUT"
                                                     selected={field.value === "OUT"}
                                                     onClick={() => field.onChange("OUT")}
                                                     color="red"
                                                 >
                                                     OUT
-                                                </SelectionButton>
-                                            </div>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
+                                                </SelectionButton> */}
+                                                    <Badge
+                                                        variant="outline"
+                                                        className={cn(
+                                                            "px-4 py-1 cursor-pointer rounded-full transition-all bg-red-50  border-1 hover:shadow-md text-base",
+                                                            field.value === "OUT"
+                                                                ? "bg-red-500 hover:bg-red-600 text-white border-0"
+                                                                : "hover:bg-red-100",
+                                                        )}
+                                                        onClick={() => field.onChange("OUT")}
+                                                    >
+                                                        OUT
+                                                    </Badge>
+                                                </div>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+
+                                    <FormField
+                                        control={form.control}
+                                        name="status"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Status</FormLabel>
+                                                <Select onValueChange={field.onChange} {...field}>
+                                                    <FormControl>
+                                                        <SelectTrigger className={cn("rounded-md w-[150px] text-justify  transition-all",
+                                                            field.value === "DRAFT" && "bg-gray-100",
+                                                            field.value === "PENDING" && "bg-blue-200 font-semibold",
+                                                            field.value === "PROCESSING" && "bg-yellow-300/70",
+                                                            field.value === "READY" && "bg-green-400/50",
+                                                            field.value === "COMPLETED" && "bg-gray-200",
+                                                        )} >
+                                                            <SelectValue placeholder="Select status" />
+                                                        </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent className="w-[150px] flex ">
+                                                        <SelectItem value="DRAFT">DRAFT</SelectItem>
+                                                        <SelectItem value="PENDING">PENDING</SelectItem>
+                                                        <SelectItem value="PROCESSING">PROCESSING</SelectItem>
+                                                        <SelectItem value="READY">READY</SelectItem>
+                                                        <SelectItem value="COMPLETED">COMPLETED</SelectItem>
+                                                        {/* <SelectItem className="w-[150px] mt-2 text-white text-center items-center justify-center font-bold  bg-gray-100 rounded-full" value="DRAFT">DRAFT</SelectItem>
+                                                        <SelectItem className="w-[150px] mt-2 text-white text-center items-center justify-center font-bold rounded-full bg-yellow-300" value="PENDING">PENDING</SelectItem>
+                                                        <SelectItem className="w-[150px] mt-2 text-white text-center items-center justify-center font-bold rounded-full bg-blue-300" value="PROCESSING">PROCESSING</SelectItem>
+                                                        <SelectItem className="w-[150px] mt-2 text-white text-center items-center justify-center font-bold rounded-full bg-green-300" value="READY">READY</SelectItem>
+                                                        <SelectItem className="w-[150px] mt-2 text-white text-center items-center justify-center font-bold rounded-full bg-amber-300" value="COMPLETED">COMPLETED</SelectItem> */}
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
 
                                 <FormField
                                     control={form.control}
@@ -237,9 +322,9 @@ export default function OrderForm({ onClose }: { onClose: () => void }) {
                                             <FormMessage />
                                         </FormItem>
                                     )}
-                                />
+                                /> */}
 
-                                <FormField
+                                {/* <FormField
                                     control={form.control}
                                     name="movement"
                                     render={({ field }) => (
@@ -296,28 +381,7 @@ export default function OrderForm({ onClose }: { onClose: () => void }) {
 
                                 <input type="hidden" name="orderType" value="CUSTOMER_ORDER" />
 
-                                <FormField
-                                    control={form.control}
-                                    name="status"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Status</FormLabel>
-                                            <Select onValueChange={field.onChange} {...field}>
-                                                <FormControl>
-                                                    <SelectTrigger>
-                                                        <SelectValue placeholder="Select status" />
-                                                    </SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent>
-                                                    <SelectItem value="DRAFT">DRAFT</SelectItem>
-                                                    <SelectItem value="PENDING">PENDING</SelectItem>
-                                                    <SelectItem value="PROCESSING">PROCESSING</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
+
 
                                 <FormField
                                     control={form.control}
@@ -362,38 +426,48 @@ export default function OrderForm({ onClose }: { onClose: () => void }) {
                         </div>
 
                         {/* Right Column - Items Section */}
-                        <div className="space-y-4 lg:max-h-[calc(100vh-20rem)] overflow-auto ">
+                        <div className="space-y-4  lg:max-h-[calc(100vh-20rem)] overflow-scroll ">
+                        {/* <div className="space-y-4  overflow-hidden "> */}
+                            {/* <div className="  space-y-4  "> */}
+                            {/* Remove lg:max-h and overflow-scroll */}
+                            {/* <div className="space-y-4  "> Added max-height and overflow */}
+
                             {/* <FormLabel className="hidden md:block sticky top-1 bg-white z-10">Items</FormLabel> */}
-                            <div className="border rounded-lg p-2 sm:p-0  ">
+                            <div className="border rounded-lg p-2 sm:p-0  container">
                                 <table className="w-full border-collapse ">
-                                    <thead className="hidden md:table-header-group">
+                                    <thead className="hidden md:table-header-group ">
                                         <tr className="bg-gray-100">
-                                            <th className="py-2 px-4 text-left w-12">#</th>
-                                            <th className="py-2 px-4 text-left">Item</th>
-                                            <th className="py-2 px-4 text-center w-24">Quantity</th>
-                                            <th className="py-2 px-4 text-left w-1"></th>
+                                            <th className="py-2 px-4 border text-left w-12">#</th>
+                                            <th className="py-2 px-4 border text-left">Item</th>
+                                            <th className="py-2 px-4 border text-center w-24">Quantity</th>
+                                            <th className="py-2 px-4 border text-left w-1"></th>
                                         </tr>
                                     </thead>
-                                    <tbody>
-                                        {fields.map((field, index) => (
-                                            <ItemRow
-                                                key={field.id}
-                                                index={index}
-                                                itemId={form.watch(`items.${index}.itemId`)}
-                                                quantity={form.watch(`items.${index}.quantity`)}
-                                                items={itemsList!}
-                                                onItemChange={(value: string) => form.setValue(`items.${index}.itemId`, value)}
-                                                onQuantityChange={(value: string) => form.setValue(`items.${index}.quantity`, parseInt(value))}
-                                                onRemove={() => remove(index)}
-                                            />
-                                        ))}
+
+                                    <tbody className="">
+
+                                            {fields.map((field, index) => (
+                                                <ItemRow
+                                                    key={field.id}
+                                                    index={index}
+                                                    itemId={form.watch(`items.${index}.itemId`)}
+                                                    quantity={form.watch(`items.${index}.quantity`)}
+                                                    itemLocationId={form.watch(`items.${index}.itemLocationId`)}
+                                                    items={itemsList!}
+                                                    onItemChange={(value: string) => form.setValue(`items.${index}.itemId`, value)}
+                                                    onQuantityChange={(value: string) => form.setValue(`items.${index}.quantity`, parseInt(value))}
+                                                    onRemove={() => remove(index)}
+                                                />
+                                            ))}
+
                                     </tbody>
+
                                 </table>
                                 <Button
                                     type="button"
                                     variant="outline"
                                     className="w-[calc(100%-2rem)] m-4"
-                                    onClick={() => append({ itemId: "", quantity: 1 })}
+                                    onClick={() => append({ itemId: "", quantity: 1, itemLocationId: "4e176e92-e833-44f5-aea9-0537f980fb4b" })}
                                 >
                                     <Plus className="h-4 w-4 mr-2" />
                                     Add Item
@@ -409,7 +483,7 @@ export default function OrderForm({ onClose }: { onClose: () => void }) {
 
 
                 {/* <div className="border-t px-6 py-4 sticky bottom-0 bg-white"> */}
-                <div className="border-t px-4 sm:px-6 py-4 sticky bottom-0 bg-slate-100">
+                <div className="border-t px-4 sm:px-6 py-4  bottom-0 bg-slate-100">
                     <div className="flex justify-end gap-2">
                         <Button
                             type="button"

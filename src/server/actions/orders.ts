@@ -19,7 +19,7 @@ export async function createOrder(formData: FormData): Promise<OrderActionRespon
         if (!session?.user?.id) {
             return { success: false, error: "Unauthorized: Must be logged in to create orders." };
         }
-        // console.log('1231231231231:', 
+        console.log('1231231231231:', 
         //     "customerId:", formData.get('customerId'),
         //     "orderType:", formData.get('orderType'),
         //     "movement:", formData.get('movement'),
@@ -28,23 +28,26 @@ export async function createOrder(formData: FormData): Promise<OrderActionRespon
         //     "status:", formData.get('status'),
         //     "addressId:", formData.get('addressId'),
         //     "notes:", formData.get('notes'),
-        //     "items:", JSON.parse(formData.get('items') as string)
-        // );
+            "items:", JSON.parse(formData.get('items') as string)
+        );
         const formObject: Record<string, any> = {};
-        const items: { itemId: string; quantity: number }[] = [];
+        const items: { itemId: string; quantity: number, itemLocationId: string }[] = [];
 
         // First pass to collect all form fields
         formData.forEach((value, key) => {
             if (key.startsWith('items.')) {
                 const [_, index, field] = key.split('.');
                 if (!items[parseInt(index)]) {
-                    items[parseInt(index)] = { itemId: '', quantity: 0 };
+                    items[parseInt(index)] = { itemId: '', quantity: 0 , itemLocationId: ''};
                 }
                 if (field === 'itemId') {
                     items[parseInt(index)].itemId = value as string;
                 } else if (field === 'quantity') {
                     items[parseInt(index)].quantity = parseInt(value as string) || 0;
+                }else if (field === 'itemLocationId') {
+                    items[parseInt(index)].itemLocationId = value as string;
                 }
+
             } else if (value !== undefined) {
                 formObject[key] = value;
             }
@@ -90,14 +93,19 @@ export async function createOrder(formData: FormData): Promise<OrderActionRespon
                 createdBy: session?.user.id ?? ""
             }).returning();
 
-            // Insert order items
-            const orderItemsData = orderData.items.map(item => ({
-                orderId: newOrder.orderId,
-                itemId: item.itemId,
-                quantity: item.quantity
-            }));
+            try {
+                // Insert order items
+                const orderItemsData = orderData.items.map(item => ({
+                    orderId: newOrder.orderId,
+                    itemId: item.itemId,
+                    quantity: item.quantity,
+                    itemLocationId: item.itemLocationId
+                }));
 
-            await tx.insert(orderItems).values(orderItemsData);
+                await tx.insert(orderItems).values(orderItemsData);
+            } catch (error) {
+                throw new Error(`Failed to insert order items: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            }
 
             return newOrder;
         });
@@ -126,7 +134,7 @@ export type GetOrderActionResponse = {
 
 export async function getOrders(
     page: number = 1,
-    pageSize: number = 10,
+    pageSize: number = 100,
     filters: OrderFilters = {},
     sort: OrderSort = { field: 'createdAt', direction: 'desc' }
 ): Promise<GetOrderActionResponse> {
@@ -179,7 +187,8 @@ export async function getOrders(
                         jsonb_build_object(
                             'itemId', ${items}.item_id,
                             'itemName', ${items}.item_name,
-                            'quantity', ${orderItems}.quantity
+                            'quantity', ${orderItems}.quantity,
+                            'itemLocationId', ${orderItems}.item_location_id
                         )
                     END
                 ) FILTER (WHERE ${items}.item_id IS NOT NULL), '[]') AS items
@@ -195,7 +204,7 @@ export async function getOrders(
         `;
 
         const results = await db.execute(rawQuery);
-
+            console.log(results.rows[0])
         // Add type validation for raw query results
         if (!results?.rows || !Array.isArray(results.rows)) {
             throw new Error('Invalid query results structure');
@@ -218,7 +227,8 @@ export async function getOrders(
                 ? order.items.map((item: any) => ({
                     itemId: item.itemId || '',
                     itemName: item.itemName || '',
-                    quantity: Number(item.quantity) || 0
+                    quantity: Number(item.quantity) || 0,
+                    itemLocationId: item.itemLocationId
                 })).filter(item => item.itemId && item.quantity > 0)
                 : [];
 
@@ -251,6 +261,7 @@ export async function getOrders(
 
         // Validate entire array against schema
         try {
+            // console.log(enrichedOrders)
             const parsedOrders = EnrichedOrders.array().parse(enrichedOrders);
             // Get total count for pagination
             const countQuery: any = await db.execute(sql<{ count: number }[]>`

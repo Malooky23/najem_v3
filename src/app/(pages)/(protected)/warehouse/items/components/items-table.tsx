@@ -6,7 +6,7 @@ import { DataTable } from "@/components/ui/data-table/data-table"
 import { ColumnDef } from "@tanstack/react-table"
 
 interface ItemsTableProps {
-  columns: ColumnDef<EnrichedItemsType, any>[]
+  columns: ColumnDef<EnrichedItemsType>[]
   data: EnrichedItemsType[]
   isLoading?: boolean
 }
@@ -20,8 +20,9 @@ export function ItemsTable({
     select: '10px',
     itemNumber: '50px',
     itemType: '70px',
-    itemName: '300px',
-    customerDisplayName: '200px'
+    // itemName: '300px',
+    // itemStock: '50px',
+    // customerDisplayName: '200px'
   }
 
   const filterableColumns = [
@@ -31,6 +32,8 @@ export function ItemsTable({
   ]
 
   return (
+    // <div className="max-h-[90vh] bg-green-400">
+
     <DataTable
       columns={columns}
       data={data}
@@ -50,5 +53,7 @@ export function ItemsTable({
         })
       }}
     />
+          // </div>
+
   )
 }

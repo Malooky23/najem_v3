@@ -6,6 +6,7 @@ import { SidebarLink } from "./sidebar-link";
 import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { usePathname } from 'next/navigation';
+import { useMediaQuery } from "@/hooks/use-media-query";
 
 export function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(true);
@@ -13,8 +14,9 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        "border-r bg-background flex flex-col",
+        "border-r bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 flex flex-col",
         "transition-[width] ease-in-out duration-3000",
+        "hidden md:flex", // Hide on mobile, show on medium screens and up
         isCollapsed ? "w-16" : "w-[150px]"
       )}
     >
@@ -30,7 +32,7 @@ export function Sidebar() {
           <ChevronRight className="h-5 w-5" />
       </button>
 
-      <nav className="p-2 flex flex-col gap-1 ">
+      <nav className="p-2 flex flex-col gap-1">
         {sidebarConfig.links.map((link) => (
           <SidebarLink
             key={link.href}

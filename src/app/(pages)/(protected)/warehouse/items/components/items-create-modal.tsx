@@ -67,7 +67,7 @@ export function CreateItemModal({ customers }: CreateItemModalProps) {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button variant="outline">Open Form</Button>
+                <Button variant="outline"> New Item</Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px] max-h-[80%] overflow-scroll">
 

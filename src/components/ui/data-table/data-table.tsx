@@ -77,7 +77,7 @@ export function DataTable<TData>({
   })
 
   return (
-    <div className="flex flex-col rounded-md">
+    <div className="flex flex-col rounded-md display-block overflow-auto ">
       {filterableColumns.length > 0 && (
         <div className="flex items-center py-4 gap-2">
           {filterableColumns.map((column) => (
@@ -94,10 +94,13 @@ export function DataTable<TData>({
         </div>
       )}
 
-      <div className="rounded-md border relative">
-        <div className="overflow-auto rounded-md max-h-[calc(100vh-200px)] w-full">
+      <div className="rounded-md border relative ">
+        {/* <div className="overflow-auto rounded-md "> */}
+        {/* <div className="flex   rounded-md min-h-0 w-full"> */}
+        <div className="overflow-auto rounded-md max-h-[calc(97vh-200px)] w-full">
+        {/* <div className="overflow-auto rounded-md max-h-[calc(100vh-200px)] w-full"> */}
           <Table className="relative" style={{ tableLayout: "auto" }}>
-            <TableHeader className="sticky top-0 rounded-t-md bg-slate-300">
+            <TableHeader className="sticky top-0 rounded-t-md bg-slate-100">
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id} className="hover:opacity-75">
                   {headerGroup.headers.map((header) => {
@@ -162,7 +165,7 @@ export function DataTable<TData>({
         </div>
       </div>
 
-      <div className="mt-1">
+      <div className="mt-4 mb-2">
         <DataTablePagination table={table} />
       </div>
     </div>

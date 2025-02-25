@@ -8,7 +8,7 @@ import { X } from "lucide-react"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import { cn } from "@/lib/utils"
 import { useOrders } from "@/hooks/data-fetcher"
-import { type EnrichedOrders  } from "@/types/orders"
+import { type EnrichedOrders } from "@/types/orders"
 import { CreateOrderDialog } from "./components/create-order-dialog"
 
 export default function OrdersPage() {
@@ -46,18 +46,19 @@ export default function OrdersPage() {
   console.log(isMobile)
 
   return (
-    <div className="p-2 mx-6 h-[calc(100vh-4rem)] h-[90vh]flex flex-col ">
-      <div className="flex justify-between mb-4">
-        <h1 className="text-2xl font-semibold">Orders</h1>
-        <CreateOrderDialog isMobile={isMobile}/>
+    // <div className="p-2 mx-6 h-[calc(100vh-4rem)] h-[90vh] flex flex-col ">
+    <div className="   px-4 h-[94vh]  overflow- flex flex-col   ">
+      <div className="flex justify-between ">
+        <h1 className="text-2xl font-bold text-gray-900">Orders</h1>
+        <CreateOrderDialog isMobile={isMobile} />
       </div>
       {/* <pre>{JSON.stringify(data, null, 2)}</pre> */}
 
-      <div className="flex gap-4 flex-1 min-h-0">
+      <div className="flex gap-4 flex-1 min-h-0 ">
         {/* Table section - responsive width */}
-        <div 
+        <div
           className={cn(
-            "flex flex-col rounded-md border transition-all duration-300",
+            "flex flex-col rounded-md transition-all duration-300",
             isMobile ? (isDetailsOpen ? "hidden" : "w-full") : (isDetailsOpen ? "w-[30%]" : "w-full"),
             "overflow-hidden"
           )}
@@ -74,10 +75,10 @@ export default function OrdersPage() {
 
         {/* Details section - responsive */}
         {isDetailsOpen && (
-          <div 
+          <div
             className={cn(
-              "bg-white rounded-md border relative transition-all duration-300",
-              isMobile ? "fixed inset-0 z-50 m-0" : "w-[70%]"
+              "bg-white rounded-md border relative transition-all duration-300 flex-1 w-[100%] overflow-auto ",
+              isMobile ? "fixed inset-0 z-50 m-0" : "w-[70%] "
             )}
           >
             <Button
@@ -91,10 +92,12 @@ export default function OrdersPage() {
             >
               <X className="h-6 w-6" />
             </Button>
-            <OrderDetails 
-              order={selectedOrder} 
+
+            <OrderDetails
+              order={selectedOrder}
               isMobile={isMobile}
             />
+
           </div>
         )}
       </div>

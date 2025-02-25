@@ -1,5 +1,5 @@
 import { ItemIndicator } from "@radix-ui/react-select";
-import { BoxesIcon, Home, TestTube2Icon, Users2, WarehouseIcon } from "lucide-react";
+import { BoxesIcon, Home, ShoppingBag, TestTube2Icon, Users2, WarehouseIcon } from "lucide-react";
 // import { SidebarConfig } from "./types";
 
 function chicken()  {
@@ -33,7 +33,12 @@ export const sidebarConfig = {
     {
       href: "/warehouse/items",
       icon: Box,
-      label: "experiment",
+      label: "Items",
+    },
+    {
+      href: "/warehouse/orders",
+      icon: ShoppingBag,
+      label: "Orders",
     },
   ],
 }; 

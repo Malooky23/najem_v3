@@ -25,12 +25,18 @@ export function CreateOrderDialog({ isMobile }: CreateOrderDialogProps) {
       <DialogTrigger asChild>
         <Button>Create Order</Button>
       </DialogTrigger>
-      <DialogContent className="max-w-[90%]  max-h-[80vh] overflow-scroll p-0 gap-0">
-      {/* <DialogContent className="max-w-4xl max-h-[90%] p-0 overflow-scroll"> */}
-          <DialogHeader className="px-6 pt-4 bg-slate-100 border-b">
-            <DialogTitle className="text-xl">Create New Order</DialogTitle>
-          </DialogHeader>
-            <OrderForm onClose={() => setOpen(false)} />
+      <DialogContent className="max-w-[90%] max-h-[90vh]  p-0 gap-0">
+        {/* <DialogContent className="max-w-4xl max-h-[90%] p-0 overflow-scroll">//max-h-[80vh]  */}
+        {/* <DialogHeader className="px-6 pt-4 bg-slate-100 border-b"> */}
+        <DialogHeader className="px-6 pt-4 bg-slate-100 border-b sticky top-0 z-50">
+
+          <DialogTitle className="text-xl">Create New Order</DialogTitle>
+        </DialogHeader>
+
+
+
+          <OrderForm onClose={() => setOpen(false)} />
+
       </DialogContent>
     </Dialog>
   );

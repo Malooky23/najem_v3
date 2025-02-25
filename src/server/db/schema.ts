@@ -96,7 +96,7 @@ export const entityAddresses = pgTable("entity_addresses", {
 export const customers = pgTable("customers", {
   customerId: uuid("customer_id").defaultRandom().primaryKey().notNull(),
   customerNumber: serial("customer_number").notNull(),
-  displayName: varchar("display_name", {length:100}).notNull(),
+  displayName: varchar("display_name", { length: 100 }).notNull(),
   customerType: customerType("customer_type").notNull(),
 
   notes: text(),
@@ -237,7 +237,7 @@ export const items = pgTable("items", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 
   updatedAt: timestamp("updated_at", { withTimezone: true }),
-  isDeleted: boolean().default(false),
+  isDeleted: boolean("is_deleted").default(false),
 
 
   // THIS IS NOT WORKING
@@ -247,23 +247,50 @@ export const items = pgTable("items", {
 });
 
 // Inventory tracking tables
+// export const itemStock = pgTable("item_stock", {
+//   itemId: uuid("item_id")
+//     .notNull()
+//     .references(() => items.itemId),
+//   locationId: uuid("location_id")
+//     .notNull()
+//     .references(() => locations.locationId),
+//   currentQuantity: integer("current_quantity").notNull().default(0),
+//   lastUpdated: timestamp("last_updated", { withTimezone: true })
+//     .defaultNow()
+//     .notNull(),
+// },
+//   // (table) => ({
+//   //   pk: primaryKey({ columns: [table.itemId, table.locationId] }),
+//   //   quantityCheck: check("quantity_check", sql`current_quantity >= 0`),
+//   // })
+// );
+
 export const itemStock = pgTable("item_stock", {
-  itemId: uuid("item_id")
-    .notNull()
-    .references(() => items.itemId),
-  locationId: uuid("location_id")
-    .notNull()
-    .references(() => locations.locationId),
+  itemId: uuid("item_id").notNull().references(() => items.itemId),
+  locationId: uuid("location_id").notNull().references(() => locations.locationId),
   currentQuantity: integer("current_quantity").notNull().default(0),
-  lastUpdated: timestamp("last_updated", { withTimezone: true })
-    .defaultNow()
-    .notNull(),
+  lastUpdated: timestamp("last_updated", { withTimezone: true }).defaultNow().notNull(),
+  lastMovementId: uuid("last_movement_id").references(() => stockMovements.movementId),
+  lastReconciliationAt: timestamp("last_reconciliation_at", { withTimezone: true }),
+  lastReconciliationBy: uuid("last_reconciliation_by").references(() => users.userId),
 },
-  // (table) => ({
-  //   pk: primaryKey({ columns: [table.itemId, table.locationId] }),
-  //   quantityCheck: check("quantity_check", sql`current_quantity >= 0`),
-  // })
-);
+  (table) => [
+    primaryKey({ columns: [table.itemId, table.locationId] }),
+    check("quantity_check", sql`current_quantity >= 0`)
+  ]);
+
+export const stockReconciliation = pgTable("stock_reconciliation", {
+  reconciliationId: uuid("reconciliation_id").defaultRandom().primaryKey(),
+  itemId: uuid("item_id").notNull().references(() => items.itemId),
+  locationId: uuid("location_id").notNull().references(() => locations.locationId),
+  expectedQuantity: integer("expected_quantity").notNull(),
+  actualQuantity: integer("actual_quantity").notNull(),
+  discrepancy: integer("discrepancy").notNull(),
+  notes: text("notes"),
+  reconciliationDate: timestamp("reconciliation_date", { withTimezone: true }).defaultNow().notNull(),
+  performedBy: uuid("performed_by").notNull().references(() => users.userId),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
 
 export const stockMovements = pgTable("stock_movements", {
   movementId: uuid("movement_id").defaultRandom().primaryKey(),
@@ -279,7 +306,7 @@ export const stockMovements = pgTable("stock_movements", {
   referenceId: uuid("reference_id"),
   notes: text(),
   createdBy: uuid("created_by")
-    .notNull()
+    // .notNull()   //MAKE NULLABLE TO ALLOW ORDER=COMPLETED TRIGGER TO UPDATE STOCK
     .references(() => users.userId),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
@@ -292,7 +319,7 @@ export const deletedItems = pgTable('deleted_items', {
 });
 
 export const orderStatus = pgEnum("order_status", ['DRAFT', 'PENDING', 'PROCESSING', 'READY', 'COMPLETED', 'CANCELLED'])
-export const orderType = pgEnum("order_type", ['CUSTOMER_ORDER', ])
+export const orderType = pgEnum("order_type", ['CUSTOMER_ORDER',])
 export const deliveryMethod = pgEnum("delivery_method", ['NONE', 'PICKUP', 'DELIVERY'])
 
 
@@ -311,7 +338,7 @@ export const orders = pgTable("orders", {
 
   createdBy: uuid("created_by").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true}),
+  updatedAt: timestamp("updated_at", { withTimezone: true }),
   isDeleted: boolean().default(false),
 
 },
@@ -335,27 +362,33 @@ export const orders = pgTable("orders", {
   ]);
 
 
-  export const orderItems = pgTable("order_items", {
-    orderItemsId: uuid("order_items_id").defaultRandom().primaryKey().notNull(),
-    orderId: uuid("order_id").notNull(),
-    itemId: uuid("item_id").notNull(),
-    quantity: integer().notNull(),
-    createdAt: timestamp("created_at", {withTimezone: true}).defaultNow().notNull(),
-    updatedAt: timestamp("updated_at", {withTimezone: true})
-  }, (table) => [
-    foreignKey({
-        columns: [table.orderId],
-        foreignColumns: [orders.orderId],
-        name: "order_items_order_id_fkey"
-    }).onDelete("cascade"),
-    foreignKey({
-        columns: [table.itemId],
-        foreignColumns: [items.itemId],
-        name: "order_items_item_id_fkey"
-    }).onDelete("restrict"),
-    check("order_items_quantity_check", sql`quantity
+export const orderItems = pgTable("order_items", {
+  orderItemsId: uuid("order_items_id").defaultRandom().primaryKey().notNull(),
+  orderId: uuid("order_id").notNull(),
+  itemId: uuid("item_id").notNull(),
+  itemLocationId: uuid("item_location_id"),
+  quantity: integer().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+}, (table) => [
+  foreignKey({
+    columns: [table.itemLocationId],
+    foreignColumns: [locations.locationId],
+    name: "orderItems_locations_location_id_fkey"
+  }).onDelete("restrict"),
+  foreignKey({
+    columns: [table.orderId],
+    foreignColumns: [orders.orderId],
+    name: "order_items_order_id_fkey"
+  }).onDelete("cascade"),
+  foreignKey({
+    columns: [table.itemId],
+    foreignColumns: [items.itemId],
+    name: "order_items_item_id_fkey"
+  }).onDelete("restrict"),
+  check("order_items_quantity_check", sql`quantity
     > 0`),
-  ]);
+]);
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
@@ -488,5 +521,23 @@ export const loginAttemptsRelations = relations(loginAttempts, ({ one }) => ({
   user: one(users, {
     fields: [loginAttempts.userId],
     references: [users.userId]
+  })
+}));
+
+export const itemsRelations = relations(items, ({ one, many }) => ({
+  itemStock: many(itemStock)
+  // stockMovements: many(stockMovements),
+  // orderItems: many(orderItems),
+}));
+
+export const itemStockRelations = relations(itemStock, ({ one }) => ({
+  item: one(items, {
+    fields: [itemStock.itemId],
+    references: [items.itemId],
+    relationName: "item_stock_relation"
+  }),
+  location: one(locations, {
+    fields: [itemStock.locationId],
+    references: [locations.locationId]
   })
 }));

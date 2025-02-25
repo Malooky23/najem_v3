@@ -54,9 +54,10 @@ export function useItems() {
       }
       return res.json();
     },
-    staleTime: 1000 * 60 * 5, // Optional: cache for 5 minutes
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
+    // staleTime: 1000 * 60 * 5, // Optional: cache for 5 minutes
+    staleTime: 10, // Optional: cache for 5 minutes
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 }
 

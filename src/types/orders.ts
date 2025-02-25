@@ -79,7 +79,9 @@ export const EnrichedOrders = OrderTable.extend({
             itemId: z.string().uuid(),
             itemName: z.string(),
             quantity: z.number().positive(),
-        })).min(1, 'At least one item is required'),
+            itemLocationId: z.string().uuid()
+        }))
+        // })).min(1, 'At least one item is required'),
 });
 export type EnrichedOrders = z.infer<typeof EnrichedOrders>;
 
@@ -97,6 +99,7 @@ export const createOrderSchema = z.object({
              z.object({
                 itemId: z.string().uuid(),
                 quantity: z.number().positive(),
+                itemLocationId: z.string().uuid()
             })
         ).min(1, 'At least one item is required'),
     createdBy: z.string().uuid()

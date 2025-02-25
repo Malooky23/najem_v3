@@ -1,6 +1,6 @@
 "use client"
 
-import { EnrichedItemsSchema } from "@/types/items"
+import { EnrichedItemsSchema, EnrichedItemsType } from "@/types/items"
 import { ColumnDef } from "@tanstack/react-table"
 import {
   DropdownMenu,
@@ -55,7 +55,7 @@ interface ColumnMeta {
   width?: string;
 }
 
-export const itemsColumns: ColumnDef<typeof EnrichedItemsSchema, ColumnMeta>[] = [
+export const itemsColumns: ColumnDef<EnrichedItemsType>[] = [
   {
     id: "select",
     header: ({ table }) => (
@@ -106,6 +106,22 @@ export const itemsColumns: ColumnDef<typeof EnrichedItemsSchema, ColumnMeta>[] =
     header: "Name",
   },
   {
+    accessorKey: "itemStock",
+    // header: "Total Stock",
+    header: () => (
+      <div className="text-center ">Total Stock</div>
+    ),
+    cell: ({ row }) => {
+      const itemStock = row.getValue("itemStock") as Array<{ currentQuantity: number }> || [];
+      const totalStock = itemStock.reduce((sum, item) => sum + (item.currentQuantity || 0), 0);
+      return (
+        <div className=" text-center border-x border-slate-300">
+          <span className="">{totalStock}</span>
+        </div>
+      );
+    },
+  },
+  {
     accessorKey: "customerDisplayName",
     header: "Customer Name",
   },
@@ -115,6 +131,8 @@ export const itemsColumns: ColumnDef<typeof EnrichedItemsSchema, ColumnMeta>[] =
       const payment = row.original
 
       return (
+        <div className="flex justify-end">
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="h-8 w-8 p-0">
@@ -134,6 +152,8 @@ export const itemsColumns: ColumnDef<typeof EnrichedItemsSchema, ColumnMeta>[] =
             <DropdownMenuItem>View payment details</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        </div>
+
       )
     },
   },

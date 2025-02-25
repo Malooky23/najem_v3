@@ -18,7 +18,7 @@ export type CreateItemResponse =
         error?: any
     }; // Include undefined in error type
 
-export async function createItemAction ( prevData:any, formData:FormData){
+export async function createItemAction(prevData: any, formData: FormData) {
     // export const createItemAction = async (formData: any): Promise<CreateItemResponse> => {
 
     const session = await auth();
@@ -56,7 +56,7 @@ export async function createItemAction ( prevData:any, formData:FormData){
         notes: formData.get('notes'),
         createdBy: session.user.id // Set createdBy from session here on server-side
     });
- 
+
     try {
         if (!validatedFields.success) {
             console.log("Zod Validation Error:", validatedFields.error);
@@ -65,6 +65,9 @@ export async function createItemAction ( prevData:any, formData:FormData){
             return { success: false, error: fieldErrors }; // Return fieldErrors directly for field-level error display
         }
         const rawFormData = validatedFields.data;
+        const dimensions = rawFormData.dimensions &&
+            (!rawFormData.dimensions.width || !rawFormData.dimensions.height || !rawFormData.dimensions.length) ?
+            null : rawFormData.dimensions;
         const payload = {
             itemName: rawFormData.itemName,
             itemType: rawFormData.itemType,
@@ -72,7 +75,7 @@ export async function createItemAction ( prevData:any, formData:FormData){
             itemModel: rawFormData.itemModel,
             itemBarcode: rawFormData.itemBarcode,
             itemCountryOfOrigin: rawFormData.itemCountryOfOrigin,
-            dimensions: rawFormData.dimensions,
+            dimensions: dimensions,
             weightGrams: rawFormData.weightGrams,
             customerId: rawFormData.customerId,
             notes: rawFormData.notes,
@@ -81,6 +84,14 @@ export async function createItemAction ( prevData:any, formData:FormData){
 
 
         const dbAction = await db.insert(items).values(payload).returning(); // Use payload directly
+        // const itemData = {
+        //     ...dbAction[0],
+        //     itemStock: [], // Initialize with empty array since it's a new item
+        //     stockMovements: [], // Initialize with empty array
+        //     stockReconciliations: [], // Initialize with empty array
+        // };
+
+        // const newItem = ItemSchema.safeParse(itemData);
         const newItem = ItemSchema.safeParse(dbAction[0]);
 
 

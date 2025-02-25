@@ -21,12 +21,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="h-full">
+    <html lang="en" className="h-full ">
       {/* <meta name="viewport" 
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/> */}
 
       <Providers>
         <body className={`${inter.className} h-full bg-gray-50`}>
+        {/* <body className={`${inter.className} h-full bg-gradient-to-br from-blue-200/80 via-purple-200/80 to-amber-200/50`}> */}
           <div className="h-full flex flex-col">
             <Header />
             <div className="flex-1 mt-12">
