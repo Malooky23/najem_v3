@@ -1,10 +1,41 @@
 'use client';
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type ItemSchemaType } from "@/types/items";
 import { EnrichedCustomer } from "@/types/customer";
 import { EnrichedOrders } from "@/types/orders";
 import { getSession } from 'next-auth/react';
 import { getOrders } from "@/server/actions/orders";
+
+export function useOrdersQuery() {
+  const queryClient = useQueryClient();
+  
+  const query = useQuery<EnrichedOrders[]>({
+    queryKey: ['orders'],
+    queryFn: async () => {
+      const result = await getOrders();
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to fetch orders');
+      }
+      if (result.data === undefined) {
+        throw new Error('Failed to fetch orders');
+      }
+      return result.data.orders;
+    },
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
+    staleTime: 0, // Always fetch fresh data
+  });
+
+  const invalidateOrders = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['orders'] });
+    return query.refetch(); // Immediately refetch after invalidation
+  };
+  
+  return {
+    ...query,
+    invalidateOrders
+  };
+}
 
 
 

@@ -93,8 +93,8 @@ export const createOrderSchema = z.object({
     packingType: packingType.default('NONE'),
     deliveryMethod: deliveryMethod.default('NONE'),
     status: orderStatus.default('PENDING'),
-    addressId: z.string().uuid().optional(),
-    notes: z.string().optional(),
+    addressId: z.string().uuid().optional().nullable(),
+    notes: z.string().optional().nullable(),
     items: z.array(
              z.object({
                 itemId: z.string().uuid(),

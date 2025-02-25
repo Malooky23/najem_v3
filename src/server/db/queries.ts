@@ -61,7 +61,7 @@ export const QUERIES = {
     return user[0];
   },
 
-getCustomers: async function (delayMs?: number) {
+getCustomers: async function () {
     try {
       const result = db
         .select({

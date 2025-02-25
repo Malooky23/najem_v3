@@ -113,19 +113,21 @@ export const ItemRow: React.FC<ItemRowProps> = ({
     }));
 
     return (
-        <tr className="border-b flex flex-col md:table-row gap-4 p-4 md:p-0 bg-background ">
-            <td className="py-2 px-4 text-center hidden md:table-cell">{index + 1}</td>
-            <td className="py-2 px-0 md:px-4 w-full block md:table-cell">
-                <div className="flex items-center gap-2">
-                    <span className="md:hidden font-medium min-w-[24px]">{index + 1}.</span>
-                    <div className="flex-1">
-                        <ComboboxForm
+        // <tr className="border-b flex flex-col md:table-row gap-4 p-4 md:p-0 bg-background ">
+        <tr className="border-b flex flex-col md:table-row gap-4 p-4 md:p-0 bg-background min-w-0 flex-shrink-1 overflow-hidden">
 
+            <td className="py-2 px-4 text-center hidden md:table-cell">{index + 1}</td>
+            <td className="py-2 px-0 md:px-4 w-full block md:table-cell min-w-0 max-w-full">
+                <div className="flex items-center gap-2 min-w-0 w-full max-w-full">
+                    <span className="md:hidden font-medium flex-shrink-0 min-w-[24px]">{index + 1}.</span>
+                    <div className="flex-1 min-w-0 overflow-hidden max-w-full">
+                        <ComboboxForm
                             isModal={true}
                             name={`items.${index}.itemId`}
                             options={itemOptions}
                             placeholder="Select an item"
-                            className="w-full z-50"
+                            className="w-full min-w-[120px] max-w-full shrink"
+                            // className="w-full z-50 min-w-0"
                             onChange={(value) => {
                                 const currentCustomerId = form.watch('customerId');
                                 if (!currentCustomerId || currentCustomerId === "") {
@@ -150,7 +152,7 @@ export const ItemRow: React.FC<ItemRowProps> = ({
                     </div>
                 </div>
             </td>
-            <td className="py-2 px-0  md:px-4 block md:table-cell">
+            <td className="py-2 px-0 md:px-4 block md:table-cell flex-shrink-0">
                 <FormField
                     control={form.control}
                     name={`items.${index}.quantity`}
@@ -196,8 +198,8 @@ export const ItemRow: React.FC<ItemRowProps> = ({
                     )}
                 />
             </td>
-            <td className="py-2 px-0 md:px-1 block md:table-cell">
-                <Button type="button" variant="destructive" size="sm" onClick={onRemove} className="w-full md:w-auto">
+            <td className="py-2 px-0 md:px-1 block md:table-cell flex-shrink-0">
+                <Button type="button" variant="destructive" size="sm" onClick={onRemove} className="w-full md:w-auto whitespace-nowrap">
                     <Trash2 className="h-4 w-4" />
                 </Button>
             </td>

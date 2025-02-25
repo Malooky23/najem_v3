@@ -6,6 +6,7 @@ import { auth } from '@/lib/auth/auth';
 import { orders, orderItems, customers, items, users } from '@/server/db/schema';
 import { eq, and, desc, asc, sql, gte, lte } from 'drizzle-orm';
 import { createOrderSchema, deliveryMethod, EnrichedOrders, packingType, updateOrderSchema, type OrderFilters, type OrderSort } from '@/types/orders';
+import useDelay from '@/hooks/useDelay';
 
 export type OrderActionResponse = {
     success: boolean;
@@ -118,6 +119,81 @@ export async function createOrder(formData: FormData): Promise<OrderActionRespon
 }
 
 
+export async function updateOrder(orderData: EnrichedOrders): Promise<OrderActionResponse> {
+    await new Promise((resolve) => setTimeout(resolve, 3000))
+    try {
+        const session = await auth();
+        if (!session?.user?.id) {
+            return { success: false, error: "Unauthorized: Must be logged in to update orders." };
+        }
+
+        // Validate the update data
+        const validatedFields = updateOrderSchema.safeParse({
+            orderId: orderData.orderId,
+            status: orderData.status,
+            movement: orderData.movement,
+            packingType: orderData.packingType,
+            deliveryMethod: orderData.deliveryMethod,
+            notes: orderData.notes,
+            items: orderData.items.map(item => ({
+                itemId: item.itemId,
+                quantity: item.quantity,
+                itemLocationId: item.itemLocationId
+            }))
+        });
+
+        if (!validatedFields.success) {
+            return { success: false, error: validatedFields.error.message };
+        }
+
+        const updateData = validatedFields.data;
+
+        // Start a transaction to update order and items
+        const result = await db.transaction(async (tx) => {
+            // Update order
+            const [updatedOrder] = await tx
+                .update(orders)
+                .set({
+                    status: updateData.status,
+                    movement: updateData.movement,
+                    packingType: updateData.packingType,
+                    deliveryMethod: updateData.deliveryMethod,
+                    notes: updateData.notes,
+                    updatedAt: new Date()
+                })
+                .where(eq(orders.orderId, updateData.orderId))
+                .returning();
+
+            // Delete existing items
+            await tx
+                .delete(orderItems)
+                .where(eq(orderItems.orderId, updateData.orderId));
+
+            // Insert updated items
+            if (updateData.items && updateData.items.length > 0) {
+                const orderItemsData = updateData.items.map(item => ({
+                    orderId: updateData.orderId,
+                    itemId: item.itemId,
+                    quantity: item.quantity,
+                    itemLocationId: item.itemLocationId
+                }));
+
+                await tx.insert(orderItems).values(orderItemsData);
+            }
+
+            return updatedOrder;
+        });
+
+        return { success: true, data: result };
+    } catch (error) {
+        console.error('Error in updateOrder:', error);
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to update order'
+        };
+    }
+}
+
 export type GetOrderActionResponse = {
     success: boolean;
     data?: {
@@ -149,8 +225,14 @@ export async function getOrders(
         // Build the WHERE clause conditions
         let conditions = sql``;
 
-        if (filters.status || filters.customerId || filters.movement || filters.dateRange) {
+        if (filters.status || filters.customerId || filters.movement || filters.dateRange || session.user.userType === 'CUSTOMER') {
             const whereClauses = [];
+
+            if(session.user.userType === 'CUSTOMER'){
+                if(session.user.customerId){
+                    whereClauses.push(sql`${orders.customerId} = ${session.user.customerId}`);
+                }
+            }
 
             if (filters.status) {
                 whereClauses.push(sql`${orders.status} = ${filters.status}`);

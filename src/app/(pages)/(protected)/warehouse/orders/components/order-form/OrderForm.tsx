@@ -21,6 +21,8 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 import { SelectionButton } from "@/components/ui/selectionButton";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+
 
 async function submitOrderForm(formData: FormData) {
     try {
@@ -55,10 +57,6 @@ async function submitOrderForm(formData: FormData) {
             }
         }
 
-        // Validate items array
-        // if (!formObject.items || !Array.isArray(formObject.items) || formObject.items.length === 0) {
-        //   throw new Error('At least one item is required');
-        // }
         console.log()
         const result = await createOrder(formData);
 
@@ -132,9 +130,9 @@ export default function OrderForm({ onClose }: { onClose: () => void }) {
 
     if (isCustomersLoading) {
         return (
-            <div className="p-4 rounded-md border border-gray-200 bg-gray-50 text-gray-700">
-                Loading customers...
-            </div>
+            <div className="p-4 rounded-md border border-gray-200 bg-gray-50 text-gray-700 h-full">
+                <LoadingSpinner/>
+                </div>
         )
     }
 
@@ -162,29 +160,32 @@ export default function OrderForm({ onClose }: { onClose: () => void }) {
                         formAction(data) // Call server action if customerId is selected
                     })
                 }}
-                className="  ">
+                // className="  ">
+                // className="flex flex-col h-full flex-grow"
+                className="flex flex-col h-full w-full  mx-auto flex-grow"
 
-                {/* <div className="h-[vmax] space-y-6 px-4 sm:px-6 py-2 overflow-scroll"> */}
-                {/* Remove h-[vmax] and overflow-scroll */}
-                {/* <div className="flex-1 space-y-6 px-4 sm:px-6 py-2">  */}
-                <div className=" space-y-6 px-4 sm:px-6 py-2 ">
-                    <div className="grid grid-cols-1 md:grid-cols-[2fr,3fr] gap-4 md:gap-6">
+                >
+
+
+                {/* <div className=" space-y-6 px-4 sm:px-6 py-2   "> */}
+                <div className="flex flex-col space-y-6 px-4 sm:px-6 py-2 flex-grow">
+
+                    <div className="grid grid-cols-1 lg:grid-cols-[2fr,3fr] gap-4 md:gap-6">
                         {/* Left Column - Form Fields */}
                         <div className="space-y-4 md:space-y-6">
                             <div className="grid grid-cols-1 gap-4 md:gap-6">
                                 <div className="grid grid-cols-2 gap-4 md:gap-6">
 
-                                    <input
-                                        type="hidden"
+                                    <FormField
+                                        control={form.control}
                                         name="movement"
-                                        value={form.watch("movement")}
+                                        render={({ field }) => (
+                                            <input
+                                                type="hidden"
+                                                {...field}
+                                            />
+                                        )}
                                     />
-                                    {/* <input
-                                        type="hidden"
-                                        name="itemLocationId"
-                                        value="4e176e92-e833-44f5-aea9-0537f980fb4b"
-                                    /> */}
-
                                     <FormField
                                         control={form.control}
                                         name="movement"
@@ -193,17 +194,6 @@ export default function OrderForm({ onClose }: { onClose: () => void }) {
                                                 <FormLabel>Movement Type</FormLabel>
                                                 <div className="flex justify-center gap-4 ">
 
-
-                                                    {/* <SelectionButton
-                                                    value="IN"
-                                                    selected={field.value === "IN"}
-                                                    onClick={() => form.setValue("movement", "IN")}
-                                                    // onClick={() => field.onChange("IN")}
-                                                    color="green"
-
-                                                >
-                                                    IN
-                                                </SelectionButton> */}
 
                                                     <Badge
                                                         variant="outline"
@@ -416,6 +406,7 @@ export default function OrderForm({ onClose }: { onClose: () => void }) {
                                                 <Textarea
                                                     placeholder="Add any additional notes here"
                                                     {...field}
+                                                    value={field.value ?? ''}
                                                 />
                                             </FormControl>
                                             <FormMessage />
@@ -426,15 +417,21 @@ export default function OrderForm({ onClose }: { onClose: () => void }) {
                         </div>
 
                         {/* Right Column - Items Section */}
-                        <div className="space-y-4  lg:max-h-[calc(100vh-20rem)] overflow-scroll ">
+                        {/* <div className="space-y-4  md:max-h-[calc(100vh-20rem)] flex  overflow-auto "> */}
+                        <div className="space-y-4 flex flex-col flex-grow overflow-auto md:max-h-[calc(100vh-20rem)]">
+
                         {/* <div className="space-y-4  overflow-hidden "> */}
                             {/* <div className="  space-y-4  "> */}
                             {/* Remove lg:max-h and overflow-scroll */}
                             {/* <div className="space-y-4  "> Added max-height and overflow */}
 
                             {/* <FormLabel className="hidden md:block sticky top-1 bg-white z-10">Items</FormLabel> */}
-                            <div className="border rounded-lg p-2 sm:p-0  container">
-                                <table className="w-full border-collapse ">
+                            {/* <div className="border rounded-lg p-2 sm:p-0 w-full overflow-hidden"> */}
+                            <div className="border rounded-lg p-2 sm:p-0 w-full overflow-scroll flex flex-col flex-grow">
+
+                                {/* <table className="w-full border-collapse "> */}
+                                <table className="w-full border-collapse flex-shrink">
+
                                     <thead className="hidden md:table-header-group ">
                                         <tr className="bg-gray-100">
                                             <th className="py-2 px-4 border text-left w-12">#</th>

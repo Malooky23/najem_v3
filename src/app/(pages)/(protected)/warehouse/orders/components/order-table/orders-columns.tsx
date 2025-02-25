@@ -20,10 +20,11 @@ const StatusCell = ({ status }: { status: string }) => {
   const getStatusStyles = (status: string) => {
     const baseStyles = "px-2 py-1 rounded-full text-xs font-semibold w-24 text-center inline-block"
     const statuses: { [key: string]: string } = {
+      "DRAFT": "bg-gray-500/20 text-gray-700",
       "PENDING": "bg-yellow-500/20 text-yellow-700",
       "PROCESSING": "bg-blue-500/20 text-blue-700",
-      "SHIPPED": "bg-green-500/20 text-green-700",
-      "DELIVERED": "bg-purple-500/20 text-purple-700",
+      "COMPLETED": "bg-green-500/20 text-green-700",
+      "READY": "bg-purple-500/20 text-purple-700",
       "CANCELLED": "bg-red-500/20 text-red-700",
     }
     return `${baseStyles} ${statuses[status] || statuses["PENDING"]}`
