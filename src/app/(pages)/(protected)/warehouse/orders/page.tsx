@@ -53,13 +53,6 @@ export default function OrdersPage() {
     }
   }
 
-  // Close details view when switching to mobile
-  // useEffect(() => {
-  //   if (isMobile && selectedOrderId) {
-  //     handleCloseDetails()
-  //   }
-  // }, [isMobile, selectedOrderId, handleCloseDetails])
-
   // Validate orderId exists in data
   useEffect(() => {
     if (selectedOrderId && data && !data.some(order => order.orderId === selectedOrderId)) {
