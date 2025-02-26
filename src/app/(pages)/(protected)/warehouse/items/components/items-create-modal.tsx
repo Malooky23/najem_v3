@@ -54,14 +54,14 @@ import { EnrichedCustomer } from "@/types/customer";
 import { useState } from "react";
 import { CreateItemForm } from "./create-item-form";
 
-interface CreateItemModalProps {
+export interface CreateItemModalProps {
     // isOpen:boolean;
     customers: EnrichedCustomer[]
 }
 
 
 
-export function CreateItemModal({ customers }: CreateItemModalProps) {
+export default function CreateItemModal({ customers }: CreateItemModalProps) {
     const [open, setOpen] = useState(false)
 
     return (

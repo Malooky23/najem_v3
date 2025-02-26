@@ -6,9 +6,11 @@ import { useCustomers, useItems } from "@/hooks/data-fetcher";
 import { EnrichedItemsType } from "@/types/items";
 import { Button } from "@/components/ui/button";
 import { use, useState } from "react";
-import { CreateItemModal } from "./items-create-modal";
 import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
+import dynamic from "next/dynamic";
+import { CreateItemModalProps } from "./items-create-modal";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 export function ItemsClientWrapper() {
   const session = useSession();
@@ -44,12 +46,23 @@ export function ItemsClientWrapper() {
   if (isItemsError) return <div>Error Loading Items</div>;
   if (isCustomersError) return <div>Error Loading Customers</div>;
 
-
+  const CreateModal = dynamic<CreateItemModalProps>(
+    () => import('./items-create-modal').then(mod => mod.default),
+    {
+      loading: () => 
+        <Button variant="outline">
+          <LoadingSpinner className=""/>
+        </Button>
+      ,
+      ssr: false,
+    }
+  );
   return (
     <div className="flex flex-col flex-1">
       <div className="flex justify-between px-2 pt-1  ">
         <h1 className="text-2xl font-bold text-gray-900">Items</h1>
-        <CreateItemModal customers={customerList ?? []} />
+        <CreateModal customers={customerList?? []}/>
+
       </div>
       <div className="flex flex-row flex-1 justify-between">
       <ItemsTable
