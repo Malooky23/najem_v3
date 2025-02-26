@@ -20,17 +20,17 @@ export async function createOrder(formData: FormData): Promise<OrderActionRespon
         if (!session?.user?.id) {
             return { success: false, error: "Unauthorized: Must be logged in to create orders." };
         }
-        console.log('1231231231231:',
-            //     "customerId:", formData.get('customerId'),
-            //     "orderType:", formData.get('orderType'),
-            //     "movement:", formData.get('movement'),
-            //     "packingType:", formData.get('packingType'),
-            //     "deliveryMethod:", formData.get('deliveryMethod'),
-            //     "status:", formData.get('status'),
-            //     "addressId:", formData.get('addressId'),
-            //     "notes:", formData.get('notes'),
-            "items:", JSON.parse(formData.get('items') as string)
-        );
+        // console.log('1231231231231:',
+        //     //     "customerId:", formData.get('customerId'),
+        //     //     "orderType:", formData.get('orderType'),
+        //     //     "movement:", formData.get('movement'),
+        //     //     "packingType:", formData.get('packingType'),
+        //     //     "deliveryMethod:", formData.get('deliveryMethod'),
+        //     //     "status:", formData.get('status'),
+        //     //     "addressId:", formData.get('addressId'),
+        //     //     "notes:", formData.get('notes'),
+        //     "items:", JSON.parse(formData.get('items') as string)
+        // );
         const formObject: Record<string, any> = {};
         const items: { itemId: string; quantity: number, itemLocationId: string }[] = [];
 
@@ -58,7 +58,7 @@ export async function createOrder(formData: FormData): Promise<OrderActionRespon
         const validItems = items.filter(item => item.itemId && item.quantity > 0);
         formObject.items = validItems;
 
-        console.log('Processed form data:', JSON.stringify(formObject));
+        // console.log('Processed form data:', JSON.stringify(formObject));
 
         const validatedFields = createOrderSchema.safeParse({
             customerId: formObject.customerId,
@@ -72,7 +72,7 @@ export async function createOrder(formData: FormData): Promise<OrderActionRespon
             items: formObject.items,
             createdBy: session?.user.id ?? ""
         });
-        console.log('Validated Fields:', validatedFields);
+        // console.log('Validated Fields:', validatedFields);
 
         if (!validatedFields.success) {
             return { success: false, error: validatedFields.error.message };
@@ -120,7 +120,7 @@ export async function createOrder(formData: FormData): Promise<OrderActionRespon
 
 
 export async function updateOrder(orderData: EnrichedOrders): Promise<OrderActionResponse> {
-    await new Promise((resolve) => setTimeout(resolve, 3000))
+    // await new Promise((resolve) => setTimeout(resolve, 3000))
     try {
         const session = await auth();
         if (!session?.user?.id) {
