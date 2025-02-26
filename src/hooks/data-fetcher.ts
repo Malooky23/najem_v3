@@ -1,25 +1,83 @@
 'use client';
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type ItemSchemaType } from "@/types/items";
 import { EnrichedCustomer } from "@/types/customer";
-import { EnrichedOrders } from "@/types/orders";
+import { EnrichedOrders, type OrderFilters, type OrderSort } from "@/types/orders";
 import { getSession } from 'next-auth/react';
-import { getOrders } from "@/server/actions/orders";
+import { getOrders, getOrderById } from "@/server/actions/orders";
 
-export function useOrdersQuery() {
+export interface OrdersQueryParams {
+  page?: number;
+  pageSize?: number;
+  filters?: OrderFilters;
+  sort?: OrderSort;
+}
+
+export interface OrdersQueryResult {
+  orders: EnrichedOrders[];
+  pagination: {
+    total: number;
+    pageSize: number;
+    currentPage: number;
+    totalPages: number;
+  };
+}
+
+export function useOrderDetails(
+  orderId: string | null,
+  selectedOrder: any | null = null // add parameter
+
+) {
   const queryClient = useQueryClient();
   
-  const query = useQuery<EnrichedOrders[]>({
-    queryKey: ['orders'],
+  return useQuery({
+    queryKey: ['order', orderId],
     queryFn: async () => {
-      const result = await getOrders();
+      if (!orderId) return null;
+      const result = await getOrderById(orderId);
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to fetch order');
+      }
+      return result.data;
+    },
+    enabled: !!orderId && selectedOrder === null, // add condition
+    // placeholderData: () => {
+    //   const orders = queryClient.getQueryData(['orders']) as EnrichedOrders[];
+    //   return orders?.find((order:EnrichedOrders) => order.orderId === orderId) || null ;
+
+    //   // Use the smaller/preview version of the blogPost from the 'blogPosts'
+    //   // query as the placeholder data for this blogPost query
+    //   // return queryClient
+    //   //   .getQueryData(['orders'])?.find((d) => d.orderId === orderId)
+    //   },
+
+  });
+}
+
+export function useOrdersQuery(params: OrdersQueryParams = {}) {
+  const queryClient = useQueryClient();
+  
+  const query = useQuery<OrdersQueryResult>({
+    queryKey: ['orders', params],
+    queryFn: async () => {
+      const result = await getOrders(
+        params.page || 1,
+        params.pageSize || 10,
+        params.filters || {},
+        params.sort || { field: 'createdAt', direction: 'desc' }
+      );
+      
       if (!result.success) {
         throw new Error(result.error || 'Failed to fetch orders');
       }
-      if (result.data === undefined) {
+      if (!result.data) {
         throw new Error('Failed to fetch orders');
       }
-      return result.data.orders;
+
+      return {
+        orders: result.data.orders,
+        pagination: result.data.pagination
+      };
     },
     refetchOnMount: true,
     refetchOnWindowFocus: false,
@@ -33,11 +91,11 @@ export function useOrdersQuery() {
   
   return {
     ...query,
-    invalidateOrders
+    invalidateOrders,
+    data: query.data?.orders || [],
+    pagination: query.data?.pagination
   };
 }
-
-
 
 export function useCustomers() {
   return useQuery<EnrichedCustomer[]>({
@@ -60,98 +118,32 @@ export function useCustomers() {
   });
 }
 
-
 export function useItems() {
   return useQuery<ItemSchemaType[]>({
     queryKey: ['items'],
     queryFn: async () => {
-      const session = await getSession(); // Get session on client-side
+      const session = await getSession();
 
       const res = await fetch('/api/items', {
         headers: {
-          'Authorization': `Bearer ${session}` // Include token in header
+          'Authorization': `Bearer ${session}`
         }
       });
       if (!res.ok) {
         let errorResponse;
         try {
-          errorResponse = await res.json(); // Try to parse JSON response
+          errorResponse = await res.json();
         } catch (jsonError) {
-          errorResponse = { message: 'Failed to parse error response as JSON', rawResponse: await res.text() }; // If JSON parsing fails, include raw text
+          errorResponse = { message: 'Failed to parse error response as JSON', rawResponse: await res.text() };
           console.error("JSON parsing error:", jsonError);
         }
-        console.error("API error response:", errorResponse); // Log the error response for debugging
+        console.error("API error response:", errorResponse);
         throw new Error(`Failed to fetch items. API Response: ${JSON.stringify(errorResponse)}`);
       }
       return res.json();
     },
-    // staleTime: 1000 * 60 * 5, // Optional: cache for 5 minutes
-    staleTime: 10, // Optional: cache for 5 minutes
+    staleTime: 10,
     refetchOnMount: true,
     refetchOnWindowFocus: true,
   });
 }
-
-export function useOrders() {
-  return useQuery<EnrichedOrders[]>({
-    queryKey: ['orders'],
-    queryFn: async () => {
-      const result = await getOrders();
-      if (!result.success) {
-        console.log("(!result.success)", result);
-        throw new Error(result.error || 'Failed to fetch orders');
-      }
-      if (result.data === undefined) {
-        console.log("result.data === undefined", result);
-
-        throw new Error(result.error || 'Failed to fetch orders');
-      } else {
-        console.log("SUCCESS", result);
-
-        return result.data.orders;
-
-      }
-
-    },
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
-    staleTime: 100 * 100 * 100 * 100,
-  });
-}
-
-// export function useItemsOLD() {
-//   return useQuery<ItemSchemaType[]>({
-//     queryKey: ['items'],
-//     queryFn: async () => {
-//       try {
-//         const response = await getItems();
-//         return response; // Make sure to return the data
-//       } catch (error) {
-//         console.error("Error items:", error);
-//         throw error;
-//       }
-//     },
-//     staleTime: 1000 * 60 * 5, // Optional: cache for 5 minutes
-//     refetchOnMount: false,
-//     refetchOnWindowFocus: false,
-//   });
-// }
-
-// export function useCustomersOLD() {
-//   return useQuery({
-//     queryKey: ['customers'],
-//     queryFn: async () => {
-//       try {
-//         // await new Promise((resolve) => setTimeout(resolve, 2000))
-//         return await getCustomers();
-//         // return customers.map(customer => customerSchema.parse(customer));
-//       } catch (error) {
-//         console.error("Error fetching/validating customers:", error);
-//         throw error;
-//       }
-//     },
-//     refetchOnMount:false,
-//     refetchOnWindowFocus:false,
-//     staleTime: 100*100*100*100
-//   });
-// }

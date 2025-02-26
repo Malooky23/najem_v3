@@ -20,15 +20,15 @@ export async function createOrder(formData: FormData): Promise<OrderActionRespon
         if (!session?.user?.id) {
             return { success: false, error: "Unauthorized: Must be logged in to create orders." };
         }
-        console.log('1231231231231:', 
-        //     "customerId:", formData.get('customerId'),
-        //     "orderType:", formData.get('orderType'),
-        //     "movement:", formData.get('movement'),
-        //     "packingType:", formData.get('packingType'),
-        //     "deliveryMethod:", formData.get('deliveryMethod'),
-        //     "status:", formData.get('status'),
-        //     "addressId:", formData.get('addressId'),
-        //     "notes:", formData.get('notes'),
+        console.log('1231231231231:',
+            //     "customerId:", formData.get('customerId'),
+            //     "orderType:", formData.get('orderType'),
+            //     "movement:", formData.get('movement'),
+            //     "packingType:", formData.get('packingType'),
+            //     "deliveryMethod:", formData.get('deliveryMethod'),
+            //     "status:", formData.get('status'),
+            //     "addressId:", formData.get('addressId'),
+            //     "notes:", formData.get('notes'),
             "items:", JSON.parse(formData.get('items') as string)
         );
         const formObject: Record<string, any> = {};
@@ -39,13 +39,13 @@ export async function createOrder(formData: FormData): Promise<OrderActionRespon
             if (key.startsWith('items.')) {
                 const [_, index, field] = key.split('.');
                 if (!items[parseInt(index)]) {
-                    items[parseInt(index)] = { itemId: '', quantity: 0 , itemLocationId: ''};
+                    items[parseInt(index)] = { itemId: '', quantity: 0, itemLocationId: '' };
                 }
                 if (field === 'itemId') {
                     items[parseInt(index)].itemId = value as string;
                 } else if (field === 'quantity') {
                     items[parseInt(index)].quantity = parseInt(value as string) || 0;
-                }else if (field === 'itemLocationId') {
+                } else if (field === 'itemLocationId') {
                     items[parseInt(index)].itemLocationId = value as string;
                 }
 
@@ -70,7 +70,7 @@ export async function createOrder(formData: FormData): Promise<OrderActionRespon
             addressId: formObject.addressId,
             notes: formObject.notes,
             items: formObject.items,
-            createdBy: session?.user.id?? ""
+            createdBy: session?.user.id ?? ""
         });
         console.log('Validated Fields:', validatedFields);
 
@@ -194,6 +194,93 @@ export async function updateOrder(orderData: EnrichedOrders): Promise<OrderActio
     }
 }
 
+export type GetSingleOrderResponse = {
+    success: boolean;
+    data?: EnrichedOrders;
+    error?: string;
+};
+
+export async function getOrderById(orderId: string): Promise<GetSingleOrderResponse> {
+    try {
+        const session = await auth();
+        if (!session?.user?.id) {
+            return { success: false, error: "Unauthorized: Must be logged in to fetch order." };
+        }
+
+        const rawQuery = sql<EnrichedOrders[]>`
+            SELECT
+                ${orders}.*,
+                ${customers}.display_name as "displayName",
+                ${users}.first_name as "creatorFirstName",
+                ${users}.last_name as "creatorLastName",
+                ${users}.user_type as "creatorUserType",
+                COALESCE(json_agg(
+                    CASE WHEN ${items}.item_id IS NOT NULL THEN
+                        jsonb_build_object(
+                            'itemId', ${items}.item_id,
+                            'itemName', ${items}.item_name,
+                            'quantity', ${orderItems}.quantity,
+                            'itemLocationId', ${orderItems}.item_location_id
+                        )
+                    END
+                ) FILTER (WHERE ${items}.item_id IS NOT NULL), '[]') AS items
+            FROM ${orders}
+            LEFT JOIN ${customers} ON ${orders}.customer_id = ${customers}.customer_id
+            LEFT JOIN ${orderItems} ON ${orders}.order_id = ${orderItems}.order_id
+            LEFT JOIN ${items} ON ${orderItems}.item_id = ${items}.item_id
+            LEFT JOIN ${users} ON ${orders}.created_by = ${users}.user_id
+            WHERE ${orders}.order_id = ${orderId}
+            GROUP BY ${orders}.order_id, ${customers}.customer_id, ${users}.user_id
+        `;
+
+        const results = await db.execute(rawQuery);
+
+        if (!results?.rows || !Array.isArray(results.rows) || results.rows.length === 0) {
+            return { success: false, error: 'Order not found' };
+        }
+
+        const order = results.rows[0];
+        const enrichedOrder = {
+            orderId: order.order_id,
+            orderNumber: Number(order.order_number) || 0,
+            customerId: order.customer_id,
+            orderType: order.order_type || 'CUSTOMER_ORDER',
+            movement: order.movement || 'IN',
+            packingType: order.packing_type || 'NONE',
+            deliveryMethod: order.delivery_method || 'NONE',
+            status: order.status || 'PENDING',
+            addressId: order.address_id || null,
+            fulliedAt: order.fullied_at ? new Date(order.fullied_at.toString()) : null,
+            notes: order.notes || null,
+            createdBy: order.created_by,
+            createdAt: order.created_at ? new Date(order.created_at.toString()) : new Date(),
+            updatedAt: order.updated_at ? new Date(order.updated_at.toString()) : null,
+            isDeleted: Boolean(order.is_deleted),
+            customerName: order.displayName || 'Unknown Customer',
+            creator: {
+                userId: order.created_by,
+                firstName: order.creatorFirstName || '',
+                lastName: order.creatorLastName || '',
+                userType: order.creatorUserType || 'EMPLOYEE',
+            },
+            items: Array.isArray(order.items)
+                ? order.items.map((item: any) => ({
+                    itemId: item.itemId || '',
+                    itemName: item.itemName || '',
+                    quantity: Number(item.quantity) || 0,
+                    itemLocationId: item.itemLocationId
+                })).filter(item => item.itemId && item.quantity > 0)
+                : []
+        };
+
+        const parsedOrder = EnrichedOrders.parse(enrichedOrder);
+        return { success: true, data: parsedOrder };
+    } catch (error) {
+        console.error('Error in getOrderById:', error);
+        return { success: false, error: 'Failed to fetch order' };
+    }
+}
+
 export type GetOrderActionResponse = {
     success: boolean;
     data?: {
@@ -228,8 +315,8 @@ export async function getOrders(
         if (filters.status || filters.customerId || filters.movement || filters.dateRange || session.user.userType === 'CUSTOMER') {
             const whereClauses = [];
 
-            if(session.user.userType === 'CUSTOMER'){
-                if(session.user.customerId){
+            if (session.user.userType === 'CUSTOMER') {
+                if (session.user.customerId) {
                     whereClauses.push(sql`${orders.customerId} = ${session.user.customerId}`);
                 }
             }
@@ -252,8 +339,8 @@ export async function getOrders(
 
         // Determine ORDER BY clause
         const orderBySql = sql`ORDER BY ${sort.field === 'orderNumber' ? orders.orderNumber :
-                sort.field === 'status' ? orders.status :
-                    orders.createdAt
+            sort.field === 'status' ? orders.status :
+                orders.createdAt
             } ${sort.direction === 'desc' ? sql`DESC` : sql`ASC`}`;
 
         // Construct the main query
@@ -286,7 +373,7 @@ export async function getOrders(
         `;
 
         const results = await db.execute(rawQuery);
-            console.log(results.rows[0])
+        // console.log(results.rows[0])
         // Add type validation for raw query results
         if (!results?.rows || !Array.isArray(results.rows)) {
             throw new Error('Invalid query results structure');
@@ -346,13 +433,37 @@ export async function getOrders(
             // console.log(enrichedOrders)
             const parsedOrders = EnrichedOrders.array().parse(enrichedOrders);
             // Get total count for pagination
-            const countQuery: any = await db.execute(sql<{ count: number }[]>`
-            SELECT count(*) as count
-            FROM ${orders}
-            ${conditions}
-        `);
+            //     const countQuery: any = await db.execute(sql<{ count: number }[]>`
+            //     SELECT count(*) as count
+            //     FROM ${orders}
+            //     ${conditions}
+            // `);
 
-            const totalCount = Number(countQuery[0]?.count) || 0;
+            // const countQuery = await db
+            //     .select({ count: sql`count(*)` })
+            //     .from(orders)
+            //     .where(conditions ? conditions : undefined);
+
+            // const countQuery = await db
+            //     .select({
+            //         count: sql<number>`count(*)::integer`
+            //     })
+            //     .from(orders)
+            //     .where(conditions ? conditions : undefined);
+
+            // const totalCount = Number(countQuery[0]?.count) || 0;
+
+            const countQuery = await db.execute(sql<{ count: number }>`
+                SELECT count(*)::integer as count 
+                FROM ${orders} 
+                ${conditions ? conditions : sql``}
+            `);
+            
+            const totalCount = Number(countQuery.rows[0]?.count) || 0;
+            
+
+            console.log(countQuery.rows[0])
+            // const totalCount = Number(countQuery[0]?.count) || 0;
 
             return {
                 success: true,

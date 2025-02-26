@@ -1,103 +1,91 @@
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Edit, Printer, X } from "lucide-react"
 import { OrderStatus } from "@/types/orders"
+import { Button } from "@/components/ui/button"
 import { StatusDropdown } from "./StatusDropdown"
-import { SaveButton } from "@/components/ui/SaveButton"
+import { X } from "lucide-react"
+import { LoadingSpinner } from "@/components/ui/loading-spinner"
 
 interface OrderHeaderProps {
   orderNumber: string
   status: OrderStatus
   isEditing: boolean
   isMobile?: boolean
+  isLoading?: boolean
   onStatusChange: (status: OrderStatus) => Promise<void>
   onEdit: () => void
-  onSave: () => Promise<void>
+  onSave: () => void
   onClose: () => void
 }
 
-export function OrderHeader({
-  orderNumber,
-  status,
-  isEditing,
+export function OrderHeader({ 
+  orderNumber, 
+  status, 
+  isEditing, 
   isMobile = false,
-  onStatusChange,
-  onEdit,
-  onSave,
-  onClose,
+  isLoading = false,
+  onStatusChange, 
+  onEdit, 
+  onSave, 
+  onClose 
 }: OrderHeaderProps) {
-  if (isMobile) {
-    return (
-      <div className="flex items-center justify-between w-full pb-2 ">
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="h-7 px-3 text-lg border-2 bg-white ">
-            <p className="whitespace-nowrap">Order #{orderNumber}</p>
-          </Badge>
-
-        </div>
-        <div className="flex items-center gap-2">
-          <Button size="sm" className="gap-2 bg-blue-500 hover:bg-blue-600 transition-colors">
-            <Printer className="w-4 h-4" />
-          </Button>
-          {isEditing ? (
-            <SaveButton onClick={onSave} />
-          ) : (
-            <Button
-              size="sm"
-              className="gap-2 bg-purple-500 hover:bg-purple-600 transition-colors"
-              onClick={onEdit}
-            >
-              <Edit className="w-4 h-4" />
-            </Button>
-          )}
-          <Button
-            onClick={onClose}
-            size="sm"
-            className="gap-2 bg-red-400 hover:bg-red-600 transition-colors"
-            >
-            <X className="w-4 h-4" />
-          </Button>
-        </div>
-      </div>
-    )
+  const handleStatusChange = async (newStatus: OrderStatus) => {
+    try {
+      await onStatusChange(newStatus)
+    } catch (error) {
+      // Error handling is done in the StatusDropdown component
+      throw error
+    }
   }
 
   return (
-    <div className="flex justify-between mx-1">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 ">
-        {/* <h1 className="text-xl font-semibold text-gray-800">Order Details</h1> */}
-        <Badge variant="outline" className="h-7 px-3 text-lg border-2 bg-white">
-         <p className="whitespace-nowrap">Order #{orderNumber}</p>
-        </Badge>
-        <StatusDropdown
-          currentStatus={status}
-          onStatusChange={onStatusChange}
-          isEditing={isEditing}
-        />
-      </div>
-      <div className="flex items-end gap-3    ">
-        <Button size="sm" className="gap-2 bg-blue-500 hover:bg-blue-600 transition-colors">
-          <Printer className="w-4 h-4" />
-          Print Order
-        </Button>
-        {isEditing ? (
-          <SaveButton onClick={onSave} showLabel />
+    <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center gap-4">
+        {isLoading ? (
+          <div className="flex items-center gap-2">
+            <LoadingSpinner />
+            <span className="text-gray-500">Loading order details...</span>
+          </div>
         ) : (
-          <Button
-            size="sm"
-            className="gap-2 bg-purple-500 hover:bg-purple-600 transition-colors"
-            onClick={onEdit}
-          >
-            <Edit className="w-4 h-4" />
-            Edit
-          </Button>
+          <>
+            <h2 className="text-xl font-semibold">
+              Order #{orderNumber}
+            </h2>
+            <StatusDropdown
+              currentStatus={status}
+              onStatusChange={handleStatusChange}
+              isEditing={isEditing}
+            />
+          </>
         )}
+      </div>
+
+      <div className="flex items-center gap-2">
+        {!isLoading && (
+          isEditing ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onSave}
+            >
+              Save Changes
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onEdit}
+            >
+              Edit Order
+            </Button>
+          )
+        )}
+        
         <Button
+          variant="ghost"
+          size="icon"
           onClick={onClose}
-          size="sm"
-          className="gap-2 bg-red-400 hover:bg-red-600 transition-colors"
+          className={isMobile ? "absolute right-4 top-4" : ""}
         >
-          <X  />
+          <X className="h-4 w-4" />
         </Button>
       </div>
     </div>

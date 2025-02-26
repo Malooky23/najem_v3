@@ -6,35 +6,75 @@ import { ordersColumns } from "./components/order-table/orders-columns"
 import { OrderDetails } from "./components/order-details/OrderDetails"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import { cn } from "@/lib/utils"
-import { useOrdersQuery } from "@/hooks/data-fetcher"
-import { type EnrichedOrders } from "@/types/orders"
+import { useOrderDetails, useOrdersQuery } from "@/hooks/data-fetcher"
+import { type EnrichedOrders, type OrderSort, type OrderSortField, type OrderStatus } from "@/types/orders"
 import { CreateOrderDialog } from "./components/order-form/create-order-dialog"
 import { updateOrder } from "@/server/actions/orders"
+import { PaginationControls } from "@/components/ui/pagination-controls"
 
 export default function OrdersPage() {
-  const { data, isLoading, error, invalidateOrders } = useOrdersQuery()
   const searchParams = useSearchParams()
   const router = useRouter()
-  const isMobile = useMediaQuery("(max-width: 950px)")
+  const isMobile = useMediaQuery("(max-width: 768px)")
 
-  // Get orderId from URL
+  // Get URL parameters
+  const page = Number(searchParams.get('page')) || 1
+  const pageSize = Number(searchParams.get('pageSize')) || 10
+  const sortField = (searchParams.get('sort') || 'createdAt') as OrderSortField
+  const sortDirection = (searchParams.get('direction') || 'desc') as 'asc' | 'desc'
+
+  // Get orderId from URL for details view
   const selectedOrderId = searchParams.get('orderId')
-  const selectedOrder = data?.find(order => order.orderId === selectedOrderId) ?? null
   const isDetailsOpen = !!selectedOrderId
 
-  const handleCloseDetails = useCallback(() => {
-    // Remove orderId from URL
+  const sort: OrderSort = {
+    field: sortField,
+    direction: sortDirection
+  }
+
+  const { data: orders, pagination, isLoading, error, invalidateOrders } = useOrdersQuery({
+    page,
+    pageSize,
+    sort
+  })
+
+  const updateUrlParams = useCallback((updates: Record<string, string | null>) => {
     const params = new URLSearchParams(searchParams)
-    params.delete('orderId')
-    router.push(`?${params.toString()}`)
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value === null) {
+        params.delete(key)
+      } else {
+        params.set(key, value)
+      }
+    })
+    router.replace(`?${params.toString()}`)
   }, [searchParams, router])
 
+  const handleCloseDetails = useCallback(() => {
+    updateUrlParams({ orderId: null })
+  }, [updateUrlParams])
+
   const handleOrderClick = useCallback((order: EnrichedOrders) => {
-    // Update URL with selected order ID
-    const params = new URLSearchParams(searchParams)
-    params.set('orderId', order.orderId)
-    router.push(`?${params.toString()}`)
-  }, [searchParams, router])
+    updateUrlParams({ orderId: order.orderId })
+  }, [updateUrlParams])
+
+  const handlePageChange = useCallback((newPage: number) => {
+    updateUrlParams({ page: newPage.toString() })
+  }, [updateUrlParams])
+
+  const handlePageSizeChange = useCallback((newPageSize: number) => {
+    updateUrlParams({
+      pageSize: newPageSize.toString(),
+      page: '1' // Reset to first page when changing page size
+    })
+  }, [updateUrlParams])
+
+  const handleSortChange = useCallback((field: string, direction: 'asc' | 'desc') => {
+    updateUrlParams({
+      sort: field,
+      direction: direction
+    })
+  }, [updateUrlParams])
 
   const handleUpdateOrder = async (updatedOrder: EnrichedOrders) => {
     try {
@@ -42,10 +82,8 @@ export default function OrdersPage() {
       if (!result.success) {
         throw new Error(result.error || 'Failed to update order')
       }
-      
-      // Refresh the orders list
+
       await invalidateOrders()
-      
       return result
     } catch (error) {
       console.error('Error updating order:', error)
@@ -53,13 +91,12 @@ export default function OrdersPage() {
     }
   }
 
-  // Validate orderId exists in data
+  // Close details view when switching to mobile
   useEffect(() => {
-    if (selectedOrderId && data && !data.some(order => order.orderId === selectedOrderId)) {
-      // If the orderId doesn't exist in the data, remove it from URL
+    if (isMobile && selectedOrderId) {
       handleCloseDetails()
     }
-  }, [data, selectedOrderId, handleCloseDetails])
+  }, [isMobile, selectedOrderId, handleCloseDetails])
 
   if (error) {
     return (
@@ -69,30 +106,62 @@ export default function OrdersPage() {
     )
   }
 
+  // const selectedOrder = orders?.find(order => order.orderId === selectedOrderId) ?? null
+  // const { data: orderDetails } = useOrderDetails(selectedOrderId, {
+  //   enabled: selectedOrder === null // Only fetch if selectedOrder is null
+  // })
+  const selectedOrder = orders?.find(order => order.orderId === selectedOrderId) ?? null
+  const {data: orderDetails} = useOrderDetails(selectedOrderId, selectedOrder)
+    
+  const finalSelectedOrder = selectedOrder ?? orderDetails ?? null
+
+  useEffect(() => {
+    if (pagination?.totalPages && page > pagination.totalPages) {
+      updateUrlParams({page: pagination.totalPages.toString()})
+    }
+  }, [page, pagination?.totalPages, updateUrlParams])
+
   return (
     <div className="px-4 h-[94vh] flex flex-col">
-      <div className="flex justify-between">
-        <h1 className="text-2xl font-bold text-gray-900 pt-2">Orders</h1>
+      <div className="flex justify-between mb-4">
+        <h1 className="text-2xl font-bold text-gray-900">Orders</h1>
         <CreateOrderDialog isMobile={isMobile} />
       </div>
 
-      <div className="flex gap-4 flex-1 min-h-0">
+      <div className="flex gap-4 flex-1 min-h-0 overflow-hidden">
         {/* Table section - responsive width */}
         <div
           className={cn(
             "flex flex-col rounded-md transition-all duration-300",
             isMobile ? (isDetailsOpen ? "hidden" : "w-full") : (isDetailsOpen ? "w-[30%]" : "w-full"),
-            "overflow-hidden"
           )}
         >
-          <OrdersTable
-            columns={ordersColumns}
-            data={data || []}
-            isLoading={isLoading}
-            onRowClick={handleOrderClick}
-            selectedId={selectedOrderId || undefined}
-            isCompact={isDetailsOpen || isMobile}
-          />
+          <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+            <OrdersTable
+              columns={ordersColumns}
+              data={orders || []}
+              isLoading={isLoading}
+              onRowClick={handleOrderClick}
+              selectedId={selectedOrderId || undefined}
+              isCompact={isDetailsOpen || isMobile}
+              onSort={handleSortChange}
+              sortField={sortField}
+              sortDirection={sortDirection}
+            />
+          </div>
+
+          {pagination && (
+            <div className="py-4 flex justify-center bg-white border-t">
+              <PaginationControls
+                currentPage={pagination.currentPage}
+                totalPages={pagination.totalPages}
+                pageSize={pagination.pageSize}
+                total={pagination.total}
+                onPageChange={handlePageChange}
+                onPageSizeChange={handlePageSizeChange}
+              />
+            </div>
+          )}
         </div>
 
         {/* Details section - responsive */}
@@ -104,7 +173,7 @@ export default function OrdersPage() {
             )}
           >
             <OrderDetails
-              order={selectedOrder}
+              order={finalSelectedOrder}
               isMobile={isMobile}
               handleClose={handleCloseDetails}
               onSave={handleUpdateOrder}

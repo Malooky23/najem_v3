@@ -75,7 +75,7 @@ function ComboboxContent({ field, form, options, label, placeholder, disabled, o
           <CommandGroup >
             {options.map((option) => (
               <CommandItem
-                value={option.value}  // Changed from option.label to option.value
+                value={option.label}  // Changed from option.label to option.value
                 key={option.value}
                 onSelect={() => {
                   form.setValue(field.name, option.value)

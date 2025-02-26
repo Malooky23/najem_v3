@@ -5,22 +5,61 @@ import { OrderNotesCard } from "./OrderNotesCard"
 import { EnrichedOrders, OrderStatus } from "@/types/orders"
 import { useOrderForm } from "../hooks/useOrderForm"
 import { toast } from "@/hooks/use-toast"
+import { LoadingSpinner } from "@/components/ui/loading-spinner"
+import { useOrderDetails } from "@/hooks/data-fetcher"
 
 interface OrderDetailsProps {
   order: EnrichedOrders | null
   isMobile?: boolean
+  isLoading?: boolean
   onSave?: (updatedOrder: EnrichedOrders) => void
   handleClose: () => void
 }
 
 export function OrderDetails({ 
   order, 
-  isMobile = false, 
+  isMobile = false,
+  isLoading = false,
   onSave, 
   handleClose 
 }: OrderDetailsProps) {
+  const containerClass = isMobile
+    ? "p-4 h-full overflow-scroll"
+    : "p-6 bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 min-h-full overflow-hidden"
+
+  const cardClass = isMobile
+    ? "bg-white"
+    : "bg-white/70 backdrop-blur-sm rounded-lg shadow-xl overflow-hidden transition-all hover:shadow-2xl"
+
+  if (isLoading) {
+    return (
+      <div className={containerClass}>
+        <div className={`max-w-4xl mx-auto mt-0 ${cardClass}`}>
+          <div className={`${isMobile ? "p-4" : "p-6"} flex items-center justify-center min-h-[200px]`}>
+            <LoadingSpinner />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   if (!order) {
-    return <div className="p-6 text-center">No order details available.</div>
+
+    return (
+      <div className={containerClass}>
+        <div className={`max-w-4xl mx-auto mt-0 ${cardClass}`}>
+          <div className={`${isMobile ? "p-4" : "p-6"} text-center text-gray-500`}>
+            <p>Order not found or no longer available.</p>
+            <button
+              onClick={handleClose}
+              className="mt-4 text-blue-500 hover:text-blue-600 underline"
+            >
+              Return to Orders List
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   const {
@@ -39,14 +78,6 @@ export function OrderDetails({
       await onSave(values)
     }
   })
-
-  const containerClass = isMobile
-    ? "p-4 h-full overflow-scroll"
-    : "p-6 bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 min-h-full overflow-hidden"
-
-  const cardClass = isMobile
-    ? "bg-white"
-    : "bg-white/70 backdrop-blur-sm rounded-lg shadow-xl overflow-hidden transition-all hover:shadow-2xl"
 
   const handleStatusChange = async (status: OrderStatus) => {
     // Don't proceed if status hasn't changed

@@ -59,22 +59,26 @@ export const ordersColumns: ColumnDef<EnrichedOrders>[] = [
   },
   {
     accessorKey: "orderNumber",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          className="flex justify-start px-0"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          #
-          <ArrowUpDown className="h-4 w-4" />
-        </Button>
-      )
-    },
+    header:  "#",
+    cell: ({ row }) => <div className="flex flex-1 justify-center"> {row.getValue("orderNumber")}</div>,
+
+    // header: ({ column }) => {
+    //   return (
+    //     <Button
+    //       variant="ghost"
+    //       className="flex justify-start px-0"
+    //       onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+    //     >
+    //       #
+    //       <ArrowUpDown className="h-4 w-4" />
+    //     </Button>
+    //   )
+    // },
   },
   {
     accessorKey: "status",
-    header: () => <div className="text-center w-full">Status</div>,
+    header: "Status",
+    // header: () => <div className="text-center w-full">Status</div>,
     cell: ({ row }) => <StatusCell status={row.getValue("status")} />,
   },
   {

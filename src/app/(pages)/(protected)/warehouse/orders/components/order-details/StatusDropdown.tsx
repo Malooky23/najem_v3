@@ -33,9 +33,17 @@ export function StatusDropdown({
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const handleStatusSelect = (status: OrderStatus) => {
+  const handleStatusSelect = async (status: OrderStatus) => {
     if (isEditing) {
-      onStatusChange(status)
+      try {
+        await onStatusChange(status)
+      } catch (error) {
+        toast({
+          title: "Failed to update status",
+          description: error instanceof Error ? error.message : 'An error occurred',
+          variant: "destructive",
+        })
+      }
       return
     }
 
@@ -78,7 +86,11 @@ export function StatusDropdown({
 
   if (isEditing) {
     return (
-      <Select onValueChange={(value) => handleStatusSelect(value as OrderStatus)} defaultValue={currentStatus}>
+      <Select 
+        onValueChange={handleStatusSelect} 
+        defaultValue={currentStatus}
+        disabled={isLoading}
+      >
         <SelectTrigger className="w-[180px]">
           <SelectValue placeholder="Select status" />
         </SelectTrigger>
@@ -103,7 +115,7 @@ export function StatusDropdown({
             statusColors[currentStatus],
             isLoading && "opacity-50 cursor-not-allowed"
           )}
-          onClick={() => setIsOpen(!isOpen)}
+          onClick={() => !isLoading && setIsOpen(!isOpen)}
         >
           {currentStatus}
           <ChevronDown className="w-4 h-4 ml-1" />

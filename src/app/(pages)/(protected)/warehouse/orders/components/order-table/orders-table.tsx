@@ -2,10 +2,10 @@
 
 import { DataTable } from "@/components/ui/data-table/data-table"
 import { ColumnDef } from "@tanstack/react-table"
-import { toast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
 import { useMemo } from "react"
-import { EnrichedOrders } from "@/types/orders"
+import { EnrichedOrders, OrderSortField } from "@/types/orders"
+import { ChevronUp, ChevronDown } from "lucide-react"
 
 interface OrdersTableProps {
   columns: ColumnDef<EnrichedOrders, any>[]
@@ -14,7 +14,16 @@ interface OrdersTableProps {
   onRowClick?: (order: EnrichedOrders) => void
   selectedId?: string
   isCompact?: boolean
+  onSort?: (field: OrderSortField, direction: 'asc' | 'desc') => void
+  sortField?: OrderSortField
+  sortDirection?: 'asc' | 'desc'
 }
+
+type ExtendedColumnDef = ColumnDef<EnrichedOrders, any> & {
+  accessorKey?: string;
+  id?: string;
+  header?: string | ((props: any) => React.ReactNode);
+};
 
 export function OrdersTable({
   columns,
@@ -22,7 +31,10 @@ export function OrdersTable({
   isLoading,
   onRowClick,
   selectedId,
-  isCompact = false
+  isCompact = false,
+  onSort,
+  sortField,
+  sortDirection
 }: OrdersTableProps) {
   // Define base column widths
   const baseColumnWidths: { [key: string]: string } = {
@@ -41,17 +53,71 @@ export function OrdersTable({
     actions: '50px'
   }
 
-  // Define which columns to show in compact mode
+  // Define which columns to show in compact mode and add sorting
   const visibleColumns = useMemo(() => {
+    const sortableFields: OrderSortField[] = ['orderNumber', 'status', 'createdAt', 'customerName']
+    
+    return columns.map((column: ExtendedColumnDef) => {
+      const columnId = column.accessorKey || column.id
+      if (!columnId || !sortableFields.includes(columnId as OrderSortField)) {
+        return column
+      }
+
+      // Get the original header content
+      const originalHeader = typeof column.header === 'string' 
+        ? column.header 
+        : columnId
+
+      // Create a new column definition with custom header
+      const newColumn: ExtendedColumnDef = {
+        ...column,
+        id: columnId,
+        header: () => (
+          <div
+            className="flex items-center gap-1 cursor-pointer select-none"
+            onClick={() => {
+              const isAsc = sortField === columnId && sortDirection === 'asc'
+              onSort?.(columnId as OrderSortField, isAsc ? 'desc' : 'asc')
+            }}
+          >
+            <span className={cn( originalHeader === "#" ? "flex flex-1  justify-center text-center pr-1" : " ")}
+            >{originalHeader}</span>
+            <div className="flex flex-col">
+              <ChevronUp
+                className={cn(
+                  "h-3 w-3 -mb-1",
+                  sortField === columnId && sortDirection === 'asc'
+                    ? "text-foreground"
+                    : "text-muted-foreground/30"
+                )}
+              />
+              <ChevronDown
+                className={cn(
+                  "h-3 w-3 -mt-1",
+                  sortField === columnId && sortDirection === 'desc'
+                    ? "text-foreground"
+                    : "text-muted-foreground/30"
+                )}
+              />
+            </div>
+          </div>
+        )
+      }
+
+      return newColumn
+    })
+  }, [columns, onSort, sortField, sortDirection])
+
+  // Filter columns for compact mode
+  const displayColumns = useMemo(() => {
     if (isCompact) {
-      // In compact mode, only show essential columns
-      return columns.filter(column => {
-        const id = (column as { accessorKey?: string }).accessorKey || (column as { id?: string }).id
-        return ['orderNumber', 'customerName', 'status'].includes(id || '')
+      return visibleColumns.filter((column: ExtendedColumnDef) => {
+        const columnId = column.accessorKey || column.id
+        return ['orderNumber', 'customerName', 'status'].includes(columnId || '')
       })
     }
-    return columns
-  }, [columns, isCompact])
+    return visibleColumns
+  }, [visibleColumns, isCompact])
 
   const columnWidths = isCompact ? baseColumnWidths : fullColumnWidths
 
@@ -70,25 +136,27 @@ export function OrdersTable({
   }, [isCompact])
 
   return (
-    <DataTable
-      columns={visibleColumns}
-      data={data}
-      isLoading={isLoading}
-      columnWidths={columnWidths}
-      filterableColumns={filterableColumns}
-      pageSize={isCompact ? 25 : 50}
-      onRowClick={(row) => {
-        const order = row as EnrichedOrders
-        if (onRowClick) {
-          onRowClick(order)
+    <div className="h-full flex-1 overflow-hidden rounded-md ">
+      <DataTable
+        columns={displayColumns}
+        data={data}
+        isLoading={isLoading}
+        columnWidths={columnWidths}
+        filterableColumns={filterableColumns}
+        pageSize={isCompact ? 25 : 50}
+        onRowClick={(row) => {
+          const order = row as EnrichedOrders
+          if (onRowClick) {
+            onRowClick(order)
+          }
+        }}
+        rowClassName={(row) => 
+          cn(
+            "hover:bg-slate-200 cursor-pointer",
+            selectedId === (row as EnrichedOrders).orderId && "bg-blue-50 hover:bg-blue-100"
+          )
         }
-      }}
-      rowClassName={(row) => 
-        cn(
-          "hover:bg-slate-200 cursor-pointer",
-          selectedId === (row as EnrichedOrders).orderId && "bg-blue-50 hover:bg-blue-100"
-        )
-      }
-    />
+      />
+    </div>
   )
 }

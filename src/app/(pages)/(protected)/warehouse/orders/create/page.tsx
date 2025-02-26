@@ -36,7 +36,7 @@ export default function CreateOrderPage() {
       if (key === 'items') {
         formData.append(key, JSON.stringify(value));
       } else if (value !== undefined) {
-        formData.append(key, value.toString());
+        formData.append(key, value?.toString() ?? "");
       }
     });
 

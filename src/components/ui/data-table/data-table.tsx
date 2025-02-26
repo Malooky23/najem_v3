@@ -1,15 +1,15 @@
 "use client"
 
+import * as React from "react"
 import {
   ColumnDef,
+  ColumnFiltersState,
+  SortingState,
   flexRender,
   getCoreRowModel,
-  getPaginationRowModel,
-  useReactTable,
-  SortingState,
-  getSortedRowModel,
-  ColumnFiltersState,
   getFilteredRowModel,
+  getSortedRowModel,
+  useReactTable,
 } from "@tanstack/react-table"
 
 import {
@@ -20,153 +20,144 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { DataTablePagination } from "@/components/pagination-controls"
-import { Skeleton } from "@/components/ui/skeleton"
+
 import { Input } from "@/components/ui/input"
-import React from "react"
+import { LoadingSpinner } from "../loading-spinner"
 import { cn } from "@/lib/utils"
 
-interface DataTableProps<TData> {
-  columns: ColumnDef<TData, any>[]
+interface DataTableProps<TData, TValue> {
+  columns: ColumnDef<TData, TValue>[]
   data: TData[]
   isLoading?: boolean
-  filterableColumns?: {
-    id: string
-    title: string
-  }[]
   columnWidths?: { [key: string]: string }
-  onRowClick?: (row: TData) => void
+  filterableColumns?: { id: string; title: string }[]
   pageSize?: number
+  onRowClick?: (row: TData) => void
   rowClassName?: (row: TData) => string
 }
 
-export function DataTable<TData>({
+type Column = {
+  id?: string;
+  accessorKey?: string;
+  columnDef?: {
+    header?: string;
+    accessorKey?: string;
+  };
+};
+
+export function DataTable<TData, TValue>({
   columns,
   data,
   isLoading,
-  filterableColumns = [],
-  columnWidths = {},
+  columnWidths,
+  filterableColumns,
   onRowClick,
-  pageSize = 10,
   rowClassName,
-}: DataTableProps<TData>) {
-  const [sorting, setSorting] = React.useState<SortingState>([])
+}: DataTableProps<TData, TValue>) {
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
-  const [rowSelection, setRowSelection] = React.useState({})
+  const [sorting, setSorting] = React.useState<SortingState>([])
 
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    onSortingChange: setSorting,
-    getSortedRowModel: getSortedRowModel(),
     onColumnFiltersChange: setColumnFilters,
     getFilteredRowModel: getFilteredRowModel(),
-    onRowSelectionChange: setRowSelection,
+    getSortedRowModel: getSortedRowModel(),
+    onSortingChange: setSorting,
     state: {
-      sorting,
       columnFilters,
-      rowSelection,
-    },
-    initialState: {
-      pagination: {
-        pageSize: pageSize,
-      },
+      sorting,
     },
   })
 
   return (
-    <div className="flex flex-col rounded-md display-block overflow-auto ">
-      {filterableColumns.length > 0 && (
-        <div className="flex items-center py-4 gap-2">
-          {filterableColumns.map((column) => (
-            <Input
-              key={column.id}
-              placeholder={`Filter ${column.title}...`}
-              value={(table.getColumn(column.id)?.getFilterValue() as string) ?? ""}
-              onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                table.getColumn(column.id)?.setFilterValue(event.target.value)
-              }
-              className="max-w-sm"
-            />
+    <div className="flex flex-col h-full">
+      {filterableColumns && filterableColumns.length > 0 && (
+        <div className="flex items-center gap-2 flex-wrap p-4 bg-white border-b">
+          {filterableColumns.map(column => (
+            <div key={column.id} className="flex items-center gap-2">
+              <Input
+                placeholder={`Filter ${column.title}...`}
+                value={(table.getColumn(column.id)?.getFilterValue() as string) ?? ""}
+                onChange={(event) =>
+                  table.getColumn(column.id)?.setFilterValue(event.target.value)
+                }
+                className="max-w-sm"
+              />
+            </div>
           ))}
         </div>
       )}
 
-      <div className="rounded-md border relative ">
-        {/* <div className="overflow-auto rounded-md "> */}
-        {/* <div className="flex   rounded-md min-h-0 w-full"> */}
-        <div className="overflow-auto rounded-md max-h-[calc(97vh-200px)] w-full">
-        {/* <div className="overflow-auto rounded-md max-h-[calc(100vh-200px)] w-full"> */}
-          <Table className="relative" style={{ tableLayout: "auto" }}>
-            <TableHeader className="sticky top-0 rounded-t-md bg-slate-100">
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id} className="hover:opacity-75">
-                  {headerGroup.headers.map((header) => {
-                    const width = columnWidths[header.column.id] || 'auto'
-                    return (
-                      <TableHead
-                        key={header.id}
-                        style={{ width }}
-                        className="min-w-[50px] overflow-hidden whitespace-nowrap text-ellipsis text-slate-600 text-m"
-                      >
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
-                      </TableHead>
-                    )
-                  })}
-                </TableRow>
-              ))}
-            </TableHeader>
-
-            <TableBody>
-              {table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    className={cn(
-                      rowClassName ? rowClassName(row.original) : "hover:bg-slate-200"
-                    )}
-                    data-state={row.getIsSelected() && "selected"}
-                    onClick={() => onRowClick?.(row.original)}
-                  >
-                    {row.getVisibleCells().map((cell) => {
-                      const width = columnWidths[cell.column.id] || 'auto'
-                      return (
-                        <TableCell
-                          key={cell.id}
-                          style={{ width }}
-                          className="min-w-[50px] overflow-hidden whitespace-nowrap text-ellipsis"
-                        >
-                          {isLoading ? (
-                            <Skeleton className="h-4 w-[80%]" />
-                          ) : (
-                            flexRender(cell.column.columnDef.cell, cell.getContext())
+      <div className="flex-1 overflow-auto">
+        <Table>
+          <TableHeader className="sticky top-0 bg-white z-10">
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => {
+                  const column = header.column.columnDef as Column
+                  const columnId = column.id || column.accessorKey || ''
+                  const width = columnWidths?.[columnId]
+                  
+                  return (
+                    <TableHead
+                      key={header.id}
+                      style={width ? { width } : undefined}
+                      className="whitespace-nowrap bg-white"
+                    >
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
                           )}
-                        </TableCell>
-                      )
-                    })}
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={columns.length} className="h-24 text-center">
-                    No results.
-                  </TableCell>
+                    </TableHead>
+                  )
+                })}
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center relative"
+                >
+                  <LoadingSpinner />
+                </TableCell>
+              </TableRow>
+            ) : data.length > 0 ? (
+              table.getRowModel().rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                  onClick={() => onRowClick?.(row.original)}
+                  className={rowClassName?.(row.original)}
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
+                    </TableCell>
+                  ))}
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </div>
-
-      <div className="mt-4 mb-2">
-        <DataTablePagination table={table} />
+              ))
+            ) : (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
+                  No results.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
       </div>
     </div>
   )
