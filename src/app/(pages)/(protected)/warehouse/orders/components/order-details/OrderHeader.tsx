@@ -1,8 +1,10 @@
 import { OrderStatus } from "@/types/orders"
 import { Button } from "@/components/ui/button"
 import { StatusDropdown } from "./StatusDropdown"
-import { X } from "lucide-react"
+import { Edit, Printer, Save, X } from "lucide-react"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
+import { SaveButton } from "@/components/ui/SaveButton"
+import { Badge } from "@/components/ui/badge"
 
 interface OrderHeaderProps {
   orderNumber: string
@@ -16,16 +18,16 @@ interface OrderHeaderProps {
   onClose: () => void
 }
 
-export function OrderHeader({ 
-  orderNumber, 
-  status, 
-  isEditing, 
+export function OrderHeader({
+  orderNumber,
+  status,
+  isEditing,
   isMobile = false,
   isLoading = false,
-  onStatusChange, 
-  onEdit, 
-  onSave, 
-  onClose 
+  onStatusChange,
+  onEdit,
+  onSave,
+  onClose
 }: OrderHeaderProps) {
   const handleStatusChange = async (newStatus: OrderStatus) => {
     try {
@@ -37,7 +39,7 @@ export function OrderHeader({
   }
 
   return (
-    <div className="flex items-center justify-between mb-6">
+    <div className="flex items-center justify-between mb-3">
       <div className="flex items-center gap-4">
         {isLoading ? (
           <div className="flex items-center gap-2">
@@ -46,9 +48,9 @@ export function OrderHeader({
           </div>
         ) : (
           <>
-            <h2 className="text-xl font-semibold">
-              Order #{orderNumber}
-            </h2>
+            <Badge variant="outline" className="h-7 px-3 text-lg border-2 border-black bg-white">
+              <p className="whitespace-nowrap">Order #{orderNumber}</p>
+            </Badge>
             <StatusDropdown
               currentStatus={status}
               onStatusChange={handleStatusChange}
@@ -61,24 +63,31 @@ export function OrderHeader({
       <div className="flex items-center gap-2">
         {!isLoading && (
           isEditing ? (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onSave}
-            >
-              Save Changes
-            </Button>
+
+            <SaveButton
+              onClick={async () => onSave()}
+            />
           ) : (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onEdit}
-            >
-              Edit Order
-            </Button>
+            <>
+              <Button
+                className="gap-2 bg-blue-500 hover:bg-blue-600 transition-colors"
+                size="sm"
+              >
+                <Printer className="w-4 h-4" />
+              </Button>
+              <Button
+                className="gap-2 bg-purple-500 hover:bg-purple-600 transition-colors"
+                // variant="outline"
+                size="sm"
+                onClick={onEdit}
+              >
+                <Edit className="w-4 h-4" />
+              </Button>
+
+            </>
           )
         )}
-        
+
         <Button
           variant="ghost"
           size="icon"

@@ -390,6 +390,61 @@ export const orderItems = pgTable("order_items", {
     > 0`),
 ]);
 
+export const orderHistoryType = pgEnum("order_history_type", [
+  'STATUS_CHANGE',
+  'MOVEMENT_CHANGE',
+  'ITEMS_CHANGE',
+  'ADDRESS_CHANGE',
+  'DELIVERY_METHOD_CHANGE',
+  'CUSTOMER_CHANGE',
+  'PACKING_TYPE_CHANGE',
+  'NOTES_CHANGE'
+]);
+
+export const orderHistory = pgTable("order_history", {
+  historyId: uuid("history_id").defaultRandom().primaryKey(),
+  orderId: uuid("order_id")
+    .notNull()
+    .references(() => orders.orderId, { onDelete: "cascade" }),
+  
+  // What changed
+  changeType: orderHistoryType("change_type").notNull(),
+  
+  // Store the changes
+  previousValues: json("previous_values").notNull(),
+  newValues: json("new_values").notNull(),
+  
+  // Who made the change
+  changedBy: uuid("changed_by")
+    .notNull()
+    .references(() => users.userId),
+    
+  // When the change was made
+  changedAt: timestamp("changed_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+    
+  // Optional note about the change
+  changeNote: text("change_note"),
+});
+
+// Add to your existing relations
+export const orderHistoryRelations = relations(orderHistory, ({ one }) => ({
+  order: one(orders, {
+    fields: [orderHistory.orderId],
+    references: [orders.orderId],
+  }),
+  user: one(users, {
+    fields: [orderHistory.changedBy],
+    references: [users.userId],
+  }),
+}));
+
+// Types
+export type OrderHistory = typeof orderHistory.$inferSelect;
+export type InsertOrderHistory = typeof orderHistory.$inferInsert;
+
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 

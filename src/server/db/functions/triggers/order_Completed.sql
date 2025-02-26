@@ -114,3 +114,97 @@ CREATE OR REPLACE TRIGGER order_completion_inventory_trigger
 BEFORE UPDATE OF status ON orders
 FOR EACH ROW
 EXECUTE FUNCTION record_order_stock_movement();
+
+
+
+
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+-- NEW VERSION NEED TO TEST LOGIC FOR BUGS
+
+CREATE OR REPLACE FUNCTION record_order_stock_movement()
+RETURNS TRIGGER AS $$
+DECLARE
+    item_record RECORD;
+    tx_number INTEGER;
+    reversal_movement_type movement_type;
+BEGIN
+    -- Get the next transaction number for this order
+    SELECT COALESCE(COUNT(*), 0) + 1 INTO tx_number
+    FROM stock_movements
+    WHERE reference_id = NEW.order_id;
+
+    -- Handle status change to COMPLETED
+    IF NEW.status = 'COMPLETED' AND NEW.status <> OLD.status THEN
+        NEW.fulfilled_at = NOW();
+
+        -- Process all items with the order's current movement type
+        FOR item_record IN SELECT order_items.item_id, order_items.quantity, order_items.item_location_id
+                          FROM order_items
+                          WHERE order_items.order_id = NEW.order_id
+        LOOP
+            INSERT INTO stock_movements (
+                item_id,
+                location_id,
+                movement_type,
+                quantity,
+                reference_type,
+                reference_id,
+                notes
+            )
+            VALUES (
+                item_record.item_id,
+                item_record.item_location_id,
+                NEW.movement,
+                item_record.quantity,
+                'ORDER_COMPLETION',
+                NEW.order_id,
+                format('[TX#%s] Order Completed - %s Inventory',
+                       tx_number,
+                       CASE WHEN NEW.movement = 'OUT' THEN 'Deduction' ELSE 'Addition' END)
+            );
+        END LOOP;
+
+    -- Handle status change from COMPLETED to non-COMPLETED
+    ELSIF OLD.status = 'COMPLETED' AND NEW.status <> 'COMPLETED' THEN
+        -- We need to use the OLD movement type for the reversal
+        reversal_movement_type := CASE WHEN OLD.movement = 'IN' THEN 'OUT' ELSE 'IN' END;
+
+        FOR item_record IN SELECT order_items.item_id, order_items.quantity, order_items.item_location_id
+                          FROM order_items
+                          WHERE order_items.order_id = NEW.order_id
+        LOOP
+            INSERT INTO stock_movements (
+                item_id,
+                location_id,
+                movement_type,
+                quantity,
+                reference_type,
+                reference_id,
+                notes
+            )
+            VALUES (
+                item_record.item_id,
+                item_record.item_location_id,
+                reversal_movement_type,
+                item_record.quantity,
+                'ORDER_REVERSAL',
+                NEW.order_id,
+                format('[TX#%s][REVERSAL] Order Uncompleted - Reversing Previous %s',
+                       tx_number,
+                       OLD.movement)
+            );
+        END LOOP;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER order_completion_inventory_trigger
+BEFORE UPDATE OF status ON orders
+FOR EACH ROW
+EXECUTE FUNCTION record_order_stock_movement();

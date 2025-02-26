@@ -46,16 +46,21 @@ export function ItemsClientWrapper() {
 
 
   return (
-    <div className="  mt-1 px-8 h-[95vh]">
+    <div className="flex flex-col flex-1">
       <div className="flex justify-between px-2 pt-1  ">
-        <h1 className="text-2xl font-bold text-gray-900 ">Items</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Items</h1>
         <CreateItemModal customers={customerList ?? []} />
       </div>
+      <div className="flex flex-row flex-1 justify-between">
       <ItemsTable
         data={itemsWithCustomerNames}
         columns={itemsColumns}
         isLoading={isItemsLoading}
-      />
+        />
+        {/* <div className="flex flex-col flex-1 justify-center">
+          
+        </div> */}
+        </div>
     </div>
   );
 }

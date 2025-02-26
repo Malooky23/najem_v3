@@ -13,6 +13,6 @@ $$ LANGUAGE plpgsql;
 
 
 CREATE TRIGGER after_item_insert
-AFTER INSERT ON item
+AFTER INSERT ON items
 FOR EACH ROW
 EXECUTE FUNCTION insert_into_item_stock();
