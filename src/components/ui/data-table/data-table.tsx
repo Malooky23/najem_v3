@@ -4,6 +4,7 @@ import * as React from "react"
 import {
   ColumnDef,
   ColumnFiltersState,
+  RowSelectionState,
   SortingState,
   flexRender,
   getCoreRowModel,
@@ -34,6 +35,7 @@ interface DataTableProps<TData, TValue> {
   pageSize?: number
   onRowClick?: (row: TData) => void
   rowClassName?: (row: TData) => string
+  onRowSelectionChange?: (selection: RowSelectionState) => void // Updated type
 }
 
 type Column = {
@@ -50,12 +52,15 @@ export function DataTable<TData, TValue>({
   data,
   isLoading,
   columnWidths,
-  filterableColumns,
+  filterableColumns = [], // Add default value
   onRowClick,
   rowClassName,
+  onRowSelectionChange
 }: DataTableProps<TData, TValue>) {
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [sorting, setSorting] = React.useState<SortingState>([])
+  const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({})
+
 
   const table = useReactTable({
     data,
@@ -65,11 +70,26 @@ export function DataTable<TData, TValue>({
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
     onSortingChange: setSorting,
+    // onRowSelectionChange: setRowSelection,
+    onRowSelectionChange: (updatedSelection) => {
+      setRowSelection(updatedSelection);
+      // If updatedSelection is a function, call it with current selection
+      if (typeof updatedSelection === 'function') {
+        const newSelection = updatedSelection(rowSelection);
+        onRowSelectionChange?.(newSelection);
+      } else {
+        onRowSelectionChange?.(updatedSelection);
+      }
+    },
+
+
     state: {
+      rowSelection,
       columnFilters,
       sorting,
     },
   })
+
 
   return (
     <div className="flex flex-col h-full">
@@ -92,7 +112,8 @@ export function DataTable<TData, TValue>({
 
       <div className="flex-1 overflow-auto">
         <Table>
-          <TableHeader className="sticky top-0 bg-white z-10">
+          {/* <TableHeader className="sticky top-0 bg-white z-10"> */}
+          <TableHeader className="sticky top-0 bg-white ">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {

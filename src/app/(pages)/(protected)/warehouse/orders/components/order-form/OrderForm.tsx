@@ -109,6 +109,7 @@ export default function OrderForm({ onClose }: { onClose: () => void }) {
             packingType: "NONE",
             deliveryMethod: "NONE",
             status: "PENDING",
+            movement:"IN", // Add this
             items: []
         },
         mode: "onChange"
@@ -186,12 +187,15 @@ export default function OrderForm({ onClose }: { onClose: () => void }) {
                                             />
                                         )}
                                     />
+
                                     <FormField
                                         control={form.control}
                                         name="movement"
                                         render={({ field }) => (
                                             <FormItem>
                                                 <FormLabel>Movement Type</FormLabel>
+                                                <FormControl>
+
                                                 <div className="flex justify-center gap-4 ">
 
 
@@ -203,7 +207,14 @@ export default function OrderForm({ onClose }: { onClose: () => void }) {
                                                                 ? "bg-green-500 hover:bg-green-600 text-white border-0"
                                                                 : "hover:bg-green-100",
                                                         )}
-                                                        onClick={() => form.setValue("movement", "IN")}
+                                                        // onClick={() => form.setValue("movement", "IN")}
+                                                        onClick={() => form.setValue("movement", "IN", { 
+                                                            shouldValidate: true,
+                                                            shouldDirty: true,
+                                                            shouldTouch: true
+                                                        })}
+                                
+                                    
                                                     >
                                                         IN
                                                     </Badge>
@@ -226,11 +237,20 @@ export default function OrderForm({ onClose }: { onClose: () => void }) {
                                                                 ? "bg-red-500 hover:bg-red-600 text-white border-0"
                                                                 : "hover:bg-red-100",
                                                         )}
-                                                        onClick={() => field.onChange("OUT")}
+                                                        // onClick={() => field.onChange("OUT")}
+                                                        onClick={() => form.setValue("movement", "OUT", { 
+                                                            shouldValidate: true,
+                                                            shouldDirty: true,
+                                                            shouldTouch: true
+                                                        })}
+                                
+                                    
                                                     >
                                                         OUT
                                                     </Badge>
                                                 </div>
+                                                </FormControl>
+
                                                 <FormMessage />
                                             </FormItem>
                                         )}

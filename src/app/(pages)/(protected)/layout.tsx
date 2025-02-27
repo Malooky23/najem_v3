@@ -18,7 +18,7 @@ export default async function ProtectedLayout({
   return (
     <div className="flex h-full w-full overflow-hidden"> {/* **CRITICAL: flex, h-full, w-full, overflow-hidden** */}
       <Sidebar />
-      <main className="flex-1 overflow-y-auto"> {/* **CRITICAL: flex-1, overflow-y-auto** */}
+      <main className="flex-1 overflow-y-auto bg-gradient-to-tr from-orange-100/50 to-blue-200/50"> {/* **CRITICAL: flex-1, overflow-y-auto** */}
         <Suspense fallback={
           <div className="flex items-center justify-center w-full h-full">
             <Loading />

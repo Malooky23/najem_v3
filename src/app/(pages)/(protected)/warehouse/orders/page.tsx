@@ -1,5 +1,5 @@
 "use client"
-import { useEffect, useCallback } from "react"
+import { useEffect, useCallback, useState } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { OrdersTable } from "./components/order-table/orders-table"
 import { ordersColumns } from "./components/order-table/orders-columns"
@@ -11,6 +11,8 @@ import { type EnrichedOrders, type OrderSort, type OrderSortField, type OrderSta
 import { CreateOrderDialog } from "./components/order-form/create-order-dialog"
 import { updateOrder } from "@/server/actions/orders"
 import { PaginationControls } from "@/components/ui/pagination-controls"
+import { Badge } from "@/components/ui/badge"
+import { RowSelectionState } from "@tanstack/react-table"
 
 export default function OrdersPage() {
   const searchParams = useSearchParams()
@@ -105,20 +107,40 @@ export default function OrdersPage() {
   //   enabled: selectedOrder === null // Only fetch if selectedOrder is null
   // })
   const selectedOrder = orders?.find(order => order.orderId === selectedOrderId) ?? null
-  const {data: orderDetails} = useOrderDetails(selectedOrderId, selectedOrder)
-    
+  const { data: orderDetails } = useOrderDetails(selectedOrderId, selectedOrder)
+
   const finalSelectedOrder = selectedOrder ?? orderDetails ?? null
 
   useEffect(() => {
     if (pagination?.totalPages && page > pagination.totalPages) {
-      updateUrlParams({page: pagination.totalPages.toString()})
+      updateUrlParams({ page: pagination.totalPages.toString() })
     }
   }, [page, pagination?.totalPages, updateUrlParams])
+  
+  const [selectedRows, setSelectedRows] = useState<RowSelectionState>({});
+  const handleRowSelection = (selection: RowSelectionState) => {
+    setSelectedRows(selection);
+    
+    // Get the selected items
+    // const selectedItems = Object.keys(selection)
+    //   .filter(key => selection[key])
+    //   .map(key => data[parseInt(key)]);
+
+      //DO SOMETHING WITH THE SELECTED ITEMS
+      console.log("Do something with selected items", selectedRows)
+  };
 
   return (
-    <div className="px-4 h-[94vh] flex flex-col">
-      <div className="flex justify-between mb-4">
-        <h1 className="text-2xl font-bold text-gray-900">Orders</h1>
+    // <div className="px-4 h-[94vh] flex flex-col ">
+    <div className="px-4 h-[calc(100vh-3rem)] flex flex-col">
+
+      <div className="flex justify-between  m-2">
+        {/* <Badge variant={'outline'} className="bg-slate-50 border-black"> */}
+
+        <h1 className="text-2xl font-bold text-gray-900 ">
+          Orders
+        </h1>
+        {/* </Badge> */}
         <CreateOrderDialog isMobile={isMobile} />
       </div>
 
@@ -127,10 +149,10 @@ export default function OrdersPage() {
         <div
           className={cn(
             "flex flex-col rounded-md transition-all duration-300",
-            isMobile ? (isDetailsOpen ? "hidden" : "w-full") : (isDetailsOpen ? "w-[30%]" : "w-full"),
+            isMobile ? (isDetailsOpen ? "hidden" : "w-full") : (isDetailsOpen ? "w-[40%]" : "w-full"),
           )}
         >
-          <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+          <div className="flex-1  overflow-hidden flex flex-col rounded-lg bg-slate-50 border-2 border-slate-200">
             <OrdersTable
               columns={ordersColumns}
               data={orders || []}
@@ -144,18 +166,20 @@ export default function OrdersPage() {
             />
           </div>
 
-          {pagination && (
-            <div className="py-4 flex justify-center bg-white border-t">
-              <PaginationControls
-                currentPage={pagination.currentPage}
-                totalPages={pagination.totalPages}
-                pageSize={pagination.pageSize}
-                total={pagination.total}
-                onPageChange={handlePageChange}
-                onPageSizeChange={handlePageSizeChange}
-              />
+          {/* {pagination && (
+            <div className="p-2 flex w-full  justify-center min-w-0  ">
+              <div className=" ">
+                <PaginationControls
+                  currentPage={pagination.currentPage}
+                  totalPages={pagination.totalPages}
+                  pageSize={pagination.pageSize}
+                  total={pagination.total}
+                  onPageChange={handlePageChange}
+                  onPageSizeChange={handlePageSizeChange}
+                />
+              </div>
             </div>
-          )}
+          )} */}
         </div>
 
         {/* Details section - responsive */}
@@ -175,6 +199,21 @@ export default function OrdersPage() {
           </div>
         )}
       </div>
+      {pagination && (
+            <div className="p-2 flex w-full  justify-center min-w-0  ">
+              <div className=" ">
+                <PaginationControls
+                  currentPage={pagination.currentPage}
+                  totalPages={pagination.totalPages}
+                  pageSize={pagination.pageSize}
+                  total={pagination.total}
+                  onPageChange={handlePageChange}
+                  onPageSizeChange={handlePageSizeChange}
+                  selectedRows={Object.keys(selectedRows).filter(key => selectedRows[key]).length}
+                  />
+              </div>
+            </div>
+          )}
     </div>
   )
 }

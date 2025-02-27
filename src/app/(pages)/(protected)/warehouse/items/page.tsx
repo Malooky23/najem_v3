@@ -1,9 +1,11 @@
 import { Package2 } from 'lucide-react';
 import { ComingSoon } from '@/components/coming-soon';
 import { ItemsClientWrapper } from './components/items-client-wrapper-';
+import {auth} from "@/lib/auth/auth"
 
-
-export default function ItemsPage() {
+export default async function ItemsPage() {
+  const session = await auth()
+  
   return (
     // <div className="p-2 mx-6 flex flex-col bg-purple-200">
     // <div className="p-2 mx-6  h-[calc(100vh-4rem)] flex flex-col ">

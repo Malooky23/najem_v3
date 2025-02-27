@@ -82,12 +82,27 @@ export function useOrdersQuery(params: OrdersQueryParams = {}) {
     refetchOnMount: true,
     refetchOnWindowFocus: false,
     staleTime: 0, // Always fetch fresh data
+    
   });
 
+  // const invalidateOrders = async () => {
+  //   await queryClient.invalidateQueries({ queryKey: ['orders'] });
+  //   await queryClient.invalidateQueries({ queryKey: ['items'] });
+  //   return query.refetch(); // Immediately refetch after invalidation
+  // };
+
   const invalidateOrders = async () => {
-    await queryClient.invalidateQueries({ queryKey: ['orders'] });
-    return query.refetch(); // Immediately refetch after invalidation
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['orders'] }),
+      queryClient.invalidateQueries({ queryKey: ['items'] })
+    ]);
+    
+    return Promise.all([
+      query.refetch(),
+      queryClient.refetchQueries({ queryKey: ['items'] })
+    ]);
   };
+  
   
   return {
     ...query,
@@ -142,8 +157,10 @@ export function useItems() {
       }
       return res.json();
     },
-    staleTime: 10,
+    staleTime: 0,
     refetchOnMount: true,
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false, 
+
+    
   });
 }
