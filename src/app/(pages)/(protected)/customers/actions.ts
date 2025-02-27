@@ -72,6 +72,7 @@ export async function createBusinessCustomer(data: Record<string, any>) {
     const validatedData = createBusinessCustomerSchema.parse(data);
     console.log(`      
       SELECT new_business_customer(
+                  ${validatedData.displayName}::TEXT,
             ${validatedData.country}::TEXT,
             ${validatedData.businessName}::TEXT,
             ${validatedData.isTaxRegistered}::BOOLEAN,
@@ -85,6 +86,7 @@ export async function createBusinessCustomer(data: Record<string, any>) {
     await new Promise((resolve) => setTimeout(resolve, 3000));
     const result = await db.execute<{ result: any }>(sql`
           SELECT new_business_customer(
+            ${validatedData.displayName}::TEXT,
             ${validatedData.country}::TEXT,
             ${validatedData.businessName}::TEXT,
             ${validatedData.isTaxRegistered}::BOOLEAN,

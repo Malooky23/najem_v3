@@ -38,6 +38,7 @@ export const itemService = {
             });
             const parsedItems = z.array(ItemSchema).parse(rawCustomerItems);
             // console.log(parsedItems)
+
             return parsedItems;
         } catch (error) {
             if (error instanceof z.ZodError) {
