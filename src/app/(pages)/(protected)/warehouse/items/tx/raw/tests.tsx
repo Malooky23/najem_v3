@@ -1,8 +1,8 @@
 'use client'
-import { useCustomers } from '@/hooks/data-fetcher'
+import {  useStockMovements } from '@/hooks/data-fetcher'
 
 export default function TestPage(){
- const {data, isLoading, error} = useCustomers()
+ const {data, isLoading, error} = useStockMovements()
 
  if (isLoading) {
   return <div>Loading customers...</div>;

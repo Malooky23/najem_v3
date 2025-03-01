@@ -1,0 +1,88 @@
+-- Create roles
+CREATE ROLE app_user;
+CREATE ROLE app_employee;
+CREATE ROLE app_customer;
+
+-- Grant usage on schema
+GRANT USAGE ON SCHEMA public TO app_user, app_employee, app_customer;
+
+-- Grant connect to database
+GRANT CONNECT ON DATABASE your_database_name TO app_user, app_employee, app_customer;
+
+
+-- Enable RLS on tables
+ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
+ALTER TABLE items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE customers ENABLE ROW LEVEL SECURITY;
+
+-- Create policies for orders
+CREATE POLICY orders_employee_policy ON orders
+    FOR ALL
+    USING (current_setting('app.current_user_type')::text = 'EMPLOYEE');
+
+CREATE POLICY orders_customer_policy ON orders
+    FOR ALL
+    USING (
+        current_setting('app.current_user_type')::text = 'CUSTOMER' 
+        AND customer_id::text = current_setting('app.current_user_customer_id')
+    );
+
+-- Create policies for customers
+CREATE POLICY customers_employee_policy ON customers
+    FOR ALL
+    USING (current_setting('app.current_user_type')::text = 'EMPLOYEE');
+
+CREATE POLICY customers_customer_policy ON customers
+    FOR ALL
+    USING (
+        current_setting('app.current_user_type')::text = 'CUSTOMER' 
+        AND customer_id::text = current_setting('app.current_user_customer_id')
+    );
+
+
+
+
+-- HELPER FUNCTIONS
+CREATE OR REPLACE FUNCTION current_user_type()
+RETURNS text AS $$
+BEGIN
+    RETURN current_setting('app.current_user_type');
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE FUNCTION current_user_customer_id()
+RETURNS uuid AS $$
+BEGIN
+    RETURN current_setting('app.current_user_customer_id')::uuid;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+
+-- Enable RLS on tables
+ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
+ALTER TABLE items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE customers ENABLE ROW LEVEL SECURITY;
+
+-- Create policies for orders
+CREATE POLICY orders_user_policy ON orders
+    FOR ALL
+    TO authenticated
+    USING (
+        CASE
+            WHEN current_user_type() = 'EMPLOYEE' THEN TRUE
+            WHEN current_user_type() = 'CUSTOMER' THEN customer_id = current_user_customer_id()
+            ELSE FALSE
+        END
+    );
+
+-- Create policies for customers
+CREATE POLICY customers_user_policy ON customers
+    FOR ALL
+    TO authenticated
+    USING (
+        CASE
+            WHEN current_user_type() = 'EMPLOYEE' THEN TRUE
+            WHEN current_user_type() = 'CUSTOMER' THEN customer_id = current_user_customer_id()
+            ELSE FALSE
+        END
+    );

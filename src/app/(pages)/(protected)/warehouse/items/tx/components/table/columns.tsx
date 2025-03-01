@@ -12,8 +12,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { EnrichedOrders } from "@/types/orders"
 import { formatInTimeZone, toDate } from "date-fns-tz"
+import { StockMovementsView } from "@/server/db/schema"
 
 
 const StatusCell = ({ status }: { status: string }) => {
@@ -26,6 +26,8 @@ const StatusCell = ({ status }: { status: string }) => {
       "COMPLETED": "bg-green-500/20 text-green-700",
       "READY": "bg-purple-500/20 text-purple-700",
       "CANCELLED": "bg-red-500/20 text-red-700",
+      "IN": "bg-green-500/20 text-green-700",
+      "OUT": "bg-red-500/20 text-red-700",
     }
     return `${baseStyles} ${statuses[status] || statuses["PENDING"]}`
   }
@@ -37,7 +39,7 @@ const StatusCell = ({ status }: { status: string }) => {
   )
 }
 
-export const ordersColumns: ColumnDef<EnrichedOrders>[] = [
+export const stockMovementColumns: ColumnDef<StockMovementsView>[] = [
   // {
   //   id: "select",
   //   header: ({ table }) => (
@@ -70,7 +72,7 @@ export const ordersColumns: ColumnDef<EnrichedOrders>[] = [
     ),
     cell: ({ row }) => (
       <div className=" flex justify-center"
-      onClick={(e) => e.stopPropagation()}>
+        onClick={(e) => e.stopPropagation()}>
         <Checkbox
           checked={row.getIsSelected()}
           onCheckedChange={(value) => row.toggleSelected(!!value)}
@@ -81,58 +83,40 @@ export const ordersColumns: ColumnDef<EnrichedOrders>[] = [
     enableSorting: false,
     enableHiding: false,
   },
-  {
-    accessorKey: "orderNumber",
-    header:  "#",
-    cell: ({ row }) => <div className="flex flex-1 justify-center"> {row.getValue("orderNumber")}</div>,
+  // {
+  //   accessorKey: "orderNumber",
+  //   header:  "#",
+  //   cell: ({ row }) => <div className="flex flex-1 justify-center"> {row.getValue("orderNumber")}</div>,
 
-    // header: ({ column }) => {
-    //   return (
-    //     <Button
-    //       variant="ghost"
-    //       className="flex justify-start px-0"
-    //       onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-    //     >
-    //       #
-    //       <ArrowUpDown className="h-4 w-4" />
-    //     </Button>
-    //   )
-    // },
+  //   // header: ({ column }) => {
+  //   //   return (
+  //   //     <Button
+  //   //       variant="ghost"
+  //   //       className="flex justify-start px-0"
+  //   //       onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+  //   //     >
+  //   //       #
+  //   //       <ArrowUpDown className="h-4 w-4" />
+  //   //     </Button>
+  //   //   )
+  //   // },
+  // },
+  {
+    accessorKey: "movementType",
+    header: "movement Type",
+    // header: () => <div className="text-center w-full">Status</div>,
+    cell: ({ row }) => <StatusCell status={row.getValue("movementType")} />,
   },
   {
-    accessorKey: "status",
-    header: "Status",
-    // header: () => <div className="text-center w-full">Status</div>,
-    cell: ({ row }) => <StatusCell status={row.getValue("status")} />,
+    accessorKey: "quantity",
+    header: "quantity",
   },
   {
-    accessorKey: "items",
-    header: "Total Items",
-    // header: () => <div className="text-center w-full">Status</div>,
-    cell: ({ row }) => {
-      const itemsValue = row.getValue("items");
-      let itemsArray = [];
-    
-      if (Array.isArray(itemsValue)) {
-        itemsArray = itemsValue;
-      } else if (typeof itemsValue === 'string') {
-        try {
-          itemsArray = JSON.parse(itemsValue);
-        } catch (error) {
-          console.error("Error parsing JSON string:", error);
-          // Handle the error appropriately, maybe display 0 or an error message
-          return <div>Error</div>; // Or return <div>0</div>;
-        }
-      } else {
-        // Handle cases where itemsValue is neither an array nor a string, if necessary
-        return <div>N/A</div>; // Or return <div>0</div>; or handle differently
-      }
-    
-      return <div className="text-center">{Array.isArray(itemsArray) ? itemsArray.length : 0}</div>;
-    },
-      },
+    accessorKey: "itemName",
+    header: "Item Name",
+  },
   {
-    accessorKey: "customerName",
+    accessorKey: "customerDisplayName",
     header: "Customer",
   },
   {
@@ -140,9 +124,10 @@ export const ordersColumns: ColumnDef<EnrichedOrders>[] = [
     cell: ({ row }) => {
       return (
         <div className=" ">
-          { formatInTimeZone(toDate(row.getValue("createdAt")),"Asia/Dubai","EEE, dd-MM-yyyy") }
+          {formatInTimeZone(toDate(row.getValue("createdAt")), "Asia/Dubai", "EEE, dd-MM-yyyy")}
 
-        </div>)},
+        </div>)
+    },
     header: ({ column }) => {
       return (
         <Button
@@ -168,12 +153,12 @@ export const ordersColumns: ColumnDef<EnrichedOrders>[] = [
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem onClick={() => navigator.clipboard.writeText(row.original.orderId)}>
-              Copy order ID
+            <DropdownMenuItem onClick={() => navigator.clipboard.writeText(row.original.movementId)}>
+              Copy Movement ID
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>View details</DropdownMenuItem>
-            <DropdownMenuItem>Update status</DropdownMenuItem>
+            <DropdownMenuItem>Test 1</DropdownMenuItem>
+            <DropdownMenuItem>Test 2</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       )

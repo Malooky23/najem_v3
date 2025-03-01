@@ -18,7 +18,7 @@ import { Card } from "@/components/ui/card";
 
 const menuItems = [
   { title: 'Items', icon: Package2, path: '/warehouse/items', active: true },
-  { title: 'Orders', icon: ShoppingCart, path: '/warehouse/orders', active: false },
+  { title: 'Orders', icon: ShoppingCart, path: '/warehouse/orders', active: true },
   { title: 'Item Transactions', icon: ArrowLeftRight, path: '/warehouse/transactions', active: false },
   { title: 'Forklift', icon: Forklift, path: '/warehouse/forklift', active: false },
   { title: 'Labour', icon: Users, path: '/warehouse/labour', active: false },

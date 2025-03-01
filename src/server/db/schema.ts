@@ -14,6 +14,7 @@ import {
   check,
   primaryKey,
   foreignKey,
+  pgView,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { relations } from 'drizzle-orm';
@@ -596,3 +597,45 @@ export const itemStockRelations = relations(itemStock, ({ one }) => ({
     references: [locations.locationId]
   })
 }));
+
+
+
+// Define the view using pgView and explicit schema
+export const stockMovementsView = pgView("stock_movements_view", {
+  movementId: uuid("movement_id").notNull(),
+  itemId: uuid("item_id").notNull(),
+  locationId: uuid("location_id").notNull(),
+  movementType: text("movement_type").notNull(),
+  quantity: integer("quantity").notNull(),
+  referenceType: text("reference_type"),
+  referenceId: uuid("reference_id"),
+  notes: text("notes"),
+  createdBy: uuid("created_by"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+  itemName: text("item_name").notNull(),
+  customerId: uuid("customer_id").notNull(),
+  customerDisplayName: varchar("customer_display_name", { length: 100 }), // Match length from customers table
+}).as(sql`
+    SELECT
+      sm.movement_id,
+      sm.item_id,
+      sm.location_id,
+      sm.movement_type,
+      sm.quantity,
+      sm.reference_type,
+      sm.reference_id,
+      sm.notes,
+      sm.created_by,
+      sm.created_at,
+      i.item_name,
+      i.customer_id,
+      c.display_name AS customer_display_name
+    FROM
+      ${stockMovements} sm
+    JOIN
+      ${items} i ON sm.item_id = i.item_id
+    JOIN
+      ${customers} c ON i.customer_id = c.customer_id
+  `);
+
+export type StockMovementsView = typeof stockMovementsView.$inferSelect;

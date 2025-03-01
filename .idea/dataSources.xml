@@ -22,5 +22,12 @@
       <jdbc-url>jdbc:postgresql://aws-0-us-west-1.pooler.supabase.com:5432/postgres</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
+    <data-source source="LOCAL" name="local_basic-User" uuid="bb6bf91e-a5cd-43c0-9126-9d2ae3d9d858">
+      <driver-ref>postgresql</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.postgresql.Driver</jdbc-driver>
+      <jdbc-url>jdbc:postgresql://localhost:5432/malek</jdbc-url>
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
   </component>
 </project>

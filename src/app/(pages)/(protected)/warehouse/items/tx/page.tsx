@@ -1,19 +1,20 @@
 "use client"
 import { useEffect, useCallback, useState } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { OrdersTable } from "./components/order-table/orders-table"
-import { ordersColumns } from "./components/order-table/orders-columns"
-import { OrderDetails } from "./components/order-details/OrderDetails"
+import { StockMovementTable } from "./components/table/table"
+import { stockMovementColumns } from "./components/table/columns"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import { cn } from "@/lib/utils"
-import { useOrderDetails, useOrdersQuery } from "@/hooks/data-fetcher"
-import { type EnrichedOrders, type OrderSort, type OrderSortField, type OrderStatus } from "@/types/orders"
-import { CreateOrderDialog } from "./components/order-form/create-order-dialog"
-import { updateOrder } from "@/server/actions/orders"
+import { useStockMovements } from "@/hooks/data-fetcher"
 import { PaginationControls } from "@/components/ui/pagination-controls"
 import { RowSelectionState } from "@tanstack/react-table"
+import {
+  StockMovementSort,
+  type StockMovementSortFields,
+  type EnrichedStockMovementView
+} from "@/types/stockMovement"
 
-export default function OrdersPage() {
+export default function StockMovementPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const isMobile = useMediaQuery("(max-width: 768px)")
@@ -21,19 +22,19 @@ export default function OrdersPage() {
   // Get URL parameters
   const page = Number(searchParams.get('page')) || 1
   const pageSize = Number(searchParams.get('pageSize')) || 10
-  const sortField = (searchParams.get('sort') || 'createdAt') as OrderSortField
+  const sortField = (searchParams.get('sort') || 'createdAt') as StockMovementSortFields;
   const sortDirection = (searchParams.get('direction') || 'desc') as 'asc' | 'desc'
 
   // Get orderId from URL for details view
   const selectedOrderId = searchParams.get('orderId')
   const isDetailsOpen = !!selectedOrderId
 
-  const sort: OrderSort = {
+  const sort: StockMovementSort = {
     field: sortField,
     direction: sortDirection
   }
 
-  const { data: orders, pagination, isLoading, error, invalidateOrders } = useOrdersQuery({
+  const { data: orders, pagination, isLoading, error, invalidateOrders } = useStockMovements({
     page,
     pageSize,
     sort
@@ -55,8 +56,8 @@ export default function OrdersPage() {
     updateUrlParams({ orderId: null })
   }, [updateUrlParams])
 
-  const handleOrderClick = useCallback((order: EnrichedOrders) => {
-    updateUrlParams({ orderId: order.orderId })
+  const handleOrderClick = useCallback((order: EnrichedStockMovementView) => {
+    updateUrlParams({ orderId: order.movementId })
   }, [updateUrlParams])
 
   const handlePageChange = useCallback((newPage: number) => {
@@ -100,12 +101,7 @@ export default function OrdersPage() {
       </div>
     )
   }
-
-  // const selectedOrder = orders?.find(order => order.orderId === selectedOrderId) ?? null
-  // const { data: orderDetails } = useOrderDetails(selectedOrderId, {
-  //   enabled: selectedOrder === null // Only fetch if selectedOrder is null
-  // })
-  const selectedOrder = orders?.find(order => order.orderId === selectedOrderId) ?? null
+  const selectedOrder = orders?.find(order => order.movementId === selectedOrderId) ?? null
   const { data: orderDetails } = useOrderDetails(selectedOrderId, selectedOrder)
 
   const finalSelectedOrder = selectedOrder ?? orderDetails ?? null
@@ -137,7 +133,7 @@ export default function OrdersPage() {
         {/* <Badge variant={'outline'} className="bg-slate-50 border-black"> */}
 
         <h1 className="text-2xl font-bold text-gray-900 ">
-          Orders
+          Item Movements
         </h1>
         {/* </Badge> */}
         <CreateOrderDialog isMobile={isMobile} />
@@ -151,7 +147,7 @@ export default function OrdersPage() {
           )}
         >
           <div className="flex-1  overflow-hidden flex flex-col rounded-lg bg-slate-50 border-2 border-slate-200">
-            <OrdersTable
+            <StockMovementTable
               columns={ordersColumns}
               data={orders || []}
               isLoading={isLoading}
@@ -165,21 +161,6 @@ export default function OrdersPage() {
               selectedRows={selectedRows}
             />
           </div>
-
-          {/* {pagination && (
-            <div className="p-2 flex w-full  justify-center min-w-0  ">
-              <div className=" ">
-                <PaginationControls
-                  currentPage={pagination.currentPage}
-                  totalPages={pagination.totalPages}
-                  pageSize={pagination.pageSize}
-                  total={pagination.total}
-                  onPageChange={handlePageChange}
-                  onPageSizeChange={handlePageSizeChange}
-                />
-              </div>
-            </div>
-          )} */}
           {pagination && (
             <div className="p-2 flex w-full  justify-center min-w-0  ">
               <div className=" ">
@@ -205,12 +186,12 @@ export default function OrdersPage() {
               isMobile ? "fixed inset-0 z-50 m-0" : "w-[70%]"
             )}
           >
-            <OrderDetails
+            {/* <OrderDetails
               order={finalSelectedOrder}
               isMobile={isMobile}
               handleClose={handleCloseDetails}
               onSave={handleUpdateOrder}
-            />
+            /> */}
           </div>
         )}
       </div>

@@ -25,28 +25,6 @@ export type InsertOrder = typeof orders.$inferInsert;
 export type OrderItem = typeof orderItems.$inferSelect;
 export type InsertOrderItem = typeof orderItems.$inferInsert;
 
-// Extended types for UI and API
-// export interface OrderWithItems extends Order {
-//   items?: OrderItem[];
-//   customer?: {
-//     customerNumber: number;
-//     displayName: string;
-//   };
-//   creator?: {
-//     firstName: string;
-//     lastName: string;
-//   };
-//   address?: {
-//     address1?: string | null;
-//     address2?: string | null;
-//     city?: string | null;
-//     country?: string | null;
-//     postalCode?: string | null;
-//   };
-// }
-
-
-
 export const OrderTable = z.object({
     orderId: z.string().uuid(),
     orderNumber: z.number().positive(),

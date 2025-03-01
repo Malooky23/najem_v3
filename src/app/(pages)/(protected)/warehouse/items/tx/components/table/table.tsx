@@ -6,28 +6,29 @@ import { cn } from "@/lib/utils"
 import { useMemo } from "react"
 import { EnrichedOrders, OrderSortField } from "@/types/orders"
 import { ChevronUp, ChevronDown } from "lucide-react"
+import { EnrichedStockMovementView, StockMovementSort, StockMovementSortFields } from "@/types/stockMovement"
 
 interface OrdersTableProps {
-  columns: ColumnDef<EnrichedOrders, any>[]
-  data: EnrichedOrders[]
+  columns: ColumnDef<EnrichedStockMovementView, any>[]
+  data: EnrichedStockMovementView[]
   isLoading?: boolean
-  onRowClick?: (order: EnrichedOrders) => void
+  onRowClick?: (order: EnrichedStockMovementView) => void
   selectedId?: string
   isCompact?: boolean
-  onSort?: (field: OrderSortField, direction: 'asc' | 'desc') => void
-  sortField?: OrderSortField
+  onSort?: (field: StockMovementSort['field'], direction: 'asc' | 'desc') => void
+  sortField?: StockMovementSortFields
   sortDirection?: 'asc' | 'desc'
   onRowSelectionChange?: (selection: RowSelectionState) => void;
   selectedRows?: RowSelectionState;
 }
 
-type ExtendedColumnDef = ColumnDef<EnrichedOrders, any> & {
+type ExtendedColumnDef = ColumnDef<EnrichedStockMovementView, any> & {
   accessorKey?: string;
   id?: string;
   header?: string | ((props: any) => React.ReactNode);
 };
 
-export function OrdersTable({
+export function StockMovementTable({
   columns,
   data,
   isLoading,
@@ -62,11 +63,11 @@ export function OrdersTable({
 
   // Define which columns to show in compact mode and add sorting
   const visibleColumns = useMemo(() => {
-    const sortableFields: OrderSortField[] = ['orderNumber', 'status', 'createdAt', 'customerName']
+    const sortableFields: StockMovementSort['field'][] = ['createdAt']
 
     return columns.map((column: ExtendedColumnDef) => {
       const columnId = column.accessorKey || column.id
-      if (!columnId || !sortableFields.includes(columnId as OrderSortField)) {
+      if (!columnId || !sortableFields.includes(columnId as StockMovementSort['field'])) {
         return column
       }
 
@@ -82,10 +83,10 @@ export function OrdersTable({
         header: () => (
           <div
             className=" flex  items-center gap-1 cursor-pointer select-none "
-            onClick={() => {
-              const isAsc = sortField === columnId && sortDirection === 'asc'
-              onSort?.(columnId as OrderSortField, isAsc ? 'desc' : 'asc')
-            }}
+            // onClick={() => {
+            //   const isAsc = sortField === columnId && sortDirection === 'asc'
+            //   onSort?.(columnId as StockMovementSort['field'], isAsc ? 'desc' : 'asc')
+            // }}
           >
             <span className={cn("",
               originalHeader === "#" ? 
@@ -101,17 +102,17 @@ export function OrdersTable({
               <ChevronUp strokeWidth="4px"
                 className={cn(
                   "h-4 w-4 -mb-1",
-                  sortField === columnId && sortDirection === 'asc'
-                    ? "text-foreground"
-                    : "text-muted-foreground/30"
+                  // sortField === columnId && sortDirection === 'asc'
+                  //   ? "text-foreground"
+                  //   : "text-muted-foreground/30"
                 )}
               />
               <ChevronDown strokeWidth="4px"
                 className={cn(
                   "h-4 w-4 -mt-1",
-                  sortField === columnId && sortDirection === 'desc'
-                    ? "text-foreground"
-                    : "text-muted-foreground/30"
+                  // sortField === columnId && sortDirection === 'desc'
+                  //   ? "text-foreground"
+                  //   : "text-muted-foreground/30"
                 )}
               />
             </div>
@@ -128,7 +129,7 @@ export function OrdersTable({
     if (isCompact) {
       return visibleColumns.filter((column: ExtendedColumnDef) => {
         const columnId = column.accessorKey || column.id
-        return ['orderNumber', 'customerName', 'status', "items"].includes(columnId || '')
+        return ['movementType', 'customerDisplayName', 'itemName'].includes(columnId || '')
       })
     }
     return visibleColumns
@@ -139,17 +140,17 @@ export function OrdersTable({
   const filterableColumns = useMemo(() => {
     if (isCompact) {
       return [
-        { id: "orderNumber", title: "Order Number" },
-        { id: "status", title: "Status" },
-        { id: "customerName", title: "Customer" },
+        { id: "movementType", title: "movementType" },
+        { id: "customerDisplayName", title: "customerDisplayName" },
+        { id: "itemName", title: "itemName" },
 
 
       ]
     }
     return [
-      { id: "orderNumber", title: "Order Number" },
-      { id: "status", title: "Status" },
-      { id: "customerName", title: "Customer" },
+      { id: "movementType", title: "movementType" },
+      { id: "customerDisplayName", title: "customerDisplayName" },
+      { id: "itemName", title: "itemName" },
 
     ]
   }, [isCompact])
@@ -164,7 +165,7 @@ export function OrdersTable({
         filterableColumns={filterableColumns}
         pageSize={isCompact ? 25 : 50}
         onRowSelectionChange={onRowSelectionChange}
-        onRowClick={(row: EnrichedOrders) => {
+        onRowClick={(row: EnrichedStockMovementView) => {
           const order = row
           if (onRowClick) {
             onRowClick(order)
@@ -173,7 +174,7 @@ export function OrdersTable({
         rowClassName={(row) =>
           cn(
             "hover:bg-slate-200 cursor-pointer",
-            selectedId === (row as EnrichedOrders).orderId && "bg-blue-50 hover:bg-blue-100"
+            selectedId === (row as EnrichedStockMovementView).movementId && "bg-blue-50 hover:bg-blue-100"
           )
         }
       />
