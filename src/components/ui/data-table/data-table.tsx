@@ -35,7 +35,10 @@ interface DataTableProps<TData, TValue> {
   pageSize?: number
   onRowClick?: (row: TData) => void
   rowClassName?: (row: TData) => string
-  onRowSelectionChange?: (selection: RowSelectionState) => void // Updated type
+  onRowSelectionChange?: (selection: RowSelectionState) => void
+  onSort?: (field: string, direction: 'asc' | 'desc') => void
+  sortField?: string
+  sortDirection?: 'asc' | 'desc'
 }
 
 type Column = {
@@ -55,10 +58,26 @@ export function DataTable<TData, TValue>({
   filterableColumns = [], // Add default value
   onRowClick,
   rowClassName,
-  onRowSelectionChange
+  onRowSelectionChange,
+  onSort,
+  sortField,
+  sortDirection
 }: DataTableProps<TData, TValue>) {
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
-  const [sorting, setSorting] = React.useState<SortingState>([])
+  const sorting = React.useMemo<SortingState>(() => {
+    if (sortField && sortDirection) {
+      return [{ id: sortField, desc: sortDirection === 'desc' }]
+    }
+    return []
+  }, [sortField, sortDirection])
+
+  const handleSortingChange = React.useCallback((updaterOrValue: SortingState | ((old: SortingState) => SortingState)) => {
+    const newSorting = typeof updaterOrValue === 'function' ? updaterOrValue([]) : updaterOrValue
+    if (onSort && newSorting.length > 0) {
+      const { id, desc } = newSorting[0]
+      onSort(id, desc ? 'desc' : 'asc')
+    }
+  }, [onSort])
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({})
 
 
@@ -69,7 +88,7 @@ export function DataTable<TData, TValue>({
     onColumnFiltersChange: setColumnFilters,
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    onSortingChange: setSorting,
+    onSortingChange: handleSortingChange,
     // onRowSelectionChange: setRowSelection,
     onRowSelectionChange: (updatedSelection) => {
       setRowSelection(updatedSelection);

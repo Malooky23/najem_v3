@@ -62,8 +62,19 @@ export async function getStockMovements(
             conditions = sql`WHERE ${and(...whereClauses)}`;
         }
 
-        // Determine ORDER BY clause
-        const orderBySql = sql`ORDER BY ${sort.field} ${sort.direction === 'desc' ? sql`DESC` : sql`ASC`}`;
+        // Map sort field to database column name
+        const sortFieldMap: Record<StockMovementSortFields, string> = {
+            createdAt: 'created_at',
+            movementType: 'movement_type',
+            quantity: 'quantity',
+            itemName: 'item_name',
+            customerDisplayName: 'customer_display_name',
+            stockLevelAfter: 'stock_level_after',
+            movementNumber: 'movement_number'
+        };
+
+        const dbSortField = sortFieldMap[sort.field] || 'created_at';
+        const orderBySql = sql`ORDER BY ${sql.raw(dbSortField)} ${sort.direction === 'desc' ? sql`DESC` : sql`ASC`}`;
 
         // Construct the main query
         const rawQuery = sql<StockMovementsView[]>`
@@ -88,6 +99,7 @@ export async function getStockMovements(
             // Validate and transform dates
             return {
                 movementId: stockMovementsView.movement_id,
+                movementNumber: stockMovementsView.movement_number,
                 itemId: stockMovementsView.item_id,
                 locationId: stockMovementsView.location_id,
                 movementType: stockMovementsView.movement_type,
@@ -100,6 +112,7 @@ export async function getStockMovements(
                 itemName: stockMovementsView.item_name,
                 customerId: stockMovementsView.customer_id,
                 customerDisplayName: stockMovementsView.customer_display_name,
+                stockLevelAfter: stockMovementsView.stock_level_after
             }
 
 

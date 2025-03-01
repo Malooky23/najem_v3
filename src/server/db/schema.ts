@@ -295,6 +295,8 @@ export const stockReconciliation = pgTable("stock_reconciliation", {
 
 export const stockMovements = pgTable("stock_movements", {
   movementId: uuid("movement_id").defaultRandom().primaryKey(),
+  movementNumber: serial("movement_number").notNull(),
+
   itemId: uuid("item_id")
     .notNull()
     .references(() => items.itemId),
@@ -407,24 +409,24 @@ export const orderHistory = pgTable("order_history", {
   orderId: uuid("order_id")
     .notNull()
     .references(() => orders.orderId, { onDelete: "cascade" }),
-  
+
   // What changed
   changeType: orderHistoryType("change_type").notNull(),
-  
+
   // Store the changes
   previousValues: json("previous_values").notNull(),
   newValues: json("new_values").notNull(),
-  
+
   // Who made the change
   changedBy: uuid("changed_by")
     .notNull()
     .references(() => users.userId),
-    
+
   // When the change was made
   changedAt: timestamp("changed_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
-    
+
   // Optional note about the change
   changeNote: text("change_note"),
 });
@@ -603,6 +605,7 @@ export const itemStockRelations = relations(itemStock, ({ one }) => ({
 // Define the view using pgView and explicit schema
 export const stockMovementsView = pgView("stock_movements_view", {
   movementId: uuid("movement_id").notNull(),
+  movementNumber: integer("movement_number").notNull(),
   itemId: uuid("item_id").notNull(),
   locationId: uuid("location_id").notNull(),
   movementType: text("movement_type").notNull(),
@@ -615,25 +618,51 @@ export const stockMovementsView = pgView("stock_movements_view", {
   itemName: text("item_name").notNull(),
   customerId: uuid("customer_id").notNull(),
   customerDisplayName: varchar("customer_display_name", { length: 100 }), // Match length from customers table
+  stockLevelAfter: integer("stock_level_after").notNull(),
 }).as(sql`
+    WITH MovementBalances AS (
+      SELECT
+        sm.movement_id,
+        sm.movement_number,
+        sm.item_id,
+        sm.location_id,
+        sm.movement_type,
+        sm.quantity,
+        sm.reference_type,
+        sm.reference_id,
+        sm.notes,
+        sm.created_by,
+        sm.created_at,
+        SUM(CASE
+          WHEN sm.movement_type = 'IN' THEN sm.quantity
+          ELSE -sm.quantity
+        END) OVER (
+          PARTITION BY sm.item_id, sm.location_id
+          ORDER BY sm.created_at
+          ROWS UNBOUNDED PRECEDING
+        ) as stock_level_after
+      FROM ${stockMovements} sm
+    )
     SELECT
-      sm.movement_id,
-      sm.item_id,
-      sm.location_id,
-      sm.movement_type,
-      sm.quantity,
-      sm.reference_type,
-      sm.reference_id,
-      sm.notes,
-      sm.created_by,
-      sm.created_at,
+      mb.movement_id,
+      mb.movement_number,
+      mb.item_id,
+      mb.location_id,
+      mb.movement_type,
+      mb.quantity,
+      mb.reference_type,
+      mb.reference_id,
+      mb.notes,
+      mb.created_by,
+      mb.created_at,
       i.item_name,
       i.customer_id,
-      c.display_name AS customer_display_name
+      c.display_name AS customer_display_name,
+      mb.stock_level_after
     FROM
-      ${stockMovements} sm
+      MovementBalances mb
     JOIN
-      ${items} i ON sm.item_id = i.item_id
+      ${items} i ON mb.item_id = i.item_id
     JOIN
       ${customers} c ON i.customer_id = c.customer_id
   `);

@@ -2,7 +2,7 @@
 
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
-import { ArrowUpDown, MoreHorizontal } from "lucide-react"
+import { ArrowUpDown, MoreHorizontal, ChevronUp, ChevronDown } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
   DropdownMenu,
@@ -13,23 +13,18 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { formatInTimeZone, toDate } from "date-fns-tz"
-import { StockMovementsView } from "@/server/db/schema"
+import { EnrichedStockMovementView, StockMovementSortFields } from "@/types/stockMovement"
+import { cn } from "@/lib/utils"
 
 
 const StatusCell = ({ status }: { status: string }) => {
   const getStatusStyles = (status: string) => {
     const baseStyles = "px-2 py-1 rounded-full text-xs font-semibold w-24 text-center inline-block"
     const statuses: { [key: string]: string } = {
-      "DRAFT": "bg-gray-500/20 text-gray-700",
-      "PENDING": "bg-yellow-500/20 text-yellow-700",
-      "PROCESSING": "bg-blue-500/20 text-blue-700",
-      "COMPLETED": "bg-green-500/20 text-green-700",
-      "READY": "bg-purple-500/20 text-purple-700",
-      "CANCELLED": "bg-red-500/20 text-red-700",
       "IN": "bg-green-500/20 text-green-700",
-      "OUT": "bg-red-500/20 text-red-700",
+      "OUT": "bg-red-500/20 text-red-700"
     }
-    return `${baseStyles} ${statuses[status] || statuses["PENDING"]}`
+    return `${baseStyles} ${statuses[status] || "bg-gray-500/20 text-gray-700"}`
   }
 
   return (
@@ -39,7 +34,7 @@ const StatusCell = ({ status }: { status: string }) => {
   )
 }
 
-export const stockMovementColumns: ColumnDef<StockMovementsView>[] = [
+export const stockMovementColumns: ColumnDef<EnrichedStockMovementView>[] = [
   // {
   //   id: "select",
   //   header: ({ table }) => (
@@ -83,62 +78,57 @@ export const stockMovementColumns: ColumnDef<StockMovementsView>[] = [
     enableSorting: false,
     enableHiding: false,
   },
-  // {
-  //   accessorKey: "orderNumber",
-  //   header:  "#",
-  //   cell: ({ row }) => <div className="flex flex-1 justify-center"> {row.getValue("orderNumber")}</div>,
-
-  //   // header: ({ column }) => {
-  //   //   return (
-  //   //     <Button
-  //   //       variant="ghost"
-  //   //       className="flex justify-start px-0"
-  //   //       onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-  //   //     >
-  //   //       #
-  //   //       <ArrowUpDown className="h-4 w-4" />
-  //   //     </Button>
-  //   //   )
-  //   // },
-  // },
+  {
+    accessorKey: "movementNumber",
+    header: "Movement #",
+    enableSorting: true,
+  },
   {
     accessorKey: "movementType",
-    header: "movement Type",
-    // header: () => <div className="text-center w-full">Status</div>,
+    header: "Movement Type",
+    enableSorting: true,
     cell: ({ row }) => <StatusCell status={row.getValue("movementType")} />,
   },
   {
     accessorKey: "quantity",
-    header: "quantity",
+    header: "Quantity",
+    enableSorting: true,
+  },
+  {
+    accessorKey: "stockLevelAfter",
+    header: "Stock Level",
+    enableSorting: true,
+    cell: ({ row }) => {
+      const level = row.getValue("stockLevelAfter") as number;
+      return (
+        <div className={cn(
+          "font-medium",
+          level <= 0 ? "text-red-600" : level < 10 ? "text-amber-600" : "text-green-600"
+        )}>
+          {level.toLocaleString()}
+        </div>
+      );
+    },
   },
   {
     accessorKey: "itemName",
     header: "Item Name",
+    enableSorting: true,
   },
   {
     accessorKey: "customerDisplayName",
     header: "Customer",
+    enableSorting: true,
   },
   {
     accessorKey: "createdAt",
-    cell: ({ row }) => {
-      return (
-        <div className=" ">
-          {formatInTimeZone(toDate(row.getValue("createdAt")), "Asia/Dubai", "EEE, dd-MM-yyyy")}
-
-        </div>)
-    },
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Date
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      )
-    },
+    header: "Date",
+    cell: ({ row }) => (
+      <div>
+        {formatInTimeZone(toDate(row.getValue("createdAt")), "Asia/Dubai", "EEE, HH:MM dd-MM-yyyy")}
+      </div>
+    ),
+    enableSorting: true,
   },
   {
     id: "actions",
@@ -157,8 +147,9 @@ export const stockMovementColumns: ColumnDef<StockMovementsView>[] = [
               Copy Movement ID
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Test 1</DropdownMenuItem>
-            <DropdownMenuItem>Test 2</DropdownMenuItem>
+            <DropdownMenuItem>View Item Details</DropdownMenuItem>
+            <DropdownMenuItem>View Customer Details</DropdownMenuItem>
+            <DropdownMenuItem>Print Movement Record</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       )

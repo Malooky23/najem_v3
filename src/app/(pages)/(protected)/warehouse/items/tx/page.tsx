@@ -7,7 +7,8 @@ import { useMediaQuery } from "@/hooks/use-media-query"
 import { cn } from "@/lib/utils"
 import { useStockMovements } from "@/hooks/data-fetcher"
 import { PaginationControls } from "@/components/ui/pagination-controls"
-import { RowSelectionState } from "@tanstack/react-table"
+import { RowSelectionState, ColumnDef } from "@tanstack/react-table"
+import { ChevronUp, ChevronDown } from "lucide-react"
 import {
   StockMovementSort,
   type StockMovementSortFields,
@@ -22,19 +23,19 @@ export default function StockMovementPage() {
   // Get URL parameters
   const page = Number(searchParams.get('page')) || 1
   const pageSize = Number(searchParams.get('pageSize')) || 10
-  const sortField = (searchParams.get('sort') || 'createdAt') as StockMovementSortFields;
+  const sortField = (searchParams.get('sort') || 'createdAt') as StockMovementSortFields
   const sortDirection = (searchParams.get('direction') || 'desc') as 'asc' | 'desc'
 
-  // Get orderId from URL for details view
-  const selectedOrderId = searchParams.get('orderId')
-  const isDetailsOpen = !!selectedOrderId
+  // Get movement ID from URL for details view
+  const selectedMovementId = searchParams.get('movementId')
+  const isDetailsOpen = !!selectedMovementId
 
   const sort: StockMovementSort = {
     field: sortField,
     direction: sortDirection
   }
 
-  const { data: orders, pagination, isLoading, error, invalidateOrders } = useStockMovements({
+  const { data: movements, pagination, isLoading, error } = useStockMovements({
     page,
     pageSize,
     sort
@@ -53,11 +54,11 @@ export default function StockMovementPage() {
   }, [searchParams, router])
 
   const handleCloseDetails = useCallback(() => {
-    updateUrlParams({ orderId: null })
+    updateUrlParams({ movementId: null })
   }, [updateUrlParams])
 
-  const handleOrderClick = useCallback((order: EnrichedStockMovementView) => {
-    updateUrlParams({ orderId: order.movementId })
+  const handleMovementClick = useCallback((movement: EnrichedStockMovementView) => {
+    updateUrlParams({ movementId: movement.movementId })
   }, [updateUrlParams])
 
   const handlePageChange = useCallback((newPage: number) => {
@@ -71,88 +72,60 @@ export default function StockMovementPage() {
     })
   }, [updateUrlParams])
 
-  const handleSortChange = useCallback((field: string, direction: 'asc' | 'desc') => {
+  const handleSortChange = useCallback((field: StockMovementSortFields, direction: 'asc' | 'desc') => {
     updateUrlParams({
       sort: field,
       direction: direction
     })
   }, [updateUrlParams])
 
-  const handleUpdateOrder = async (updatedOrder: EnrichedOrders) => {
-    try {
-      const result = await updateOrder(updatedOrder)
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to update order')
-      }
-
-      await invalidateOrders()
-      return result
-    } catch (error) {
-      console.error('Error updating order:', error)
-      throw error
-    }
-  }
-
-
   if (error) {
     return (
       <div className="p-4 rounded-md border border-red-200 bg-red-50 text-red-700">
-        Error loading orders: {error instanceof Error ? error.message : 'Unknown error'}
+        Error loading movements: {error instanceof Error ? error.message : 'Unknown error'}
       </div>
     )
   }
-  const selectedOrder = orders?.find(order => order.movementId === selectedOrderId) ?? null
-  const { data: orderDetails } = useOrderDetails(selectedOrderId, selectedOrder)
 
-  const finalSelectedOrder = selectedOrder ?? orderDetails ?? null
+  const [selectedRows, setSelectedRows] = useState<RowSelectionState>({})
+  const handleRowSelection = (selection: RowSelectionState) => {
+    setSelectedRows(selection)
+    
+    // Get the selected items
+    const selectedItems = Object.keys(selection)
+      .filter(key => selection[key])
+      .map(key => movements[parseInt(key)])
+
+    console.log("Selected movements:", selectedItems)
+  }
 
   useEffect(() => {
     if (pagination?.totalPages && page > pagination.totalPages) {
       updateUrlParams({ page: pagination.totalPages.toString() })
     }
   }, [page, pagination?.totalPages, updateUrlParams])
-  
-  const [selectedRows, setSelectedRows] = useState<RowSelectionState>({});
-  const handleRowSelection = (selection: RowSelectionState) => {
-    setSelectedRows(selection);
-    
-    // Get the selected items
-    const selectedItems = Object.keys(selection)
-      .filter(key => selection[key])
-      .map(key => orders[parseInt(key)]);
-
-      //DO SOMETHING WITH THE SELECTED ITEMS
-      console.log("Do something with selected items", JSON.stringify(selectedItems,null,2))
-  };
 
   return (
-    // <div className="px-4 h-[94vh] flex flex-col ">
     <div className="px-4 h-[calc(100vh-3rem)] flex flex-col">
-
-      <div className="flex justify-between  m-2">
-        {/* <Badge variant={'outline'} className="bg-slate-50 border-black"> */}
-
-        <h1 className="text-2xl font-bold text-gray-900 ">
+      <div className="flex justify-between m-2">
+        <h1 className="text-2xl font-bold text-gray-900">
           Item Movements
         </h1>
-        {/* </Badge> */}
-        <CreateOrderDialog isMobile={isMobile} />
       </div>
       <div className="flex gap-4 flex-1 min-h-0 overflow-hidden">
-        {/* Table section - responsive width */}
         <div
           className={cn(
             "flex flex-col rounded-md transition-all duration-300",
             isMobile ? (isDetailsOpen ? "hidden" : "w-full") : (isDetailsOpen ? "w-[40%]" : "w-full"),
           )}
         >
-          <div className="flex-1  overflow-hidden flex flex-col rounded-lg bg-slate-50 border-2 border-slate-200">
+          <div className="flex-1 overflow-hidden flex flex-col rounded-lg bg-slate-50 border-2 border-slate-200">
             <StockMovementTable
-              columns={ordersColumns}
-              data={orders || []}
+              columns={stockMovementColumns}
+              data={movements || []}
               isLoading={isLoading}
-              onRowClick={handleOrderClick}
-              selectedId={selectedOrderId || undefined}
+              onRowClick={handleMovementClick}
+              selectedId={selectedMovementId || undefined}
               isCompact={isDetailsOpen || isMobile}
               onSort={handleSortChange}
               sortField={sortField}
@@ -162,23 +135,20 @@ export default function StockMovementPage() {
             />
           </div>
           {pagination && (
-            <div className="p-2 flex w-full  justify-center min-w-0  ">
-              <div className=" ">
-                <PaginationControls
-                  currentPage={pagination.currentPage}
-                  totalPages={pagination.totalPages}
-                  pageSize={pagination.pageSize}
-                  total={pagination.total}
-                  onPageChange={handlePageChange}
-                  onPageSizeChange={handlePageSizeChange}
-                  selectedRows={Object.keys(selectedRows).filter(key => selectedRows[key]).length}
-                  />
-              </div>
+            <div className="p-2 flex w-full justify-center min-w-0">
+              <PaginationControls
+                currentPage={pagination.currentPage}
+                totalPages={pagination.totalPages}
+                pageSize={pagination.pageSize}
+                total={pagination.total}
+                onPageChange={handlePageChange}
+                onPageSizeChange={handlePageSizeChange}
+                selectedRows={Object.keys(selectedRows).filter(key => selectedRows[key]).length}
+              />
             </div>
           )}
         </div>
 
-        {/* Details section - responsive */}
         {isDetailsOpen && (
           <div
             className={cn(
@@ -186,30 +156,10 @@ export default function StockMovementPage() {
               isMobile ? "fixed inset-0 z-50 m-0" : "w-[70%]"
             )}
           >
-            {/* <OrderDetails
-              order={finalSelectedOrder}
-              isMobile={isMobile}
-              handleClose={handleCloseDetails}
-              onSave={handleUpdateOrder}
-            /> */}
+            {/* Movement details component will be implemented later */}
           </div>
         )}
       </div>
-      {/* {pagination && (
-            <div className="p-2 flex w-full  justify-center min-w-0  ">
-              <div className=" ">
-                <PaginationControls
-                  currentPage={pagination.currentPage}
-                  totalPages={pagination.totalPages}
-                  pageSize={pagination.pageSize}
-                  total={pagination.total}
-                  onPageChange={handlePageChange}
-                  onPageSizeChange={handlePageSizeChange}
-                  selectedRows={Object.keys(selectedRows).filter(key => selectedRows[key]).length}
-                  />
-              </div>
-            </div>
-          )} */}
     </div>
   )
 }

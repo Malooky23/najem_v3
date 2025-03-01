@@ -1,6 +1,14 @@
+import { m } from "motion/react";
 import { custom, z } from "zod";
 
-export type StockMovementSortFields = 'createdAt' ;
+export type StockMovementSortFields =
+    | 'createdAt'
+    | 'movementType'
+    | 'quantity'
+    | 'itemName'
+    | 'customerDisplayName'
+    | 'stockLevelAfter'
+    | 'movementNumber';
 export const movementType = z.enum(['IN', 'OUT']);
 export type MovementType = z.infer<typeof movementType>;
 
@@ -33,6 +41,7 @@ export const stockReconciliation = z.object({
 });
 export const stockMovement = z.object({
     movementId: z.string(),
+    movementNumber: z.coerce.number(),
     itemId: z.string(),
     locationId: z.string(),
     movementType: z.enum(["IN", "OUT"]),
@@ -47,6 +56,7 @@ export const stockMovementsView = stockMovement.extend({
     itemName: z.string(),
     customerId: z.string(),
     customerDisplayName: z.string(),
+    stockLevelAfter: z.coerce.number(),
 });
 
 export type StockMovementTable = z.infer<typeof stockMovement>
