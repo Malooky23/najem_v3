@@ -83,10 +83,11 @@ export function SearchBar({isLoading}: SearchBarProps) {
   }
 
   return (
-    <div className="space-y-2 bg-white p-4 rounded-lg border">
-      <div className="flex gap-2">
+    // <div className="space-y-2 bg-red-500 p-4 rounded-lg border">
+    <div className="space-y-2   ">
+      <div className="flex gap-2 ">
 
-        <div className="flex-1 relative">
+        <div className="flex-1 relative rounded-lg bg-white">
         {isLoading ? (
           <LoaderCircle color="#f56b16"
           className={cn(
@@ -126,8 +127,8 @@ export function SearchBar({isLoading}: SearchBarProps) {
 
       <div
         className={cn(
-          "grid gap-4 overflow-hidden transition-all duration-200",
-          isExpanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+          "grid gap-4 overflow-hidden transition-all duration-200 ",
+          isExpanded ? "grid-rows-[1fr] pb-4 px-4 bg-white rounded-lg border" : "grid-rows-[0fr]"
         )}
       >
         <div className="min-h-0">

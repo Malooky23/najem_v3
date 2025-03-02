@@ -121,26 +121,26 @@ export function StockMovementTable({
     return visibleColumns
   }, [visibleColumns, isCompact])
 
-  const filterableColumns = useMemo(() => {
-    if (isCompact) {
-      return [
-        { id: "movementType", title: "Movement Type" },
-        { id: "customerDisplayName", title: "Customer" },
-        { id: "itemName", title: "Item" },
-        { id: "quantity", title: "Quantity" },
-        { id: "movementNumber", title: "Movement Number" },
-        { id: "createdAt", title: "Date" },
-      ]
-    }
-    return [
-      { id: "movementType", title: "Movement Type" },
-      { id: "customerDisplayName", title: "Customer" },
-      { id: "itemName", title: "Item" },
-      { id: "quantity", title: "Quantity" },
-      { id: "movementNumber", title: "Movement Number" },
-      { id: "createdAt", title: "Date" },
-    ]
-  }, [isCompact])
+  // const filterableColumns = useMemo(() => {
+  //   if (isCompact) {
+  //     return [
+  //       { id: "movementType", title: "Movement Type" },
+  //       { id: "customerDisplayName", title: "Customer" },
+  //       { id: "itemName", title: "Item" },
+  //       { id: "quantity", title: "Quantity" },
+  //       { id: "movementNumber", title: "Movement Number" },
+  //       { id: "createdAt", title: "Date" },
+  //     ]
+  //   }
+  //   return [
+  //     { id: "movementType", title: "Movement Type" },
+  //     { id: "customerDisplayName", title: "Customer" },
+  //     { id: "itemName", title: "Item" },
+  //     { id: "quantity", title: "Quantity" },
+  //     { id: "movementNumber", title: "Movement Number" },
+  //     { id: "createdAt", title: "Date" },
+  //   ]
+  // }, [isCompact])
 
   return (
     <div className="h-full flex-1 overflow-hidden rounded-md">
@@ -149,7 +149,7 @@ export function StockMovementTable({
         data={data}
         isLoading={isLoading}
         columnWidths={columnWidths}
-        filterableColumns={filterableColumns}
+        // filterableColumns={filterableColumns}
         pageSize={isCompact ? 25 : 50}
         onRowSelectionChange={onRowSelectionChange}
         onRowClick={(row: EnrichedStockMovementView) => {

@@ -5,9 +5,9 @@ import { EnrichedCustomer } from "@/types/customer";
 import { EnrichedOrders, type OrderFilters, type OrderSort } from "@/types/orders";
 import { getSession } from 'next-auth/react';
 import { getOrders, getOrderById } from "@/server/actions/orders";
-import { getStockMovements } from "@/server/actions/actn_stockMovements";
 import { EnrichedStockMovementView, StockMovementFilters, StockMovementSort } from "@/types/stockMovement";
 import { StockMovement } from "@/server/db/schema";
+import { getStockMovements} from "@/server/actions/getStockMovements";
 
 
 export interface OrdersQueryParams {
@@ -180,10 +180,7 @@ export interface StockMovementsQueryResult {
   };
 }
 
-
-export function useStockMovements(params: StockMovementsQueryParams = {}) {
-  const queryClient = useQueryClient();
-  
+export function useStockMovements(params: StockMovementsQueryParams = {}) {  
   const query = useQuery<StockMovementsQueryResult>({
     queryKey: ['stockMovements', params],
     queryFn: async () => {
@@ -201,7 +198,6 @@ export function useStockMovements(params: StockMovementsQueryParams = {}) {
       if (!result.data) {
         throw new Error('Failed to fetch stock Movements, no data');
       }
-
       return {
         data: result.data.data,
         pagination: result.data.pagination
@@ -216,21 +212,8 @@ export function useStockMovements(params: StockMovementsQueryParams = {}) {
     retry: 1
     
   });
-
-  const invalidateOrders = async () => {
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ['orders'] }),
-      queryClient.invalidateQueries({ queryKey: ['items'] })
-    ]);
-    
-    return Promise.all([
-      query.refetch(),
-      queryClient.refetchQueries({ queryKey: ['items'] })
-    ]);
-  };
   return {
     ...query,
-    invalidateOrders,
     data: query.data?.data || [],
     pagination: query.data?.pagination
   };

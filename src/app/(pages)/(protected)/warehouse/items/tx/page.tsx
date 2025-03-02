@@ -5,7 +5,6 @@ import { StockMovementTable } from "./components/table/table"
 import { stockMovementColumns } from "./components/table/columns"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import { cn } from "@/lib/utils"
-import { useStockMovements } from "@/hooks/data-fetcher"
 import { PaginationControls } from "@/components/ui/pagination-controls"
 import { RowSelectionState } from "@tanstack/react-table"
 import { SearchBar } from "./components/search/SearchBar"
@@ -16,6 +15,7 @@ import {
   type StockMovementFilters,
   type MovementType
 } from "@/types/stockMovement"
+import { useStockMovements } from "@/hooks/data-fetcher"
 
 export default function StockMovementPage() {
   const searchParams = useSearchParams()
@@ -138,9 +138,9 @@ export default function StockMovementPage() {
         <h1 className="text-2xl font-bold text-gray-900">
           Item Movements
         </h1>
+      <SearchBar isLoading={pending} />
       </div>
       
-      <SearchBar isLoading={pending} />
       
       <div className="flex gap-4 flex-1 min-h-0 overflow-hidden mt-4">
         <div

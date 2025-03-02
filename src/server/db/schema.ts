@@ -15,6 +15,7 @@ import {
   primaryKey,
   foreignKey,
   pgView,
+  pgMaterializedView,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { relations } from 'drizzle-orm';
@@ -601,9 +602,7 @@ export const itemStockRelations = relations(itemStock, ({ one }) => ({
 }));
 
 
-
-// Define the view using pgView and explicit schema
-export const stockMovementsView = pgView("stock_movements_view", {
+export const stockMovementsView = pgMaterializedView("stock_movements_view", {
   movementId: uuid("movement_id").notNull(),
   movementNumber: integer("movement_number").notNull(),
   itemId: uuid("item_id").notNull(),
@@ -618,7 +617,7 @@ export const stockMovementsView = pgView("stock_movements_view", {
   itemName: text("item_name").notNull(),
   customerId: uuid("customer_id").notNull(),
   customerDisplayName: varchar("customer_display_name", { length: 100 }), // Match length from customers table
-  stockLevelAfter: integer("stock_level_after").notNull(),
+  stockLevelAfter: integer("stock_level_after"), // Use numeric for SUM OVER window function result
 }).as(sql`
     WITH MovementBalances AS (
       SELECT

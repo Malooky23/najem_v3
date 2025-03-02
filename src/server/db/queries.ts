@@ -54,7 +54,7 @@ export const QUERIES = {
   },
 
   getUserById: async function (userId: string, delayMs?: number) {
-    await new Promise((resolve) => setTimeout(resolve, 3000))
+    // await new Promise((resolve) => setTimeout(resolve, 3000))
     const user = await db.select().from(schema.users).where(eq(schema.users.userId, userId));
     if (user.length === 0) {
       return null;

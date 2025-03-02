@@ -142,8 +142,6 @@ export function OrdersTable({
         { id: "orderNumber", title: "Order Number" },
         { id: "status", title: "Status" },
         { id: "customerName", title: "Customer" },
-
-
       ]
     }
     return [

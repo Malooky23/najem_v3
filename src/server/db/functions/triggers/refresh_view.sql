@@ -1,0 +1,18 @@
+CREATE OR REPLACE FUNCTION refresh_view() RETURNS TRIGGER AS $$
+BEGIN
+    REFRESH MATERIALIZED VIEW CONCURRENTLY stock_movements_view;
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER refresh_stock_movements_view
+    AFTER INSERT OR UPDATE OR DELETE ON stock_movements
+    FOR EACH STATEMENT
+EXECUTE PROCEDURE refresh_view();
+
+-- WE NEED TO CREATE AN INDEX ON THE VIEW TO MAKE IT WORK
+CREATE UNIQUE INDEX stock_movements_view_movement_id_idx
+ON stock_movements_view (movement_id);
+
+-- AFTER CREATING THE INDEX, WE NEED TO REFRESH THE VIEW
+REFRESH MATERIALIZED VIEW stock_movements_view;
