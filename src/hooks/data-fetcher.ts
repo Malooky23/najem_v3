@@ -187,7 +187,7 @@ export function useStockMovements(params: StockMovementsQueryParams = {}) {
   const query = useQuery<StockMovementsQueryResult>({
     queryKey: ['stockMovements', params],
     queryFn: async () => {
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      // await new Promise((resolve) => setTimeout(resolve, 1000))
       const result = await getStockMovements(
         params.page || 1,
         params.pageSize || 10,
