@@ -7,7 +7,7 @@ import { Providers } from "@/lib/providers";
 import { Toaster } from "@/components/ui/toaster";
 import { Header } from "@/components/layout/header/page";
 import Loading from "@/components/ui/loading";
-
+import { SpeedInsights } from '@vercel/speed-insights/next';
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -37,6 +37,7 @@ export default function RootLayout({
                 </div>
               }>
                 {children}
+                <SpeedInsights />
               </Suspense>
             </div>
             <Toaster />
