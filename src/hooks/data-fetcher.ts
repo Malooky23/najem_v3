@@ -211,6 +211,8 @@ export function useStockMovements(params: StockMovementsQueryParams = {}) {
     refetchOnWindowFocus: false,
     staleTime: 60 * 60 * 1, 
     // placeholderData: keepPreviousData,
+    refetchInterval: 1000 * 10,
+    refetchOnReconnect: true,
     retry: 1
     
   });

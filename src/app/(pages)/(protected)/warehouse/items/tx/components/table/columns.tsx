@@ -80,7 +80,7 @@ export const stockMovementColumns: ColumnDef<EnrichedStockMovementView>[] = [
   },
   {
     accessorKey: "movementNumber",
-    header: "Movement #",
+    header: "#",
     enableSorting: true,
   },
   {

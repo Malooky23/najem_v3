@@ -1,5 +1,5 @@
 import { ItemIndicator } from "@radix-ui/react-select";
-import { BoxesIcon, Home, ShoppingBag, TestTube2Icon, Users2, WarehouseIcon } from "lucide-react";
+import { BoxesIcon, Home, Repeat, ShoppingBag, TestTube2Icon, Users2, WarehouseIcon } from "lucide-react";
 // import { SidebarConfig } from "./types";
 
 function chicken()  {
@@ -10,6 +10,11 @@ function chicken()  {
 function Box()  {
   return (    <>
     📦
+    </>);
+};
+const ItemTx = () =>  {
+  return (    <>
+    <Repeat size={48} strokeWidth={2.25} />
     </>);
 };
 
@@ -40,5 +45,12 @@ export const sidebarConfig = {
       icon: ShoppingBag,
       label: "Orders",
     },
+    {
+      href: "/warehouse/items/tx",
+      icon: ItemTx,
+      label: "Transactions",
+    },
   ],
 }; 
+
+<Repeat size={48} strokeWidth={2.25} />
