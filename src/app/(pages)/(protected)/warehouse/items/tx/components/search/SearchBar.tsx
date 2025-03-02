@@ -128,7 +128,9 @@ export function SearchBar({isLoading}: SearchBarProps) {
       <div
         className={cn(
           "grid gap-4 overflow-hidden transition-all duration-200 ",
-          isExpanded ? "grid-rows-[1fr] pb-4 px-4 bg-white rounded-lg border" : "grid-rows-[0fr]"
+          isExpanded ? 
+          "grid-rows-[1fr] pb-4 px-4 bg-white rounded-lg border" :
+           "grid-rows-[0fr]"
         )}
       >
         <div className="min-h-0">

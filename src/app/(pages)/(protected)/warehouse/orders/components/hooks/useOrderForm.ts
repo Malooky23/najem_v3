@@ -115,6 +115,25 @@ export function useOrderForm({ order, onSave }: UseOrderFormProps): FormState {
   }
 
   const handleEdit = () => {
+    if (order.status === "COMPLETED") {
+      const confirmChange = window.confirm("Cannot modify COMPLETED order. Would you like to change status to DRAFT?")
+      if (confirmChange) {
+        form.setValue("status", "DRAFT")
+        // Save the status change immediately before allowing edits
+        handleSave().then(() => {
+          setIsEditing(true)
+        }).catch(() => {
+          // If save fails, revert the status change
+          form.setValue("status", "COMPLETED")
+          toast({
+            title: "Failed to change status",
+            description: "Could not change order status to DRAFT",
+            variant: "destructive",
+          })
+        })
+      }
+      return
+    }
     setIsEditing(true)
     form.reset(order) // Reset form with current order data when entering edit mode
   }
