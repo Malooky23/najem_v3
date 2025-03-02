@@ -7,14 +7,15 @@ import { useMediaQuery } from "@/hooks/use-media-query"
 import { cn } from "@/lib/utils"
 import { useStockMovements } from "@/hooks/data-fetcher"
 import { PaginationControls } from "@/components/ui/pagination-controls"
-import { RowSelectionState, ColumnDef } from "@tanstack/react-table"
-import { ChevronUp, ChevronDown } from "lucide-react"
+import { RowSelectionState } from "@tanstack/react-table"
+import { SearchBar } from "./components/search/SearchBar"
 import {
   StockMovementSort,
   type StockMovementSortFields,
-  type EnrichedStockMovementView
+  type EnrichedStockMovementView,
+  type StockMovementFilters,
+  type MovementType
 } from "@/types/stockMovement"
-import { is } from "drizzle-orm"
 
 export default function StockMovementPage() {
   const searchParams = useSearchParams()
@@ -27,6 +28,14 @@ export default function StockMovementPage() {
   const sortField = (searchParams.get('sort') || 'createdAt') as StockMovementSortFields
   const sortDirection = (searchParams.get('direction') || 'desc') as 'asc' | 'desc'
 
+  // Get filter parameters
+  const search = searchParams.get('search') || undefined
+  const movement = searchParams.get('movement') as MovementType | undefined
+  const itemName = searchParams.get('itemName') || undefined
+  const customerDisplayName = searchParams.get('customerDisplayName') || undefined
+  const dateFrom = searchParams.get('dateFrom')
+  const dateTo = searchParams.get('dateTo')
+
   // Get movement ID from URL for details view
   const selectedMovementId = searchParams.get('movementId')
   const isDetailsOpen = !!selectedMovementId
@@ -36,10 +45,25 @@ export default function StockMovementPage() {
     direction: sortDirection
   }
 
+  // Construct filters object
+  const filters: StockMovementFilters = {
+    ...(search && { search }),
+    ...(movement && { movement }),
+    ...(itemName && { itemName }),
+    ...(customerDisplayName && { customerDisplayName }),
+    ...(dateFrom && dateTo && {
+      dateRange: {
+        from: new Date(dateFrom),
+        to: new Date(dateTo)
+      }
+    })
+  }
+
   const { data: movements, pagination, isLoading, error, isFetching } = useStockMovements({
     page,
     pageSize,
-    sort
+    sort,
+    filters
   })
 
   const updateUrlParams = useCallback((updates: Record<string, string | null>) => {
@@ -115,7 +139,10 @@ export default function StockMovementPage() {
           Item Movements
         </h1>
       </div>
-      <div className="flex gap-4 flex-1 min-h-0 overflow-hidden">
+      
+      <SearchBar />
+      
+      <div className="flex gap-4 flex-1 min-h-0 overflow-hidden mt-4">
         <div
           className={cn(
             "flex flex-col rounded-md transition-all duration-300",
@@ -126,7 +153,7 @@ export default function StockMovementPage() {
             <StockMovementTable
               columns={stockMovementColumns}
               data={movements || []}
-              isLoading={isLoading }
+              isLoading={isLoading}
               onRowClick={handleMovementClick}
               selectedId={selectedMovementId || undefined}
               isCompact={isDetailsOpen || isMobile}

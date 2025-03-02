@@ -9,7 +9,6 @@ import { ChevronUp, ChevronDown } from "lucide-react"
 import { EnrichedStockMovementView, StockMovementSortFields } from "@/types/stockMovement"
 
 interface StockMovementTableProps {
-  // columns: ColumnDef<EnrichedStockMovementView, any>[]
   columns: ColumnDef<EnrichedStockMovementView>[]
   data: EnrichedStockMovementView[]
   isLoading?: boolean
@@ -23,10 +22,9 @@ interface StockMovementTableProps {
   selectedRows?: RowSelectionState
 }
 
-  type ExtendedColumnDef = ColumnDef<EnrichedStockMovementView> & {
+type ExtendedColumnDef = ColumnDef<EnrichedStockMovementView> & {
   id?: string;
   accessorKey?: string;
-  // accessorKey?: keyof EnrichedStockMovementView;
   header?: string | ((props: any) => React.ReactNode);
 };
 
@@ -55,12 +53,10 @@ export function StockMovementTable({
     const sortableFields: StockMovementSortFields[] = ['createdAt', 'movementType', 'quantity', 'itemName', 'customerDisplayName', 'movementNumber'];
 
     return columns.map((column: ExtendedColumnDef): ExtendedColumnDef => {
-      // return columns.map((column): ExtendedColumnDef => {
-      const columnId =  column.accessorKey || column.id
+      const columnId = column.accessorKey || column.id
       if (!columnId || !sortableFields.includes(columnId as StockMovementSortFields)) {
         return column
       }
-
 
       // Get the original header content
       const originalHeader = typeof column.header === 'string'
@@ -73,7 +69,7 @@ export function StockMovementTable({
         id: columnId,
         header: () => (
           <div
-            className=" flex  items-center gap-1 cursor-pointer select-none "
+            className="flex items-center gap-1 cursor-pointer select-none"
             onClick={() => {
               const isAsc = sortField === columnId && sortDirection === 'asc'
               onSort?.(columnId as StockMovementSortFields, isAsc ? 'desc' : 'asc')
@@ -81,15 +77,15 @@ export function StockMovementTable({
           >
             <span className={cn("",
               originalHeader === "#" ?
-                "ml-auto   text-center pr-1" : " ",
+                "ml-auto text-center pr-1" : "",
               originalHeader === "Status" ?
-                "ml-auto    text-center pr-1" : " "
+                "ml-auto text-center pr-1" : ""
             )}
             >
               {originalHeader}
             </span>
 
-            <div className="flex flex-col mr-auto items-start ">
+            <div className="flex flex-col mr-auto items-start">
               <ChevronUp strokeWidth="4px"
                 className={cn(
                   "h-4 w-4 -mb-1",
@@ -146,9 +142,8 @@ export function StockMovementTable({
     ]
   }, [isCompact])
 
-
   return (
-    <div className="h-full flex-1 overflow-hidden rounded-md ">
+    <div className="h-full flex-1 overflow-hidden rounded-md">
       <DataTable
         columns={displayColumns}
         data={data}

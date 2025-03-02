@@ -19,6 +19,7 @@ export interface StockMovementSort {
 export interface StockMovementFilters {
     customerId?: string;
     itemName?: string;
+    customerDisplayName?: string;
     dateRange?: {
         from: Date;
         to: Date;
@@ -61,4 +62,3 @@ export const stockMovementsView = stockMovement.extend({
 
 export type StockMovementTable = z.infer<typeof stockMovement>
 export type EnrichedStockMovementView = z.infer<typeof stockMovementsView>
-

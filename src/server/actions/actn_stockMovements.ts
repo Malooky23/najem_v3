@@ -2,7 +2,7 @@
 
 import { auth } from "@/lib/auth/auth";
 import { MovementType,StockMovementSortFields, EnrichedStockMovementView, stockMovementsView as stockMovementsViewSchema, StockMovementFilters, StockMovementSort } from "@/types/stockMovement";
-import { and, sql } from "drizzle-orm";
+import { and, or, sql } from "drizzle-orm";
 import { stockMovements, StockMovementsView, stockMovementsView } from "../db/schema";
 import { db } from "@/server/db";
 
@@ -32,34 +32,45 @@ export async function getStockMovements(
         if (!session) {
             return { success: false, error: "Unauthorized: Please Login." };
         }
-        // if (session.user.userType !== 'EMPLOYEE') {
-        //     return { success: false, error: "Unauthorized: User has insufficient permissions." };
-        // }
 
         const offset = (page - 1) * pageSize;
 
         // Build the WHERE clause conditions
         let conditions = sql``;
         const userType = session.user.userType
+        const whereClauses = [];
 
-        if (filters.customerId || filters.movement || filters.dateRange|| userType==='CUSTOMER') {
-            const whereClauses = [];
+        // Add user type restriction
+        if (userType === 'CUSTOMER' && session.user.customerId) {
+            whereClauses.push(sql`${stockMovementsView.customerId} = ${session.user.customerId}`);
+        }
 
-            if (userType === 'CUSTOMER') {
-                if (session.user.customerId) {
-                    whereClauses.push(sql`${stockMovementsView.customerId} = ${session.user.customerId}`);
-                }
-            }
-            if (filters.customerId) {
-                whereClauses.push(sql`${stockMovementsView.customerId} = ${filters.customerId}`);
-            }
-            if (filters.movement) {
-                whereClauses.push(sql`${stockMovementsView.movementType} = ${filters.movement}`);
-            }
-            if (filters.dateRange) {
-                whereClauses.push(sql`${stockMovementsView.createdAt} >= ${filters.dateRange.from} AND ${stockMovementsView.createdAt} <= ${filters.dateRange.to}`);
-            }
+        // Add filters
+        if (filters.customerId) {
+            whereClauses.push(sql`${stockMovementsView.customerId} = ${filters.customerId}`);
+        }
+        if (filters.movement) {
+            whereClauses.push(sql`${stockMovementsView.movementType} = ${filters.movement}`);
+        }
+        if (filters.dateRange) {
+            whereClauses.push(sql`${stockMovementsView.createdAt} >= ${filters.dateRange.from} AND ${stockMovementsView.createdAt} <= ${filters.dateRange.to}`);
+        }
+        if (filters.itemName) {
+            whereClauses.push(sql`${stockMovementsView.itemName} ILIKE ${`%${filters.itemName}%`}`);
+        }
+        if (filters.customerDisplayName) {
+            whereClauses.push(sql`${stockMovementsView.customerDisplayName} ILIKE ${`%${filters.customerDisplayName}%`}`);
+        }
+        if (filters.search) {
+            whereClauses.push(sql`(
+                ${stockMovementsView.itemName} ILIKE ${`%${filters.search}%`} OR
+                ${stockMovementsView.customerDisplayName} ILIKE ${`%${filters.search}%`} OR
+                ${stockMovementsView.movementNumber}::text LIKE ${`%${filters.search}%`} OR
+                ${stockMovementsView.quantity}::text LIKE ${`%${filters.search}%`}
+            )`);
+        }
 
+        if (whereClauses.length > 0) {
             conditions = sql`WHERE ${and(...whereClauses)}`;
         }
 
@@ -87,79 +98,45 @@ export async function getStockMovements(
         `;
 
         const results = await db.execute(rawQuery);
-        // console.log(results.rows[0])
-        // Add type validation for raw query results
         if (!results?.rows || !Array.isArray(results.rows)) {
             throw new Error('Invalid query results structure');
         }
-        // console.log("Results:", results)
 
-        // Transform and validate each order
-        const parsedResults = results.rows.map((stockMovementsView) => {
-
-            // Validate and transform dates
-            return {
-                movementId: stockMovementsView.movement_id,
-                movementNumber: stockMovementsView.movement_number,
-                itemId: stockMovementsView.item_id,
-                locationId: stockMovementsView.location_id,
-                movementType: stockMovementsView.movement_type,
-                quantity: stockMovementsView.quantity,
-                referenceType: stockMovementsView.reference_type,
-                referenceId: stockMovementsView.reference_id,
-                notes: stockMovementsView.notes,
-                createdBy: stockMovementsView.created_by,
-                createdAt: stockMovementsView.created_at ? new Date(stockMovementsView.created_at.toString()) : null,
-                itemName: stockMovementsView.item_name,
-                customerId: stockMovementsView.customer_id,
-                customerDisplayName: stockMovementsView.customer_display_name,
-                stockLevelAfter: stockMovementsView.stock_level_after
-            }
-
-
-        });
+        // Transform and validate each movement
+        const parsedResults = results.rows.map((stockMovementsView) => ({
+            movementId: stockMovementsView.movement_id,
+            movementNumber: stockMovementsView.movement_number,
+            itemId: stockMovementsView.item_id,
+            locationId: stockMovementsView.location_id,
+            movementType: stockMovementsView.movement_type,
+            quantity: stockMovementsView.quantity,
+            referenceType: stockMovementsView.reference_type,
+            referenceId: stockMovementsView.reference_id,
+            notes: stockMovementsView.notes,
+            createdBy: stockMovementsView.created_by,
+            createdAt: stockMovementsView.created_at ? new Date(stockMovementsView.created_at.toString()) : null,
+            itemName: stockMovementsView.item_name,
+            customerId: stockMovementsView.customer_id,
+            customerDisplayName: stockMovementsView.customer_display_name,
+            stockLevelAfter: stockMovementsView.stock_level_after
+        }));
 
         // Validate entire array against schema
         try {
-            // console.log(enrichedOrders)
-            const parsedOrders = stockMovementsViewSchema.array().parse(parsedResults);
-            // Get total count for pagination
-            //     const countQuery: any = await db.execute(sql<{ count: number }[]>`
-            //     SELECT count(*) as count
-            //     FROM ${orders}
-            //     ${conditions}
-            // `);
-
-            // const countQuery = await db
-            //     .select({ count: sql`count(*)` })
-            //     .from(orders)
-            //     .where(conditions ? conditions : undefined);
-
-            // const countQuery = await db
-            //     .select({
-            //         count: sql<number>`count(*)::integer`
-            //     })
-            //     .from(orders)
-            //     .where(conditions ? conditions : undefined);
-
-            // const totalCount = Number(countQuery[0]?.count) || 0;
+            const parsedMovements = stockMovementsViewSchema.array().parse(parsedResults);
 
             const countQuery = await db.execute(sql<{ count: number }>`
                 SELECT count(*)::integer as count 
                 FROM ${stockMovementsView} 
-                ${conditions ? conditions : sql``}
+                ${conditions}
             `);
 
             const totalCount = Number(countQuery.rows[0]?.count) || 0;
 
-
-            console.log(countQuery.rows[0])
-            // const totalCount = Number(countQuery[0]?.count) || 0;
-
             return {
                 success: true,
                 data: {
-                    data: parsedOrders,
+                    data: parsedMovements,
                     pagination: {
                         total: totalCount,
                         pageSize,
@@ -169,11 +146,11 @@ export async function getStockMovements(
                 }
             };
         } catch (error) {
-            console.error('Error in getOrders:', error);
-            return { success: false, error: 'Failed to fetch orders' };
+            console.error('Error in getStockMovements:', error);
+            return { success: false, error: 'Failed to fetch stock movements' };
         }
     } catch (error) {
-        console.error('Error in getOrders:', error);
-        return { success: false, error: 'Failed to fetch orders' };
+        console.error('Error in getStockMovements:', error);
+        return { success: false, error: 'Failed to fetch stock movements' };
     }
 }
