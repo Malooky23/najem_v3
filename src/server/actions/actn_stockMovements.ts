@@ -40,11 +40,12 @@ export async function getStockMovements(
 
         // Build the WHERE clause conditions
         let conditions = sql``;
+        const userType = session.user.userType
 
-        if (filters.customerId || filters.movement || filters.dateRange) {
+        if (filters.customerId || filters.movement || filters.dateRange|| userType==='CUSTOMER') {
             const whereClauses = [];
 
-            if (session.user.userType === 'CUSTOMER') {
+            if (userType === 'CUSTOMER') {
                 if (session.user.customerId) {
                     whereClauses.push(sql`${stockMovementsView.customerId} = ${session.user.customerId}`);
                 }

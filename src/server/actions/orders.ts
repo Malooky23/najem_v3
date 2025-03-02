@@ -120,7 +120,7 @@ export async function createOrder(formData: FormData): Promise<OrderActionRespon
 
 
 export async function updateOrder(orderData: EnrichedOrders): Promise<OrderActionResponse> {
-    await new Promise((resolve) => setTimeout(resolve, 3000))
+    // await new Promise((resolve) => setTimeout(resolve, 3000))
     try {
         const session = await auth();
         if (!session?.user?.id) {

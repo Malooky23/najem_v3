@@ -14,6 +14,7 @@ import {
   type StockMovementSortFields,
   type EnrichedStockMovementView
 } from "@/types/stockMovement"
+import { is } from "drizzle-orm"
 
 export default function StockMovementPage() {
   const searchParams = useSearchParams()
@@ -35,7 +36,7 @@ export default function StockMovementPage() {
     direction: sortDirection
   }
 
-  const { data: movements, pagination, isLoading, error } = useStockMovements({
+  const { data: movements, pagination, isLoading, error, isFetching } = useStockMovements({
     page,
     pageSize,
     sort
@@ -105,6 +106,8 @@ export default function StockMovementPage() {
     }
   }, [page, pagination?.totalPages, updateUrlParams])
 
+  const pending = isFetching || isLoading
+
   return (
     <div className="px-4 h-[calc(100vh-3rem)] flex flex-col">
       <div className="flex justify-between m-2">
@@ -123,7 +126,7 @@ export default function StockMovementPage() {
             <StockMovementTable
               columns={stockMovementColumns}
               data={movements || []}
-              isLoading={isLoading}
+              isLoading={isLoading }
               onRowClick={handleMovementClick}
               selectedId={selectedMovementId || undefined}
               isCompact={isDetailsOpen || isMobile}

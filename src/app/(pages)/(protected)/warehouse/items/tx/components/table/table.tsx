@@ -9,7 +9,8 @@ import { ChevronUp, ChevronDown } from "lucide-react"
 import { EnrichedStockMovementView, StockMovementSortFields } from "@/types/stockMovement"
 
 interface StockMovementTableProps {
-  columns: ColumnDef<EnrichedStockMovementView, any>[]
+  // columns: ColumnDef<EnrichedStockMovementView, any>[]
+  columns: ColumnDef<EnrichedStockMovementView>[]
   data: EnrichedStockMovementView[]
   isLoading?: boolean
   onRowClick?: (order: EnrichedStockMovementView) => void
@@ -22,9 +23,10 @@ interface StockMovementTableProps {
   selectedRows?: RowSelectionState
 }
 
-type ExtendedColumnDef = ColumnDef<EnrichedStockMovementView, any> & {
+  type ExtendedColumnDef = ColumnDef<EnrichedStockMovementView> & {
   id?: string;
-  accessorKey?: keyof EnrichedStockMovementView;
+  accessorKey?: string;
+  // accessorKey?: keyof EnrichedStockMovementView;
   header?: string | ((props: any) => React.ReactNode);
 };
 
@@ -52,11 +54,13 @@ export function StockMovementTable({
   const visibleColumns = useMemo(() => {
     const sortableFields: StockMovementSortFields[] = ['createdAt', 'movementType', 'quantity', 'itemName', 'customerDisplayName', 'movementNumber'];
 
-    return columns.map((column: ExtendedColumnDef) => {
-      const columnId = column.accessorKey || column.id
+    return columns.map((column: ExtendedColumnDef): ExtendedColumnDef => {
+      // return columns.map((column): ExtendedColumnDef => {
+      const columnId =  column.accessorKey || column.id
       if (!columnId || !sortableFields.includes(columnId as StockMovementSortFields)) {
         return column
       }
+
 
       // Get the original header content
       const originalHeader = typeof column.header === 'string'
@@ -143,29 +147,29 @@ export function StockMovementTable({
   }, [isCompact])
 
 
-return (
-  <div className="h-full flex-1 overflow-hidden rounded-md ">
-    <DataTable
-      columns={displayColumns}
-      data={data}
-      isLoading={isLoading}
-      columnWidths={columnWidths}
-      filterableColumns={filterableColumns}
-      pageSize={isCompact ? 25 : 50}
-      onRowSelectionChange={onRowSelectionChange}
-      onRowClick={(row: EnrichedStockMovementView) => {
-        const order = row
-        if (onRowClick) {
-          onRowClick(order)
+  return (
+    <div className="h-full flex-1 overflow-hidden rounded-md ">
+      <DataTable
+        columns={displayColumns}
+        data={data}
+        isLoading={isLoading}
+        columnWidths={columnWidths}
+        filterableColumns={filterableColumns}
+        pageSize={isCompact ? 25 : 50}
+        onRowSelectionChange={onRowSelectionChange}
+        onRowClick={(row: EnrichedStockMovementView) => {
+          const order = row
+          if (onRowClick) {
+            onRowClick(order)
+          }
+        }}
+        rowClassName={(row) =>
+          cn(
+            "hover:bg-slate-200 cursor-pointer",
+            selectedId === (row as EnrichedStockMovementView).movementId && "bg-blue-50 hover:bg-blue-100"
+          )
         }
-      }}
-      rowClassName={(row) =>
-        cn(
-          "hover:bg-slate-200 cursor-pointer",
-          selectedId === (row as EnrichedStockMovementView).movementId && "bg-blue-50 hover:bg-blue-100"
-        )
-      }
-    />
-  </div>
-)
+      />
+    </div>
+  )
 }
