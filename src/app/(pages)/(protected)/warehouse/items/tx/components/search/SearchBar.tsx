@@ -1,10 +1,10 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { ChevronDown, ChevronUp, Search, X } from "lucide-react"
+import { ChevronDown, ChevronUp, LoaderCircle, LoaderPinwheel, Search, X } from "lucide-react"
 import {
   Select,
   SelectContent,
@@ -14,17 +14,32 @@ import {
 } from "@/components/ui/select"
 import { MovementType } from "@/types/stockMovement"
 import { cn } from "@/lib/utils"
+import { useDebounce } from "@/hooks/useDebounce"
+import { LoadingSpinner } from "@/components/ui/loading-spinner"
+import { is } from "drizzle-orm"
 
-export function SearchBar() {
+interface SearchBarProps {
+  isLoading?: boolean
+}
+
+
+export function SearchBar({isLoading}: SearchBarProps) {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [isExpanded, setIsExpanded] = useState(false)
 
-  // Get current filter values from URL
-  const search = searchParams.get("search") || ""
+  // Local state for immediate input feedback
+  const [searchInput, setSearchInput] = useState(searchParams.get("search") || "")
+  const [itemNameInput, setItemNameInput] = useState(searchParams.get("itemName") || "")
+  const [customerInput, setCustomerInput] = useState(searchParams.get("customerDisplayName") || "")
+
+  // Debounced values for URL updates
+  const debouncedSearch = useDebounce(searchInput, 300)
+  const debouncedItemName = useDebounce(itemNameInput, 300)
+  const debouncedCustomer = useDebounce(customerInput, 300)
+
+  // Get other filter values from URL
   const movement = searchParams.get("movement") as MovementType | null
-  const itemName = searchParams.get("itemName") || ""
-  const customerDisplayName = searchParams.get("customerDisplayName") || ""
   const dateFrom = searchParams.get("dateFrom") || ""
   const dateTo = searchParams.get("dateTo") || ""
 
@@ -40,7 +55,23 @@ export function SearchBar() {
     router.replace(`?${params.toString()}`)
   }, [searchParams, router])
 
+  // Update URL when debounced values change
+  useEffect(() => {
+    updateUrlParams({ search: debouncedSearch || null })
+  }, [debouncedSearch, updateUrlParams])
+
+  useEffect(() => {
+    updateUrlParams({ itemName: debouncedItemName || null })
+  }, [debouncedItemName, updateUrlParams])
+
+  useEffect(() => {
+    updateUrlParams({ customerDisplayName: debouncedCustomer || null })
+  }, [debouncedCustomer, updateUrlParams])
+
   const clearFilters = () => {
+    setSearchInput("")
+    setItemNameInput("")
+    setCustomerInput("")
     updateUrlParams({
       search: null,
       movement: null,
@@ -54,12 +85,20 @@ export function SearchBar() {
   return (
     <div className="space-y-2 bg-white p-4 rounded-lg border">
       <div className="flex gap-2">
+
         <div className="flex-1 relative">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+        {isLoading ? (
+          <LoaderCircle color="#f56b16"
+          className={cn(
+            "absolute left-2 top-2.5 h-4 w-4 text-muted-foreground transition-transform",
+            isLoading && "animate-[spin_1s_linear_infinite]"
+          )}
+        />          ) : (<Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />)}
+          
           <Input
             placeholder="Search movements..."
-            value={search}
-            onChange={(e) => updateUrlParams({ search: e.target.value })}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
             className="pl-8"
           />
         </div>
@@ -74,7 +113,7 @@ export function SearchBar() {
             <ChevronDown className="h-4 w-4" />
           )}
         </Button>
-        {(search || movement || itemName || customerDisplayName || dateFrom || dateTo) && (
+        {(searchInput || movement || itemNameInput || customerInput || dateFrom || dateTo) && (
           <Button
             variant="ghost"
             size="icon"
@@ -113,8 +152,8 @@ export function SearchBar() {
               <label className="text-sm font-medium">Item Name</label>
               <Input
                 placeholder="Filter by item..."
-                value={itemName}
-                onChange={(e) => updateUrlParams({ itemName: e.target.value })}
+                value={itemNameInput}
+                onChange={(e) => setItemNameInput(e.target.value)}
               />
             </div>
 
@@ -122,8 +161,8 @@ export function SearchBar() {
               <label className="text-sm font-medium">Customer</label>
               <Input
                 placeholder="Filter by customer..."
-                value={customerDisplayName}
-                onChange={(e) => updateUrlParams({ customerDisplayName: e.target.value })}
+                value={customerInput}
+                onChange={(e) => setCustomerInput(e.target.value)}
               />
             </div>
 

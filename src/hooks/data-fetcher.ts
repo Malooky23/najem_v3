@@ -187,7 +187,7 @@ export function useStockMovements(params: StockMovementsQueryParams = {}) {
   const query = useQuery<StockMovementsQueryResult>({
     queryKey: ['stockMovements', params],
     queryFn: async () => {
-      // await new Promise((resolve) => setTimeout(resolve, 3000))
+      await new Promise((resolve) => setTimeout(resolve, 1000))
       const result = await getStockMovements(
         params.page || 1,
         params.pageSize || 10,
@@ -210,7 +210,7 @@ export function useStockMovements(params: StockMovementsQueryParams = {}) {
     refetchOnMount: false,
     refetchOnWindowFocus: false,
     staleTime: 60 * 60 * 1, 
-    // placeholderData: keepPreviousData,
+    placeholderData: keepPreviousData,
     refetchInterval: 1000 * 10,
     refetchOnReconnect: true,
     retry: 1
