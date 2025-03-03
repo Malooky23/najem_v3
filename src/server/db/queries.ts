@@ -150,7 +150,6 @@ getCustomers: async function () {
           columns: {}
         },
         users: true,
-
       },
       orderBy: (customers, { desc }) => [desc(customers.createdAt)]
 

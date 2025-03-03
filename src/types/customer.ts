@@ -83,7 +83,8 @@ export const customerSchema = z.object({
   contacts: z.array(z.object({
     contactDetail: z.any()
   })).nullable(),
-  addresses: z.array(AddressDetailsSchema).nullable(),
+  addresses:  z.array(z.object({
+    address: AddressDetailsSchema})).nullable(),
 }).transform((customer) => ({
   ...customer,
 }));
