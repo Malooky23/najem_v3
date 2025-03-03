@@ -1,5 +1,5 @@
 "use client"
-import { useEffect, useCallback, useState } from "react"
+import { useEffect, useCallback, useState, Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { StockMovementTable } from "./components/table/table"
 import { stockMovementColumns } from "./components/table/columns"
@@ -16,8 +16,13 @@ import {
   type MovementType
 } from "@/types/stockMovement"
 import { useStockMovements } from "@/hooks/data-fetcher"
+import { useSession } from "next-auth/react"
+import Loading from "@/components/ui/loading"
 
 export default function StockMovementPage() {
+
+  // const session = useSession()
+
   const searchParams = useSearchParams()
   const router = useRouter()
   const isMobile = useMediaQuery("(max-width: 768px)")
@@ -59,12 +64,13 @@ export default function StockMovementPage() {
     })
   }
 
-  const { data: movements, pagination, isLoading, error, isFetching } = useStockMovements({
+  const { data: movements, pagination, isLoading, error, isFetching, status, isError } = useStockMovements({
     page,
     pageSize,
     sort,
-    filters
+    filters,
   })
+
 
   const updateUrlParams = useCallback((updates: Record<string, string | null>) => {
     const params = new URLSearchParams(searchParams)
@@ -104,18 +110,10 @@ export default function StockMovementPage() {
     })
   }, [updateUrlParams])
 
-  if (error) {
-    return (
-      <div className="p-4 rounded-md border border-red-200 bg-red-50 text-red-700">
-        Error loading movements: {error instanceof Error ? error.message : 'Unknown error'}
-      </div>
-    )
-  }
-
   const [selectedRows, setSelectedRows] = useState<RowSelectionState>({})
   const handleRowSelection = (selection: RowSelectionState) => {
     setSelectedRows(selection)
-    
+
     // Get the selected items
     const selectedItems = Object.keys(selection)
       .filter(key => selection[key])
@@ -130,25 +128,45 @@ export default function StockMovementPage() {
     }
   }, [page, pagination?.totalPages, updateUrlParams])
 
-  const pending = isFetching || isLoading
+
+  if (isError || error) {
+    return (
+
+      // <div className="min-h-screen flex items-center justify-center">
+      //   <div className="p-4 m-6 flex justify-center items-center rounded-md border border-red-200 bg-red-50 text-red-700">
+      //     Error loading movements: {error instanceof Error ? error.message : 'Unknown error'}
+      //   </div>
+      // </div>
+
+      <div className="p-4 m-6 flex justify-center items-center rounded-md border border-red-200 bg-red-50 text-red-700">
+        Error loading movements: {error instanceof Error ? error.message : 'Unknown error'}
+      </div>
+
+    );
+  }
+
+
+
+  // if (session.data?.user.userType !== 'EMPLOYEE') {
+  //   return <div>RESTRICTED</div>
+  // }
 
   return (
     <div className="px-4 h-[calc(100vh-3rem)] flex flex-col">
-      <div className="flex justify-between m-2">
-        <h1 className="text-2xl font-bold text-gray-900">
+      <div className="flex justify-between mt-2">
+        <h1 className="text-2xl font-bold text-gray-900 text-nowrap pr-2">
           Item Movements
         </h1>
-      <SearchBar isLoading={pending} />
+        <SearchBar isLoading={isFetching} />
       </div>
-      
-      
-      <div className="flex gap-4 flex-1 min-h-0 overflow-hidden mt-4">
+      <div className="flex gap-4 flex-1 min-h-0 overflow-hidden mt-0">
         <div
           className={cn(
             "flex flex-col rounded-md transition-all duration-300",
             isMobile ? (isDetailsOpen ? "hidden" : "w-full") : (isDetailsOpen ? "w-[40%]" : "w-full"),
           )}
         >
+          {/* <Suspense fallback={<div className="flex flex-col items-center justify-center">Loading...</div>}></Suspense> */}
           <div className="flex-1 overflow-hidden flex flex-col rounded-lg bg-slate-50 border-2 border-slate-200">
             <StockMovementTable
               columns={stockMovementColumns}
@@ -178,6 +196,7 @@ export default function StockMovementPage() {
             </div>
           )}
         </div>
+        {/* <Suspense/> */}
 
         {isDetailsOpen && (
           <div
