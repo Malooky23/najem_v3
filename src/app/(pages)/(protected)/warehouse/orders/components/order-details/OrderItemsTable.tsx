@@ -3,6 +3,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { UseFormReturn } from "react-hook-form"
 import { EnrichedOrders } from "@/types/orders"
 import { Input } from "@/components/ui/input"
+import Link from "next/link"
 
 interface OrderItemsTableProps {
   order: EnrichedOrders
@@ -38,7 +39,11 @@ export function OrderItemsTable({ order, form, isEditing }: OrderItemsTableProps
                       }}
                     />
                   ) : (
-                    item.itemName
+                    <Link 
+                    href={{
+                      pathname: '/warehouse/items/tx',
+                      query: { itemName: item.itemName },
+                    }}>  {item.itemName}  </Link>
                   )}
                 </TableCell>
                 <TableCell>
@@ -68,3 +73,5 @@ export function OrderItemsTable({ order, form, isEditing }: OrderItemsTableProps
     </Card>
   )
 }
+
+
