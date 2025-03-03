@@ -115,7 +115,12 @@ export function StockMovementTable({
     if (isCompact) {
       return visibleColumns.filter((column: ExtendedColumnDef) => {
         const columnId = column.accessorKey || column.id
-        return ['movementType', 'customerDisplayName', 'itemName'].includes(columnId || '')
+        return [
+          'movementNumber',
+          'itemName',
+          'movementType',
+          'quantity',
+        ].includes(columnId || '')
       })
     }
     return visibleColumns
@@ -153,9 +158,9 @@ export function StockMovementTable({
         pageSize={isCompact ? 25 : 50}
         onRowSelectionChange={onRowSelectionChange}
         onRowClick={(row: EnrichedStockMovementView) => {
-          const order = row
+          const rowData = row
           if (onRowClick) {
-            onRowClick(order)
+            onRowClick(rowData)
           }
         }}
         rowClassName={(row) =>

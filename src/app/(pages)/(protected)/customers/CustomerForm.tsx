@@ -147,6 +147,7 @@ async function submitCustomerForm(prevState: any, formData: FormData, options: {
     } else {
       console.log('Submitting Individual Customer...');
       result = await createIndividualCustomer(formObject);
+      console.log(result)
     }
 
     console.log('Submission Result:', result);

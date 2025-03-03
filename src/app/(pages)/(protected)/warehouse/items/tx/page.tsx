@@ -15,9 +15,10 @@ import {
   type StockMovementFilters,
   type MovementType
 } from "@/types/stockMovement"
-import { useStockMovements } from "@/hooks/data-fetcher"
+import { useOrderDetails, useStockMovements } from "@/hooks/data-fetcher"
 import { useSession } from "next-auth/react"
 import Loading from "@/components/ui/loading"
+import { OrderDetails } from "./components/details/OrderDetails"
 
 export default function StockMovementPage() {
 
@@ -70,7 +71,8 @@ export default function StockMovementPage() {
     sort,
     filters,
   })
-
+  const [selectedMovementReferenceId, setSelectedMovementReferenceId] = useState<string | null>(null)
+  const { data: order, isLoading: orderLoading, isError: orderError } = useOrderDetails(selectedMovementReferenceId)
 
   const updateUrlParams = useCallback((updates: Record<string, string | null>) => {
     const params = new URLSearchParams(searchParams)
@@ -88,8 +90,17 @@ export default function StockMovementPage() {
     updateUrlParams({ movementId: null })
   }, [updateUrlParams])
 
+
   const handleMovementClick = useCallback((movement: EnrichedStockMovementView) => {
+    if(selectedMovementId === movement.movementId){
+      // updateUrlParams({ movementId: null })
+      // setSelectedMovementReferenceId(null)
+      handleCloseDetails()
+      return
+    }
     updateUrlParams({ movementId: movement.movementId })
+
+    setSelectedMovementReferenceId(movement.referenceId)
   }, [updateUrlParams])
 
   const handlePageChange = useCallback((newPage: number) => {
@@ -206,6 +217,13 @@ export default function StockMovementPage() {
             )}
           >
             {/* Movement details component will be implemented later */}
+            <OrderDetails
+              order={order!}
+              isMobile={isMobile}
+              handleClose={handleCloseDetails}
+              // onSave={handleUpdateOrder}
+            />
+
           </div>
         )}
       </div>

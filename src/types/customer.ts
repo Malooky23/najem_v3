@@ -65,3 +65,4 @@ export const customerSchema = z.object({
 // Derive types from the schema
 export type EnrichedCustomer = z.infer<typeof customerSchema>;
 
+
