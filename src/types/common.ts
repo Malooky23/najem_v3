@@ -1,18 +1,39 @@
 import { z } from "zod";
+import { contactType } from "@/server/db/schema";
+
+// Address Schemas
+export const AddressDetailsSchema = z.object({
+    addressId: z.string().uuid(),
+    address1: z.string().nullable(),
+    address2: z.string().nullable(),
+    city: z.string().nullable(),
+    country: z.string().nullable(),
+    postalCode: z.string().nullable(),
+    addressType: z.string().nullable(),
+    createdAt: z.date(),
+    updatedAt: z.date().nullable(),
+});
 
 export const CreateAddressSchema = z.object({
     address1: z.string().optional().nullish(),
     address2: z.string().optional().nullish(),
     city: z.string().optional().nullish(),
-    postalCode: z.string().optional().nullish(),
     country: z.string().optional().nullish(),
-})
+    postalCode: z.string().optional().nullish(),
+});
+
+// Contact Schemas
+export const ContactDetailsSchema = z.object({
+    contactDetailsId: z.string().uuid(),
+    contactType: z.enum(['email', 'phone', 'mobile', 'landline', 'other']),
+    contactData: z.string(),
+    isPrimary: z.boolean(),
+    createdAt: z.date(),
+    updatedAt: z.date().nullable(),
+});
 
 export const CreateContactSchema = z.object({
-    contact_type: z.enum(['email', 'phone']),
-    contact_data: z.string().min(3, "Contact data must be at least 3 characters"),
-    is_primary: z.boolean().default(false),
+    contact_type: z.enum(['email', 'phone', 'mobile', 'landline', 'other']),
+    contact_data: z.string(),
+    is_primary: z.boolean(),
 })
-
-export type CreateAddress = z.infer<typeof CreateAddressSchema>
-export type CreateContact = z.infer<typeof CreateContactSchema>
