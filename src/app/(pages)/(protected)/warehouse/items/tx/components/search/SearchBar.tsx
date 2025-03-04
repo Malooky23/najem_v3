@@ -1,10 +1,9 @@
 "use client"
 
 import { useState, useCallback, useEffect } from "react"
-import { useSearchParams, useRouter } from "next/navigation"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { ChevronDown, ChevronUp, LoaderCircle, LoaderPinwheel, Search, X } from "lucide-react"
+import { ChevronDown, ChevronUp, LoaderCircle, Search, X } from "lucide-react"
 import {
   Select,
   SelectContent,
@@ -12,89 +11,124 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { MovementType } from "@/types/stockMovement"
+import { MovementType, StockMovementFilters } from "@/types/stockMovement"
 import { cn } from "@/lib/utils"
 import { useDebounce } from "@/hooks/useDebounce"
-import { LoadingSpinner } from "@/components/ui/loading-spinner"
-import { is } from "drizzle-orm"
 
 interface SearchBarProps {
   isLoading?: boolean
+  filters: StockMovementFilters
+  onFilterChange: (filters: StockMovementFilters) => void
 }
 
-
-export function SearchBar({isLoading}: SearchBarProps) {
-  const searchParams = useSearchParams()
-  const router = useRouter()
+export function SearchBar({ isLoading, filters, onFilterChange }: SearchBarProps) {
   const [isExpanded, setIsExpanded] = useState(false)
+  const [dateRange, setDateRange] = useState({
+    from: filters.dateRange?.from?.toISOString().split('T')[0] || '',
+    to: filters.dateRange?.to?.toISOString().split('T')[0] || ''
+  })
 
   // Local state for immediate input feedback
-  const [searchInput, setSearchInput] = useState(searchParams.get("search") || "")
-  const [itemNameInput, setItemNameInput] = useState(searchParams.get("itemName") || "")
-  const [customerInput, setCustomerInput] = useState(searchParams.get("customerDisplayName") || "")
+  const [searchInput, setSearchInput] = useState(filters.search || "")
+  const [itemNameInput, setItemNameInput] = useState(filters.itemName || "")
+  const [customerInput, setCustomerInput] = useState(filters.customerDisplayName || "")
+  const [movementType, setMovementType] = useState<string>(filters.movement || "ALL")
 
-  // Debounced values for URL updates
+  // Debounced values for filter updates
   const debouncedSearch = useDebounce(searchInput, 300)
   const debouncedItemName = useDebounce(itemNameInput, 300)
   const debouncedCustomer = useDebounce(customerInput, 300)
 
-  // Get other filter values from URL
-  const movement = searchParams.get("movement") as MovementType | null
-  const dateFrom = searchParams.get("dateFrom") || ""
-  const dateTo = searchParams.get("dateTo") || ""
+  // Effect handlers for debounced updates
+  useEffect(() => {
+    const newFilters = { ...filters }
+    
+    if (debouncedSearch !== filters.search) {
+      newFilters.search = debouncedSearch || undefined
+    }
+    if (debouncedItemName !== filters.itemName) {
+      newFilters.itemName = debouncedItemName || undefined
+    }
+    if (debouncedCustomer !== filters.customerDisplayName) {
+      newFilters.customerDisplayName = debouncedCustomer || undefined
+    }
+    
+    // Only trigger update if filters actually changed
+    if (JSON.stringify(newFilters) !== JSON.stringify(filters)) {
+      onFilterChange(newFilters)
+    }
+  }, [
+    debouncedSearch,
+    debouncedItemName,
+    debouncedCustomer,
+    filters,
+    onFilterChange
+  ])
 
-  const updateUrlParams = useCallback((updates: Record<string, string | null>) => {
-    const params = new URLSearchParams(searchParams)
-    Object.entries(updates).forEach(([key, value]) => {
-      if (value === null) {
-        params.delete(key)
+  // Effect for movement type
+  useEffect(() => {
+    if (movementType !== (filters.movement || "ALL")) {
+      const newFilters = { ...filters }
+      if (movementType === "ALL") {
+        delete newFilters.movement
       } else {
-        params.set(key, value)
+        newFilters.movement = movementType as MovementType
       }
-    })
-    router.replace(`?${params.toString()}`)
-  }, [searchParams, router])
-
-  // Update URL when debounced values change
-  useEffect(() => {
-    updateUrlParams({ search: debouncedSearch || null })
-  }, [debouncedSearch, updateUrlParams])
-
-  useEffect(() => {
-    updateUrlParams({ itemName: debouncedItemName || null })
-  }, [debouncedItemName, updateUrlParams])
-
-  useEffect(() => {
-    updateUrlParams({ customerDisplayName: debouncedCustomer || null })
-  }, [debouncedCustomer, updateUrlParams])
+      onFilterChange(newFilters)
+    }
+  }, [movementType, filters, onFilterChange])
 
   const clearFilters = () => {
     setSearchInput("")
     setItemNameInput("")
     setCustomerInput("")
-    updateUrlParams({
-      search: null,
-      movement: null,
-      itemName: null,
-      customerDisplayName: null,
-      dateFrom: null,
-      dateTo: null
-    })
+    setMovementType("ALL")
+    setDateRange({ from: '', to: '' })
+    onFilterChange({})
+  }
+
+  const handleDateChange = (type: 'from' | 'to', value: string) => {
+    const newDateRange = { ...dateRange, [type]: value }
+    setDateRange(newDateRange)
+
+    // Only update filters if both dates are present
+    if (newDateRange.from && newDateRange.to) {
+      const fromDate = new Date(newDateRange.from)
+      const toDate = new Date(newDateRange.to)
+      
+      // Ensure the dates are valid before updating filters
+      if (!isNaN(fromDate.getTime()) && !isNaN(toDate.getTime())) {
+        const newFilters = {
+          ...filters,
+          dateRange: {
+            from: fromDate,
+            to: toDate
+          }
+        }
+        onFilterChange(newFilters)
+      }
+    } else {
+      // If either date is missing, remove the dateRange filter
+      const { dateRange: _, ...restFilters } = filters
+      onFilterChange(restFilters)
+    }
   }
 
   return (
-    // <div className="space-y-2 bg-red-500 p-4 rounded-lg border">
-    <div className="space-y-2   ">
-      <div className="flex gap-2 ">
-
+    <div className="space-y-2">
+      <div className="flex gap-2">
         <div className="flex-1 relative rounded-lg bg-white">
-        {isLoading ? (
-          <LoaderCircle color="#f56b16"
-          className={cn(
-            "absolute left-2 top-2.5 h-4 w-4 text-muted-foreground transition-transform",
-            isLoading && "animate-[spin_1s_linear_infinite]"
+          {isLoading ? (
+            <LoaderCircle
+              color="#f56b16"
+              className={cn(
+                "absolute left-2 top-2.5 h-4 w-4 text-muted-foreground transition-transform",
+                isLoading && "animate-[spin_1s_linear_infinite]"
+              )}
+            />
+          ) : (
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           )}
-        />          ) : (<Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />)}
           
           <Input
             placeholder="Search movements..."
@@ -114,7 +148,7 @@ export function SearchBar({isLoading}: SearchBarProps) {
             <ChevronDown className="h-4 w-4" />
           )}
         </Button>
-        {(searchInput || movement || itemNameInput || customerInput || dateFrom || dateTo) && (
+        {(searchInput || movementType !== "ALL" || itemNameInput || customerInput || filters.dateRange) && (
           <Button
             variant="ghost"
             size="icon"
@@ -127,7 +161,7 @@ export function SearchBar({isLoading}: SearchBarProps) {
 
       <div
         className={cn(
-          "grid gap-4 overflow-hidden transition-all duration-200 ",
+          "grid gap-4 overflow-hidden transition-all duration-200",
           isExpanded ? 
           "grid-rows-[1fr] pb-4 px-4 bg-white rounded-lg border" :
            "grid-rows-[0fr]"
@@ -138,13 +172,14 @@ export function SearchBar({isLoading}: SearchBarProps) {
             <div className="space-y-2">
               <label className="text-sm font-medium">Movement Type</label>
               <Select
-                value={movement || undefined}
-                onValueChange={(value) => updateUrlParams({ movement: value || null })}
+                value={movementType}
+                onValueChange={setMovementType}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="All types" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="ALL">All</SelectItem>
                   <SelectItem value="IN">IN</SelectItem>
                   <SelectItem value="OUT">OUT</SelectItem>
                 </SelectContent>
@@ -174,13 +209,13 @@ export function SearchBar({isLoading}: SearchBarProps) {
               <div className="grid grid-cols-2 gap-2">
                 <Input
                   type="date"
-                  value={dateFrom}
-                  onChange={(e) => updateUrlParams({ dateFrom: e.target.value })}
+                  value={dateRange.from}
+                  onChange={(e) => handleDateChange('from', e.target.value)}
                 />
                 <Input
                   type="date"
-                  value={dateTo}
-                  onChange={(e) => updateUrlParams({ dateTo: e.target.value })}
+                  value={dateRange.to}
+                  onChange={(e) => handleDateChange('to', e.target.value)}
                 />
               </div>
             </div>

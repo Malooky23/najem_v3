@@ -30,7 +30,6 @@ export interface OrdersQueryResult {
 export function useOrderDetails(
   orderId: string | null,
   selectedOrder: any | null = null // add parameter
-
 ) {
   const queryClient = useQueryClient();
   
@@ -45,17 +44,7 @@ export function useOrderDetails(
       return result.data;
     },
     enabled: !!orderId && selectedOrder === null, // add condition
-    // placeholderData: () => {
-    //   const orders = queryClient.getQueryData(['orders']) as EnrichedOrders[];
-    //   return orders?.find((order:EnrichedOrders) => order.orderId === orderId) || null ;
-
-    //   // Use the smaller/preview version of the blogPost from the 'blogPosts'
-    //   // query as the placeholder data for this blogPost query
-    //   // return queryClient
-    //   //   .getQueryData(['orders'])?.find((d) => d.orderId === orderId)
-    //   },
     staleTime: 60 * 60 * 1000,
-
   });
 }
 
@@ -88,7 +77,6 @@ export function useOrdersQuery(params: OrdersQueryParams = {}) {
     refetchOnWindowFocus: false,
     staleTime: 60 * 60 * 1000,
     placeholderData: keepPreviousData,
-    
   });
 
   const invalidateOrders = async () => {
@@ -129,7 +117,7 @@ export function useCustomers() {
     refetchOnWindowFocus: false,
     staleTime: 100 * 100 * 100 * 100,
     placeholderData: keepPreviousData,
-    });
+  });
 }
 
 export function useItems() {
@@ -160,8 +148,6 @@ export function useItems() {
     gcTime: 60 * 60 * 1000, // 30 minutes
     refetchOnMount: false,
     refetchOnWindowFocus: false,
-
-    
   });
 }
 
@@ -172,6 +158,7 @@ export interface StockMovementsQueryParams {
   filters?: StockMovementFilters;
   sort?: StockMovementSort;
 }
+
 export interface StockMovementsQueryResult {
   data: EnrichedStockMovementView[];
   pagination: {
@@ -186,7 +173,6 @@ export function useStockMovements(params: StockMovementsQueryParams = {}) {
   const query = useQuery<StockMovementsQueryResult>({
     queryKey: ['stockMovements', params],
     queryFn: async () => {
-      // await new Promise((resolve) => setTimeout(resolve, 1000))
       const result = await getStockMovements(
         params.page || 1,
         params.pageSize || 10,
@@ -207,12 +193,11 @@ export function useStockMovements(params: StockMovementsQueryParams = {}) {
     },
     refetchOnMount: false,
     refetchOnWindowFocus: false,
-    staleTime: 60 * 60 * 1000, 
+    staleTime: 60 * 1000, // 1 minute
     placeholderData: keepPreviousData,
-    // refetchInterval: 2 * 60 * 1000,
     retry: 1
-    
   });
+
   return {
     ...query,
     data: query.data?.data || [],
