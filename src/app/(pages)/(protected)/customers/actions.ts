@@ -7,6 +7,7 @@ import { db } from "@/server/db"
 import { addressDetails, contactDetails, customers, businessCustomers, individualCustomers, entityAddresses, entityContactDetails } from "@/server/db/schema"
 import { CreateAddressSchema, CreateContactSchema } from "@/types/common"
 import { BusinessData, BusinessDataSchema, CreateCustomerResponse, IndividualData, IndividualDataSchema } from "@/types/customer"
+import { sendEmail, emailTemplates } from "@/server/services/email-service"
 
 class CustomerCreationError extends Error {
   constructor(message: string, public readonly cause?: unknown) {
@@ -17,11 +18,21 @@ class CustomerCreationError extends Error {
 
 type DatabaseTransaction = any
 
+// Helper to find primary email from contacts
+function getPrimaryEmail(contacts: z.infer<typeof CreateContactSchema>[]): string | undefined {
+  const primaryEmail = contacts.find(
+    contact => contact.contact_type === 'email' && contact.is_primary
+  )?.contact_data;
+  console.log('Primary email:', primaryEmail);
+  return primaryEmail;
+}
+
 export async function createIndividualCustomer(
   data: Record<string, any>
 ): Promise<CreateCustomerResponse> {
   try {
     const customerData = IndividualDataSchema.parse(data);
+    console.log('Customer Data:', customerData);
     return await executeIndividualCustomerCreation(customerData);
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -65,6 +76,19 @@ async function executeIndividualCustomerCreation(
       
       if (customerData.contacts?.length) {
         await createCustomerContacts(tx, customerId, customerData.contacts);
+        
+        // Send welcome email if primary email exists
+        const primaryEmail = getPrimaryEmail(customerData.contacts);
+        if (primaryEmail) {
+          const { subject, html } = emailTemplates.newCustomer(
+            `${customerData.firstName} ${customerData.lastName}`
+          );
+          await sendEmail({
+            to: primaryEmail,
+            subject,
+            html
+          });
+        }
       }
 
       revalidatePath('/customers');
@@ -92,6 +116,19 @@ async function executeBusinessCustomerCreation(
       
       if (customerData.contacts?.length) {
         await createCustomerContacts(tx, customerId, customerData.contacts);
+        
+        // Send welcome email if primary email exists
+        // const primaryEmail = getPrimaryEmail(customerData.contacts);
+        // if (primaryEmail) {
+        //   const { subject, html } = emailTemplates.newCustomer(
+        //     customerData.businessName
+        //   );
+        //   await sendEmail({
+        //     to: primaryEmail,
+        //     subject,
+        //     html
+        //   });
+        // }
       }
 
       revalidatePath('/customers');

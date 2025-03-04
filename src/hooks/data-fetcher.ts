@@ -54,6 +54,7 @@ export function useOrderDetails(
     //   // return queryClient
     //   //   .getQueryData(['orders'])?.find((d) => d.orderId === orderId)
     //   },
+    staleTime: 60 * 60 * 1000,
 
   });
 }
@@ -85,7 +86,7 @@ export function useOrdersQuery(params: OrdersQueryParams = {}) {
     },
     refetchOnMount: false,
     refetchOnWindowFocus: false,
-    staleTime: 60 * 60 * 1, 
+    staleTime: 60 * 60 * 1000,
     placeholderData: keepPreviousData,
     
   });
@@ -155,9 +156,10 @@ export function useItems() {
       }
       return res.json();
     },
-    staleTime: 0,
-    refetchOnMount: true,
-    refetchOnWindowFocus: false, 
+    staleTime: 60 * 60 * 1000, // 5 minutes
+    gcTime: 60 * 60 * 1000, // 30 minutes
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
 
     
   });
@@ -205,10 +207,9 @@ export function useStockMovements(params: StockMovementsQueryParams = {}) {
     },
     refetchOnMount: false,
     refetchOnWindowFocus: false,
-    staleTime: 60 * 60 * 1, 
+    staleTime: 60 * 60 * 1000, 
     placeholderData: keepPreviousData,
-    refetchInterval: 1000 * 10,
-    refetchOnReconnect: true,
+    // refetchInterval: 2 * 60 * 1000,
     retry: 1
     
   });
