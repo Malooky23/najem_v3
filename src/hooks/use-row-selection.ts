@@ -1,25 +1,37 @@
-import { useState, useCallback } from 'react';
-import { RowSelectionState, Updater } from '@tanstack/react-table';
+import { useCallback, useRef, useState } from "react";
+import { RowSelectionState } from "@tanstack/react-table";
 
+/**
+ * A custom hook to manage row selection state with optimized updates
+ * @param initialState Initial row selection state
+ * @param onChange Callback to run when selection changes
+ * @returns [rowSelection, setRowSelection]
+ */
 export function useRowSelection(
-  initialState: RowSelectionState = {},
-  onChange?: (newSelection: RowSelectionState) => void
-) {
-  const [rowSelection, setInternalRowSelection] = useState<RowSelectionState>(initialState);
-
-  const setRowSelection = useCallback((updater: Updater<RowSelectionState>) => {
-    // Handle both function updaters and direct values
-    if (typeof updater === 'function') {
-      setInternalRowSelection(old => {
-        const newValue = (updater as Function)(old);
-        if (onChange) onChange(newValue);
-        return newValue;
-      });
-    } else {
-      setInternalRowSelection(updater);
-      if (onChange) onChange(updater);
-    }
+  initialState: RowSelectionState = {}, 
+  onChange?: (selection: RowSelectionState) => void
+): [RowSelectionState, (updater: RowSelectionState | ((prev: RowSelectionState) => RowSelectionState)) => void] {
+  const [rowSelection, setLocalRowSelection] = useState<RowSelectionState>(initialState);
+  const lastChangeRef = useRef<number>(0);
+  
+  // Wrapped setter that calls onChange only when needed
+  const setRowSelection = useCallback((updater: RowSelectionState | ((prev: RowSelectionState) => RowSelectionState)) => {
+    setLocalRowSelection((prev) => {
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      
+      // Only trigger onChange if the selection actually changed
+      if (JSON.stringify(prev) !== JSON.stringify(next)) {
+        // Throttle to prevent rapid succession of callbacks
+        const now = Date.now();
+        if (now - lastChangeRef.current > 20) { // 20ms throttle
+          lastChangeRef.current = now;
+          onChange?.(next);
+        }
+      }
+      
+      return next;
+    });
   }, [onChange]);
 
-  return [rowSelection, setRowSelection] as const;
+  return [rowSelection, setRowSelection];
 }

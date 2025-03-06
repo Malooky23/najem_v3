@@ -189,13 +189,15 @@ export default function OrdersPage() {
   }, [updateUrlParams])
 
   const handleSortChange = useCallback((field: string, direction: 'asc' | 'desc') => {
-    setIsLocalLoading(true);
-    updateUrlParams({
-      sort: field,
-      direction: direction,
-      page: '1' // Reset to first page when changing sort
-    })
-  }, [updateUrlParams])
+    if (field !== sortField || direction !== sortDirection) {
+      setIsLocalLoading(true);
+      updateUrlParams({
+        sort: field,
+        direction: direction,
+        page: '1' // Reset to first page when changing sort
+      });
+    }
+  }, [sortField, sortDirection, updateUrlParams]);
 
   const handleStatusChange = createFilterHandler('status');
   const handleCustomerChange = createFilterHandler('customerId');
