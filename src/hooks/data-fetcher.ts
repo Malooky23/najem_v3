@@ -28,35 +28,37 @@ export interface OrdersQueryResult {
   };
 }
 
+// Update the useOrderDetails hook to better handle errors and missing IDs
 export function useOrderDetails(
   orderId: string | null,
   selectedOrder: any | null = null // add parameter
-
 ) {
   const queryClient = useQueryClient();
 
   return useQuery({
     queryKey: ['order', orderId],
     queryFn: async () => {
-      if (!orderId) return null;
-      const result = await getOrderById(orderId);
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to fetch order');
+      if (!orderId) {
+        console.log("No order ID provided to fetch");
+        return null;
       }
-      return result.data;
+      console.log("Fetching order details for ID:", orderId);
+      try {
+        const result = await getOrderById(orderId);
+        if (!result.success) {
+          console.error("Error fetching order:", result.error);
+          throw new Error(result.error || 'Failed to fetch order');
+        }
+        return result.data;
+      } catch (error) {
+        console.error("Exception in order fetch:", error);
+        throw error;
+      }
     },
-    enabled: !!orderId && selectedOrder === null, // add condition
-    // placeholderData: () => {
-    //   const orders = queryClient.getQueryData(['orders']) as EnrichedOrders[];
-    //   return orders?.find((order:EnrichedOrders) => order.orderId === orderId) || null ;
-
-    //   // Use the smaller/preview version of the blogPost from the 'blogPosts'
-    //   // query as the placeholder data for this blogPost query
-    //   // return queryClient
-    //   //   .getQueryData(['orders'])?.find((d) => d.orderId === orderId)
-    //   },
+    enabled: !!orderId,
     staleTime: 60 * 60 * 1000,
-
+    retry: 2, // Retry failed requests twice
+    retryDelay: attempt => Math.min(attempt * 1000, 3000), // Exponential backoff
   });
 }
 
@@ -206,81 +208,72 @@ export interface StockMovementsQueryResult {
   };
 }
 
-// export function useStockMovements(params: StockMovementsQueryParams = {}) {  
-//   const query = useQuery<StockMovementsQueryResult>({
-//     queryKey: ['stockMovements', params],
-//     queryFn: async () => {
-//       // await new Promise((resolve) => setTimeout(resolve, 1000))
-//       const result = await getStockMovements(
-//         params.page || 1,
-//         params.pageSize || 10,
-//         params.filters || {},
-//         params.sort || { field: 'createdAt', direction: 'desc' }
-//       );
-
-//       // if (!result.success) {
-//       //   throw new Error(result.error || 'Failed to fetch stock Movements, no success');
-//       // }
-//       // if (!result.data) {
-//       //   throw new Error('Failed to fetch stock Movements, no data');
-//       // }
-//       return {
-//         data: result.data?.data,
-//         pagination: result.data?.pagination
-//       };
-//     },
-//     refetchOnMount: false,
-//     refetchOnWindowFocus: false,
-//     staleTime: 60 * 60 * 1000, 
-//     placeholderData: keepPreviousData,
-//     // refetchInterval: 2 * 60 * 1000,
-//     retry: 1
-
-//   });
-//   return {
-//     ...query,
-//     data: query.data?.data || [],
-//     pagination: query.data?.pagination
-//   };
-// }
-
-
-export function useStockMovements(params: StockMovementsQueryParams = {}) {  
-  const query = useQuery<StockMovementsQueryResult>({
+// Fix the stock movements hook to properly handle fetch keys and deduplication
+export function useStockMovements(params: StockMovementsQueryParams = {}) {
+  return useQuery<StockMovementsQueryResult>({
     queryKey: ['stockMovements', params],
     queryFn: async () => {
-      // await new Promise((resolve) => setTimeout(resolve, 1000))
-      const result = await getStockMovements(
-        params.page || 1,
-        params.pageSize || 10,
-        params.filters || {},
-        params.sort || { field: 'createdAt', direction: 'desc' }
-      );
+      const session = await getSession();
       
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to fetch stock Movements, no success');
+      const queryParams = new URLSearchParams();
+      if (params.page) queryParams.set('page', String(params.page));
+      if (params.pageSize) queryParams.set('pageSize', String(params.pageSize));
+      if (params.filters) queryParams.set('filters', JSON.stringify(params.filters));
+      if (params.sort) queryParams.set('sort', JSON.stringify(params.sort));
+      
+      // Create an AbortController for timeout handling
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15-second timeout
+      
+      try {
+        const res = await fetch(`/api/stock-movements?${queryParams.toString()}`, {
+          headers: {
+            'Authorization': `Bearer ${session}`
+          },
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!res.ok) {
+          let errorResponse;
+          try {
+            errorResponse = await res.json();
+          } catch (jsonError) {
+            errorResponse = { 
+              message: 'Failed to parse error response as JSON', 
+              rawResponse: await res.text() 
+            };
+            console.error("JSON parsing error:", jsonError);
+          }
+          console.error("API error response:", errorResponse);
+          throw new Error(`Failed to fetch stock movements. API Response: ${JSON.stringify(errorResponse)}`);
+        }
+        
+        const data = await res.json();
+        
+        return {
+          data: data.stockMovements || [],
+          pagination: data.pagination || {
+            total: 0,
+            pageSize: params.pageSize || 10,
+            currentPage: params.page || 1,
+            totalPages: 0
+          }
+        };
+      } catch (error) {
+        clearTimeout(timeoutId);
+        if (error.name === 'AbortError') {
+          throw new Error('Request timeout: The server took too long to respond');
+        }
+        throw error;
       }
-      if (!result.data) {
-        throw new Error('Failed to fetch stock Movements, no data');
-      }
-      return {
-        data: result.data.data,
-        pagination: result.data.pagination
-      };
     },
-    refetchOnMount: false,
+    staleTime: 30 * 1000, // 30 seconds instead of very long cache time
+    gcTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: false,
-    staleTime: 60 * 60 * 1000, 
-    placeholderData: keepPreviousData,
-    // refetchInterval: 1000 * 10,
-    refetchOnReconnect: true,
-    retry: 1
-    
+    retry: 1, // Limit retries to prevent infinite loading
+    retryDelay: 1000, // 1 second between retries
   });
-  return {
-    ...query,
-    data: query.data?.data || [],
-    pagination: query.data?.pagination
-  };
 }
 

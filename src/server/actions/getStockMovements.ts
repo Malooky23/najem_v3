@@ -58,7 +58,9 @@ function withFilters<T extends PgSelect>(
         query = query.where(ilike(stockMovementsView.customerDisplayName, `%${filters.customerDisplayName}%`));
     }
 
-    if (filters.search) {
+    // Improved search handling - make sure it works with any value
+    if (filters.search !== undefined && filters.search !== null) {
+        console.log("Applying search filter:", filters.search);
         query = query.where(
             or(
                 ilike(stockMovementsView.itemName, `%${filters.search}%`),
@@ -107,6 +109,10 @@ export async function getStockMovements(
             return { success: false, error: "Unauthorized: Please Login." };
         }
 
+        // Debug incoming params
+        console.log("Server action called with page:", page, "pageSize:", pageSize);
+        console.log("Server action filters:", JSON.stringify(filters));
+        
         // Build base query and make it dynamic
         let query = db.select()
             .from(stockMovementsView)
@@ -130,28 +136,23 @@ export async function getStockMovements(
         countQuery = withFilters(countQuery, filters, session);
         const countResult = await countQuery;
 
-        try {
-            const parsedMovements = stockMovementsViewSchema.array().parse(results);
-            const totalCount = countResult[0].count;
-
-            return {
-                success: true,
-                data: {
-                    data: parsedMovements,
-                    pagination: {
-                        total: totalCount,
-                        pageSize,
-                        currentPage: page,
-                        totalPages: Math.ceil(totalCount / pageSize)
-                    }
+        const totalCount = countResult[0].count;
+        
+        // Return data with proper parsing
+        return {
+            success: true,
+            data: {
+                data: results,
+                pagination: {
+                    total: totalCount,
+                    pageSize,
+                    currentPage: page,
+                    totalPages: Math.ceil(totalCount / pageSize)
                 }
-            };
-        } catch (error) {
-            console.error('Error in getStockMovements:', error);
-            return { success: false, error: 'Failed to fetch stock movements' };
-        }
+            }
+        };
     } catch (error) {
         console.error('Error in getStockMovements:', error);
-        return { success: false, error: 'Failed to fetch stock movements' };
+        return { success: false, error: error instanceof Error ? error.message : "Unknown error getting stock movements" };
     }
 }

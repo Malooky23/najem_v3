@@ -3,16 +3,11 @@ import { getStockMovements } from "@/server/actions/getStockMovements";
 import { StockMovementFilters, StockMovementSort } from "@/types/stockMovement";
 import { NextRequest, NextResponse } from "next/server";
 
-// Adjust this value to control delay duration (in milliseconds)
-const ARTIFICIAL_DELAY = 5000;
-
 export async function GET(request: NextRequest) {
   try {
-    // Add artificial delay to trigger suspense
-    await new Promise(resolve => setTimeout(resolve, ARTIFICIAL_DELAY));
 
     // Authentication check
-    const session = await auth()
+    const session = await auth();
     if (!session) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -33,6 +28,10 @@ export async function GET(request: NextRequest) {
         filters = JSON.parse(filtersParam);
       } catch (e) {
         console.error("Error parsing filters:", e);
+        return NextResponse.json(
+          { error: "Invalid filters parameter" },
+          { status: 400 }
+        );
       }
     }
     
@@ -44,24 +43,27 @@ export async function GET(request: NextRequest) {
         sort = JSON.parse(sortParam);
       } catch (e) {
         console.error("Error parsing sort:", e);
+        return NextResponse.json(
+          { error: "Invalid sort parameter" },
+          { status: 400 }
+        );
       }
     }
 
-    // Call the server action
     const result = await getStockMovements(page, pageSize, filters, sort);
     
     if (!result.success) {
       return NextResponse.json(
-        { error: result.error || "Failed to fetch stock movements" },
+        { success: false, error: result.error || "Failed to fetch stock movements" },
         { status: 400 }
       );
     }
 
-    return NextResponse.json(result.data);
+    return NextResponse.json({ success: true, data: result.data });
   } catch (error: any) {
     console.error("API route error:", error);
     return NextResponse.json(
-      { error: error.message || "Internal server error" },
+      { success: false, error: error.message || "Internal server error" },
       { status: 500 }
     );
   }

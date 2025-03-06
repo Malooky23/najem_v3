@@ -1,3 +1,7 @@
+"use client"
+import { X } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import { OrderHeader } from "./OrderHeader"
 import { OrderInfoCard } from "./OrderInfoCard"
 import { OrderItemsTable } from "./OrderItemsTable"
@@ -6,134 +10,106 @@ import { EnrichedOrders, OrderStatus } from "@/types/orders"
 import { useOrderForm } from "../hooks/useOrderForm"
 import { toast } from "@/hooks/use-toast"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
-import { useOrderDetails } from "@/hooks/data-fetcher"
 
 interface OrderDetailsProps {
   order: EnrichedOrders | null
-  isMobile?: boolean
-  isLoading?: boolean
-  onSave?: (updatedOrder: EnrichedOrders) => void
+  isMobile: boolean
   handleClose: () => void
+  isLoading: boolean
 }
 
 export function OrderDetails({ 
   order, 
-  isMobile = false,
-  isLoading = false,
-  onSave, 
-  handleClose 
+  isMobile, 
+  handleClose, 
+  isLoading 
 }: OrderDetailsProps) {
-  const containerClass = isMobile
-    ? "p-4 h-full overflow-scroll"
-    : "p-6 bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 min-h-full overflow-hidden"
-
-  const cardClass = isMobile
-    ? "bg-white"
-    : "bg-white/70 backdrop-blur-sm rounded-lg shadow-xl overflow-hidden transition-all hover:shadow-2xl"
-
+  // Show loading state
   if (isLoading) {
     return (
-      <div className={containerClass}>
-        <div className={`max-w-4xl mx-auto mt-0 ${cardClass}`}>
-          <div className={`${isMobile ? "p-4" : "p-6"} flex items-center justify-center min-h-[200px]`}>
-            <LoadingSpinner />
-          </div>
+      <div className="h-full flex flex-col overflow-auto">
+        <div className="flex-none flex justify-between items-center p-4 border-b">
+          <h2 className="text-lg font-semibold">
+            <Skeleton className="h-6 w-32" />
+          </h2>
+          <Button variant="ghost" size="icon" onClick={handleClose}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+        <div className="flex-1 p-4 space-y-4">
+          <Skeleton className="h-8 w-full" />
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-32 w-full" />
         </div>
       </div>
     )
   }
-
+  
+  // Show not found state
   if (!order) {
-
     return (
-      <div className={containerClass}>
-        <div className={`max-w-4xl mx-auto mt-0 ${cardClass}`}>
-          <div className={`${isMobile ? "p-4" : "p-6"} text-center text-gray-500`}>
-            <p>Order not found or no longer available.</p>
-            <button
-              onClick={handleClose}
-              className="mt-4 text-blue-500 hover:text-blue-600 underline"
-            >
-              Return to Orders List
-            </button>
+      <div className="h-full flex flex-col overflow-auto">
+        <div className="flex-none flex justify-between items-center p-4 border-b">
+          <h2 className="text-lg font-semibold">Order Not Found</h2>
+          <Button variant="ghost" size="icon" onClick={handleClose}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+        <div className="flex-1 p-4 flex items-center justify-center">
+          <div className="text-center p-6 text-gray-500">
+            <p>The requested order could not be found.</p>
+            <p className="mt-2">It may have been deleted or the reference is invalid.</p>
           </div>
         </div>
       </div>
     )
   }
 
-  const {
-    form,
-    isEditing,
-    isSaving,
-    handleSave,
-    handleEdit,
-    handleCancel
-  } = useOrderForm({ 
-    order, 
-    onSave: async (values: EnrichedOrders) => {
-      if (!onSave) {
-        throw new Error('Cannot save: save callback is not provided')
-      }
-      await onSave(values)
-    }
-  })
+  // Safety check for order structure
+  const hasValidOrderData = order && 
+                          typeof order === 'object' && 
+                          (order.orderId);
 
-  const handleStatusChange = async (status: OrderStatus) => {
-    // Don't proceed if status hasn't changed
-    if (status === order.status) {
-      toast({
-        description: "Status is already " + status,
-        variant: "default",
-      })
-      return
-    }
-
-    try {
-      form.setValue("status", status)
-      if (!isEditing) {
-        await handleSave()
-      }
-    } catch (error) {
-      // Revert on error
-      form.setValue("status", order.status)
-      throw error
-    }
+  if (!hasValidOrderData) {
+    return (
+      <div className="h-full flex flex-col overflow-auto">
+        <div className="flex-none flex justify-between items-center p-4 border-b">
+          <h2 className="text-lg font-semibold">Invalid Order Data</h2>
+          <Button variant="ghost" size="icon" onClick={handleClose}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+        <div className="flex-1 p-4 flex items-center justify-center">
+          <div className="text-center p-6 text-gray-500">
+            <p>The order data structure is invalid.</p>
+            <p className="mt-2">Please contact support if this issue persists.</p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
+  // Display order details - uses your existing components
   return (
-    <div className={containerClass}>
-      <div className={`max-w-4xl mx-auto mt-0 ${cardClass}`}>
-        <div className={isMobile ? "p-4" : "p-6"}>
-          <OrderHeader
-            orderNumber={order.orderNumber.toString()}
-            status={order.status}
-            isEditing={isEditing}
-            isMobile={isMobile}
-            onStatusChange={handleStatusChange}
-            onEdit={handleEdit}
-            onSave={handleSave}
-            onClose={handleClose}
-          />
-
-          <OrderInfoCard
-            order={order}
-            form={form}
-            isEditing={isEditing}
-          />
-
-          <OrderItemsTable
-            order={order}
-            form={form}
-            isEditing={isEditing}
-          />
-
-          <OrderNotesCard
-            order={order}
-            form={form}
-            isEditing={isEditing}
-          />
-        </div>
+    <div className="h-full flex flex-col overflow-auto">
+      <div className="flex-none flex justify-between items-center p-4 border-b">
+        <h2 className="text-lg font-semibold">Order Details</h2>
+        <Button variant="ghost" size="icon" onClick={handleClose}>
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
+      
+      <div className="flex-1 p-4 space-y-4 overflow-auto">
+        {/* Only render components when we have valid order data */}
+        <OrderHeader 
+          status={order.status}
+          orderNumber={order.orderNumber.toString()}
+          isLoading={isLoading}
+          onClose={handleClose}
+        />
+        <OrderInfoCard order={order} />
+        <OrderItemsTable order={order} />
+        <OrderNotesCard order={order} />
       </div>
     </div>
   )

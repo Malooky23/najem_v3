@@ -1,16 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { UseFormReturn } from "react-hook-form"
 import { EnrichedOrders } from "@/types/orders"
-import { Input } from "@/components/ui/input"
 
 interface OrderItemsTableProps {
   order: EnrichedOrders
-  form: UseFormReturn<EnrichedOrders>
-  isEditing: boolean
 }
 
-export function OrderItemsTable({ order, form, isEditing }: OrderItemsTableProps) {
+export function OrderItemsTable({ order }: OrderItemsTableProps) {
   return (
     <Card className="mt-6 bg-white/70 shadow-md hover:shadow-lg transition-shadow">
       <CardHeader className="p-4">
@@ -20,48 +16,24 @@ export function OrderItemsTable({ order, form, isEditing }: OrderItemsTableProps
         <Table>
           <TableHeader>
             <TableRow className="bg-gray-100/50">
-              <TableHead className="w-[70%]">Item</TableHead>
-              <TableHead className="w-[30%]">Quantity</TableHead>
+              <TableHead className="w-[40%]">Item</TableHead>
+              <TableHead className="w-[20%]">Quantity</TableHead>
+              <TableHead className="w-[20%]">Price</TableHead>
+              <TableHead className="w-[20%]">Total</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {order.items.map((item, index) => (
-              <TableRow key={`${item.itemId}-${index}`} className="hover:bg-gray-100/50 transition-colors">
-                <TableCell className="font-medium">
-                  {isEditing ? (
-                    <Input
-                      value={form.watch(`items.${index}.itemName`)}
-                      onChange={(e) => {
-                        const newItems = [...form.getValues("items")]
-                        newItems[index] = { ...newItems[index], itemName: e.target.value }
-                        form.setValue("items", newItems)
-                      }}
-                    />
-                  ) : (
-                    item.itemName
-                  )}
-                </TableCell>
-                <TableCell>
-                  {isEditing ? (
-                    <Input
-                      type="number"
-                      min="1"
-                      value={form.watch(`items.${index}.quantity`)}
-                      onChange={(e) => {
-                        const newItems = [...form.getValues("items")]
-                        newItems[index] = { 
-                          ...newItems[index], 
-                          quantity: Math.max(1, parseInt(e.target.value) || 1) 
-                        }
-                        form.setValue("items", newItems)
-                      }}
-                    />
-                  ) : (
-                    item.quantity
-                  )}
-                </TableCell>
+            {order.items?.map((item, index) => (
+              <TableRow key={index} className="hover:bg-gray-100/50 transition-colors">
+                <TableCell className="font-medium">{item.itemName || item.itemId}</TableCell>
+                <TableCell>{item.quantity}</TableCell>
               </TableRow>
             ))}
+            {(!order.items || order.items.length === 0) && (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center py-4">No items found in this order</TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </CardContent>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import React, { memo, useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -38,7 +38,7 @@ function createDateFromString(dateString: string): Date {
   return new Date(dateString)
 }
 
-export function OrderFilters({
+function OrderFiltersComponent({
   status,
   customerId,
   movement,
@@ -230,3 +230,6 @@ export function OrderFilters({
     </div>
   )
 }
+
+// Export a memoized version of the component to prevent unnecessary rerenders
+export const OrderFilters = memo(OrderFiltersComponent);

@@ -8,8 +8,8 @@
 //     connectionString: process.env.DATABASE_URL_LOCAL,
 // });
 
-// if (!process.env.DATABASE_URL) {
-// 	throw new Error("process.env.DATABASE_URL NOT AVAILABLE");
+// if (!process.env.DATABASE_URL_LOCAL) {
+//     throw new Error("process.env.DATABASE_URL_LOCAL NOT AVAILABLE");
 // }
 
 // export const db = drizzle(pool, { schema });

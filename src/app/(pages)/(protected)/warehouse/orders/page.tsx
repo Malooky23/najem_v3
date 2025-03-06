@@ -14,6 +14,7 @@ import { PaginationControls } from "@/components/ui/pagination-controls"
 import { RowSelectionState } from "@tanstack/react-table"
 import { OrderFilters } from "./components/order-filters/OrderFilters"
 import { useDebounce } from "@/hooks/use-debounce" // Add this import
+import React from "react"
 
 // Helper function to normalize dates to avoid timezone issues
 function normalizeDate(dateString: string): Date {
@@ -26,6 +27,9 @@ function normalizeDate(dateString: string): Date {
 function getDateString(date: Date): string {
   return date.toISOString().split('T')[0]
 }
+
+// Memoize CreateOrderDialog with React.memo to prevent rerenders
+const MemoizedCreateOrderDialog = React.memo(CreateOrderDialog);
 
 export default function OrdersPage() {
   const searchParams = useSearchParams()
@@ -326,15 +330,20 @@ export default function OrdersPage() {
     handleStatusChange, handleCustomerChange, handleMovementChange,
     handleDateRangeChange, handleResetFilters, isLoading]);
 
+  // Memoize the header content to prevent re-renders of CreateOrderDialog
+  const pageHeader = useMemo(() => (
+    <div className="flex justify-between m-2">
+      <h1 className="text-2xl font-bold text-gray-900 ">
+        Orders
+      </h1>
+      <MemoizedCreateOrderDialog isMobile={isMobile} />
+    </div>
+  ), [isMobile]);
+
   return (
     <div className="px-4 h-[calc(100vh-3rem)] flex flex-col">
 
-      <div className="flex justify-between m-2">
-        <h1 className="text-2xl font-bold text-gray-900 ">
-          Orders
-        </h1>
-        <CreateOrderDialog isMobile={isMobile} />
-      </div>
+      {pageHeader}
 
       <OrderFilters {...orderFiltersProps} />
 
