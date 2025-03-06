@@ -1,12 +1,11 @@
 "use client"
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, memo } from "react"
 import { StockMovementTable } from "./table/table"
 import { stockMovementColumns } from "./table/columns"
 import { useStockMovements } from "@/hooks/useStockMovements"
 import { useStockMovementStore } from "@/stores/stock-movement-store"
 import { PaginationControls } from "@/components/ui/pagination-controls"
 import { RowSelectionState } from "@tanstack/react-table"
-import React from "react"
 import { EnrichedStockMovementView, StockMovementSortFields } from "@/types/stockMovement"
 
 interface MovementsTableProps {
@@ -14,11 +13,67 @@ interface MovementsTableProps {
   onLoadingChange?: (isLoading: boolean) => void;
 }
 
-export const MovementsTable = React.memo(function MovementsTable({
+interface ErrorDisplayProps {
+  error: Error | unknown;
+  onRetry: () => void;
+}
+
+interface TablePaginationProps {
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    pageSize: number;
+    total: number;
+  };
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (size: number) => void;
+  selectedRowsCount: number;
+}
+
+// Memoized error component
+const ErrorDisplay = memo<ErrorDisplayProps>(function ErrorDisplay({ 
+  error, 
+  onRetry 
+}) {
+  return (
+    <div className="p-4 m-6 flex justify-center items-center rounded-md border border-red-200 bg-red-50 text-red-700">
+      Error loading movements: {error instanceof Error ? error.message : 'Unknown error'}
+      <button 
+        className="ml-4 px-3 py-1 bg-red-100 hover:bg-red-200 rounded text-red-800"
+        onClick={onRetry}
+      >
+        Retry
+      </button>
+    </div>
+  );
+});
+
+// Memoized pagination component
+const TablePagination = memo<TablePaginationProps>(function TablePagination({
+  pagination,
+  onPageChange,
+  onPageSizeChange,
+  selectedRowsCount
+}) {
+  return (
+    <div className="p-2 flex w-full justify-center min-w-0">
+      <PaginationControls
+        currentPage={pagination.currentPage}
+        totalPages={pagination.totalPages}
+        pageSize={pagination.pageSize}
+        total={pagination.total}
+        onPageChange={onPageChange}
+        onPageSizeChange={onPageSizeChange}
+        selectedRows={selectedRowsCount}
+      />
+    </div>
+  );
+});
+
+export const MovementsTable = memo<MovementsTableProps>(function MovementsTable({
   isMobile,
   onLoadingChange
-}: MovementsTableProps) {
-  // Get values and actions from store
+}) {
   const {
     page,
     pageSize,
@@ -34,10 +89,7 @@ export const MovementsTable = React.memo(function MovementsTable({
     getSort,
   } = useStockMovementStore()
   
-  // Row selection state
-  const [selectedRows, setSelectedRows] = useState<RowSelectionState>({})
-  
-  // Get filters and sort
+  // Get filters and sort once per render
   const filters = getFilters()
   const sort = getSort()
   
@@ -62,17 +114,9 @@ export const MovementsTable = React.memo(function MovementsTable({
     onLoadingChange?.(queryLoading || queryFetching)
   }, [queryLoading, queryFetching, onLoadingChange])
   
-  // Callbacks
-  const handleRowSelection = useCallback((selection: RowSelectionState) => {
-    setSelectedRows(selection)
-  }, [])
-  
+  // Memoized callbacks
   const handleRowClick = useCallback((movement: EnrichedStockMovementView) => {
-    if (selectedMovementId === movement.movementId) {
-      selectMovement(null)
-    } else {
-      selectMovement(movement.movementId)
-    }
+    selectMovement(selectedMovementId === movement.movementId ? null : movement.movementId)
   }, [selectedMovementId, selectMovement])
   
   const handlePageChange = useCallback((newPage: number) => {
@@ -87,22 +131,9 @@ export const MovementsTable = React.memo(function MovementsTable({
     setSort(field as StockMovementSortFields, direction as 'asc' | 'desc')
   }, [setSort])
   
-  // Calculate selected rows count
-  const selectedRowsCount = Object.values(selectedRows).filter(Boolean).length
-  
   // Error handling
   if (isError) {
-    return (
-      <div className="p-4 m-6 flex justify-center items-center rounded-md border border-red-200 bg-red-50 text-red-700">
-        Error loading movements: {error instanceof Error ? error.message : 'Unknown error'}
-        <button 
-          className="ml-4 px-3 py-1 bg-red-100 hover:bg-red-200 rounded text-red-800"
-          onClick={() => refetch()}
-        >
-          Retry
-        </button>
-      </div>
-    )
+    return <ErrorDisplay error={error} onRetry={refetch} />;
   }
   
   return (
@@ -118,26 +149,17 @@ export const MovementsTable = React.memo(function MovementsTable({
           onSort={handleSortChange}
           sortField={sortField}
           sortDirection={sortDirection}
-          onRowSelectionChange={handleRowSelection}
-          selectedRows={selectedRows}
         />
       </div>
       
       {pagination && (
-        <div className="p-2 flex w-full justify-center min-w-0">
-          <PaginationControls
-            currentPage={pagination.currentPage}
-            totalPages={pagination.totalPages}
-            pageSize={pagination.pageSize}
-            total={pagination.total}
-            onPageChange={handlePageChange}
-            onPageSizeChange={handlePageSizeChange}
-            selectedRows={selectedRowsCount}
-          />
-        </div>
+        <TablePagination
+          pagination={pagination}
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
+          selectedRowsCount={0}
+        />
       )}
     </>
   )
 })
-
-MovementsTable.displayName = "MovementsTable"

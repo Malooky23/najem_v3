@@ -1,5 +1,5 @@
 "use client"
-import { useState, useCallback, useEffect } from "react"
+import { memo, useState, useCallback } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { ChevronDown, ChevronUp, Search, X, LoaderCircle } from "lucide-react"
@@ -13,7 +13,7 @@ import {
 import { MovementType } from "@/types/stockMovement"
 import { cn } from "@/lib/utils"
 import { useStockMovementStore } from "@/stores/stock-movement-store"
-import { useDebounce } from "@/hooks/useDebounce"
+import { useSearchInputs } from "@/hooks/useSearchInputs"
 
 interface SearchPanelProps {
   isLoading?: boolean
@@ -25,50 +25,69 @@ const MOVEMENT_OPTIONS = [
   { value: 'OUT', label: 'OUT' }
 ] as const
 
+// Memoized input components for better performance
+const SearchInput = memo(function SearchInput({ 
+  value, 
+  onChange, 
+  isLoading 
+}: { 
+  value: string; 
+  onChange: (value: string) => void; 
+  isLoading: boolean;
+}) {
+  return (
+    <div className="flex-1 relative rounded-lg bg-white">
+      {isLoading ? (
+        <LoaderCircle 
+          className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground animate-spin" 
+        />
+      ) : (
+        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+      )}
+      
+      <Input
+        placeholder="Search movements..."
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="pl-8"
+      />
+    </div>
+  );
+});
+
+const FilterInput = memo(function FilterInput({
+  label,
+  value,
+  onChange,
+  placeholder
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+}) {
+  return (
+    <div className="space-y-2">
+      <label className="text-sm font-medium">{label}</label>
+      <Input
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
+    </div>
+  );
+});
+
 export function SearchPanel({ isLoading = false }: SearchPanelProps) {
   const [isExpanded, setIsExpanded] = useState(false)
-  const [searchInput, setSearchInput] = useState('')
-  const [itemNameInput, setItemNameInput] = useState('')
-  const [customerNameInput, setCustomerNameInput] = useState('')
   
   const store = useStockMovementStore()
-  
-  // Debounce inputs
-  const debouncedSearch = useDebounce(searchInput, 300)
-  const debouncedItemName = useDebounce(itemNameInput, 300)
-  const debouncedCustomerName = useDebounce(customerNameInput, 300)
-  
-  // Update store when debounced values change
-  useEffect(() => {
-    store.setSearch(debouncedSearch || null)
-  }, [debouncedSearch, store])
-  
-  useEffect(() => {
-    store.setItemName(debouncedItemName || null)
-  }, [debouncedItemName, store])
-  
-  useEffect(() => {
-    store.setCustomerName(debouncedCustomerName || null)
-  }, [debouncedCustomerName, store])
-  
-  // Keep local inputs in sync with store
-  useEffect(() => {
-    setSearchInput(store.search || '')
-    setItemNameInput(store.itemName || '')
-    setCustomerNameInput(store.customerDisplayName || '')
-  }, [store.search, store.itemName, store.customerDisplayName])
-  
-  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchInput(e.target.value)
-  }, [])
-  
-  const handleItemNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setItemNameInput(e.target.value)
-  }, [])
-  
-  const handleCustomerChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setCustomerNameInput(e.target.value)
-  }, [])
+  const { 
+    inputs, 
+    handleSearchChange, 
+    handleItemNameChange, 
+    handleCustomerNameChange 
+  } = useSearchInputs()
   
   const handleMovementChange = useCallback((value: string) => {
     store.setMovement(value === 'ALL' ? null : value as MovementType)
@@ -91,22 +110,11 @@ export function SearchPanel({ isLoading = false }: SearchPanelProps) {
   return (
     <div className="space-y-2">
       <div className="flex gap-2">
-        <div className="flex-1 relative rounded-lg bg-white">
-          {isLoading ? (
-            <LoaderCircle 
-              className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground animate-spin" 
-            />
-          ) : (
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          )}
-          
-          <Input
-            placeholder="Search movements..."
-            value={searchInput}
-            onChange={handleSearchChange}
-            className="pl-8"
-          />
-        </div>
+        <SearchInput
+          value={inputs.search}
+          onChange={handleSearchChange}
+          isLoading={isLoading}
+        />
         
         <Button
           variant="outline"
@@ -159,23 +167,19 @@ export function SearchPanel({ isLoading = false }: SearchPanelProps) {
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Item Name</label>
-              <Input
-                placeholder="Filter by item..."
-                value={itemNameInput}
-                onChange={handleItemNameChange}
-              />
-            </div>
+            <FilterInput
+              label="Item Name"
+              value={inputs.itemName}
+              onChange={handleItemNameChange}
+              placeholder="Filter by item..."
+            />
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Customer</label>
-              <Input
-                placeholder="Filter by customer..."
-                value={customerNameInput}
-                onChange={handleCustomerChange}
-              />
-            </div>
+            <FilterInput
+              label="Customer"
+              value={inputs.customerName}
+              onChange={handleCustomerNameChange}
+              placeholder="Filter by customer..."
+            />
 
             <div className="space-y-2">
               <label className="text-sm font-medium">Date Range</label>
