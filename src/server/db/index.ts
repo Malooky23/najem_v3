@@ -5,7 +5,7 @@
 // import { Pool } from "pg";
 
 // const pool = new Pool({
-//     connectionString: process.env.DATABASE_URL!,
+//     connectionString: process.env.DATABASE_URL_LOCAL,
 // });
 
 // if (!process.env.DATABASE_URL) {
@@ -18,4 +18,4 @@
 import * as schema from "./schema";
 import { drizzle } from 'drizzle-orm/neon-serverless';
 
-export const db = drizzle(process.env.DATABASE_URLNEON!, {schema});
+export const db = drizzle(process.env.DATABASE_URL!, {schema});

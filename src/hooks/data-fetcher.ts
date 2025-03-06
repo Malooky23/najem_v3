@@ -1,13 +1,14 @@
 'use client';
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type ItemSchemaType } from "@/types/items";
-import { EnrichedCustomer } from "@/types/customer";
+import { CustomerList, EnrichedCustomer } from "@/types/customer";
 import { EnrichedOrders, type OrderFilters, type OrderSort } from "@/types/orders";
 import { getSession } from 'next-auth/react';
 import { getOrders, getOrderById } from "@/server/actions/orders";
 import { EnrichedStockMovementView, StockMovementFilters, StockMovementSort } from "@/types/stockMovement";
 import { StockMovement } from "@/server/db/schema";
-import { getStockMovements} from "@/server/actions/getStockMovements";
+import { getStockMovements } from "@/server/actions/getStockMovements";
+import { useMemo, useCallback, useEffect, useState, useRef } from "react";
 
 
 export interface OrdersQueryParams {
@@ -33,7 +34,7 @@ export function useOrderDetails(
 
 ) {
   const queryClient = useQueryClient();
-  
+
   return useQuery({
     queryKey: ['order', orderId],
     queryFn: async () => {
@@ -61,7 +62,7 @@ export function useOrderDetails(
 
 export function useOrdersQuery(params: OrdersQueryParams = {}) {
   const queryClient = useQueryClient();
-  
+
   const query = useQuery<OrdersQueryResult>({
     queryKey: ['orders', params],
     queryFn: async () => {
@@ -71,7 +72,7 @@ export function useOrdersQuery(params: OrdersQueryParams = {}) {
         params.filters || {},
         params.sort || { field: 'createdAt', direction: 'desc' }
       );
-      
+
       if (!result.success) {
         throw new Error(result.error || 'Failed to fetch orders');
       }
@@ -88,18 +89,20 @@ export function useOrdersQuery(params: OrdersQueryParams = {}) {
     refetchOnWindowFocus: false,
     staleTime: 60 * 60 * 1000,
     placeholderData: keepPreviousData,
-    
+
   });
 
   const invalidateOrders = async () => {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ['orders'] }),
-      queryClient.invalidateQueries({ queryKey: ['items'] })
+      queryClient.invalidateQueries({ queryKey: ['items'] }),
+      queryClient.invalidateQueries({ queryKey: ['stockMovements'] })
     ]);
-    
+
     return Promise.all([
       query.refetch(),
-      queryClient.refetchQueries({ queryKey: ['items'] })
+      queryClient.refetchQueries({ queryKey: ['items'] }),
+      queryClient.refetchQueries({ queryKey: ['stockMovements'] })
     ]);
   };
   return {
@@ -129,7 +132,28 @@ export function useCustomers() {
     refetchOnWindowFocus: false,
     staleTime: 100 * 100 * 100 * 100,
     placeholderData: keepPreviousData,
-    });
+  });
+}
+export function useSelectCustomerList() {
+  return useQuery<CustomerList[]>({
+    queryKey: ['customersList'],
+    queryFn: async () => {
+      const session = await getSession()
+      const res = await fetch('/api/customers/list', {
+        headers: {
+          'Authorization': `Bearer ${session}` // Include token in header
+        }
+      }); // Call API route
+      if (!res.ok) {
+        throw new Error('Failed to fetch customers');
+      }
+      return res.json();
+    },
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    staleTime: 100 * 100 * 100 * 100,
+    placeholderData: keepPreviousData,
+  });
 }
 
 export function useItems() {
@@ -161,7 +185,7 @@ export function useItems() {
     refetchOnMount: false,
     refetchOnWindowFocus: false,
 
-    
+
   });
 }
 
@@ -181,6 +205,45 @@ export interface StockMovementsQueryResult {
     totalPages: number;
   };
 }
+
+// export function useStockMovements(params: StockMovementsQueryParams = {}) {  
+//   const query = useQuery<StockMovementsQueryResult>({
+//     queryKey: ['stockMovements', params],
+//     queryFn: async () => {
+//       // await new Promise((resolve) => setTimeout(resolve, 1000))
+//       const result = await getStockMovements(
+//         params.page || 1,
+//         params.pageSize || 10,
+//         params.filters || {},
+//         params.sort || { field: 'createdAt', direction: 'desc' }
+//       );
+
+//       // if (!result.success) {
+//       //   throw new Error(result.error || 'Failed to fetch stock Movements, no success');
+//       // }
+//       // if (!result.data) {
+//       //   throw new Error('Failed to fetch stock Movements, no data');
+//       // }
+//       return {
+//         data: result.data?.data,
+//         pagination: result.data?.pagination
+//       };
+//     },
+//     refetchOnMount: false,
+//     refetchOnWindowFocus: false,
+//     staleTime: 60 * 60 * 1000, 
+//     placeholderData: keepPreviousData,
+//     // refetchInterval: 2 * 60 * 1000,
+//     retry: 1
+
+//   });
+//   return {
+//     ...query,
+//     data: query.data?.data || [],
+//     pagination: query.data?.pagination
+//   };
+// }
+
 
 export function useStockMovements(params: StockMovementsQueryParams = {}) {  
   const query = useQuery<StockMovementsQueryResult>({
@@ -209,7 +272,8 @@ export function useStockMovements(params: StockMovementsQueryParams = {}) {
     refetchOnWindowFocus: false,
     staleTime: 60 * 60 * 1000, 
     placeholderData: keepPreviousData,
-    // refetchInterval: 2 * 60 * 1000,
+    // refetchInterval: 1000 * 10,
+    refetchOnReconnect: true,
     retry: 1
     
   });
@@ -219,3 +283,4 @@ export function useStockMovements(params: StockMovementsQueryParams = {}) {
     pagination: query.data?.pagination
   };
 }
+

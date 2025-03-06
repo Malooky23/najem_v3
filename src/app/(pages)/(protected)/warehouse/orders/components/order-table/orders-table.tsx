@@ -137,44 +137,44 @@ export function OrdersTable({
   const columnWidths = isCompact ? baseColumnWidths : fullColumnWidths
 
   const filterableColumns = useMemo(() => {
-    if (isCompact) {
-      return [
-        { id: "orderNumber", title: "Order Number" },
-        { id: "status", title: "Status" },
-        { id: "customerName", title: "Customer" },
-      ]
-    }
-    return [
+    const columns = [
       { id: "orderNumber", title: "Order Number" },
       { id: "status", title: "Status" },
       { id: "customerName", title: "Customer" },
-
+      { id: "createdAt", title: "Date" },
+      { id: "items", title: "Items" }
     ]
+    
+    if (isCompact) {
+      return columns.filter(col => ['orderNumber', 'customerName', 'status', 'items'].includes(col.id))
+    }
+    return columns
   }, [isCompact])
 
   return (
     <div className="h-full flex-1 overflow-hidden rounded-md ">
-      <DataTable
-        columns={displayColumns}
-        data={data}
-        isLoading={isLoading}
-        columnWidths={columnWidths}
-        filterableColumns={filterableColumns}
-        pageSize={isCompact ? 25 : 50}
-        onRowSelectionChange={onRowSelectionChange}
-        onRowClick={(row: EnrichedOrders) => {
-          const order = row
-          if (onRowClick) {
-            onRowClick(order)
+
+        <DataTable
+          columns={displayColumns}
+          data={data}
+          isLoading={isLoading}
+          columnWidths={columnWidths}
+          pageSize={isCompact ? 25 : 50}
+          onRowSelectionChange={onRowSelectionChange}
+          onRowClick={(row: EnrichedOrders) => {
+            const order = row
+            if (onRowClick) {
+              onRowClick(order)
+            }
+          }}
+          rowClassName={(row) =>
+            cn(
+              "hover:bg-slate-200 cursor-pointer",
+              selectedId === (row as EnrichedOrders).orderId && "bg-blue-50 hover:bg-blue-100"
+            )
           }
-        }}
-        rowClassName={(row) =>
-          cn(
-            "hover:bg-slate-200 cursor-pointer",
-            selectedId === (row as EnrichedOrders).orderId && "bg-blue-50 hover:bg-blue-100"
-          )
-        }
-      />
+        />
+
     </div>
   )
 }

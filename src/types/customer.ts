@@ -89,4 +89,11 @@ export const customerSchema = z.object({
   ...customer,
 }));
 
+export const customerList = z.object({
+  customerId: z.string(),
+  customerNumber: z.number(),
+  displayName: z.string().max(100),
+});
+
 export type EnrichedCustomer = z.infer<typeof customerSchema>;
+export type CustomerList = z.infer<typeof customerList>;

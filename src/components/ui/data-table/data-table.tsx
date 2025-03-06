@@ -1,17 +1,17 @@
-"use client"
+"use client";
 
-import * as React from "react"
+import React, { useState, useRef, useCallback, useMemo } from "react";
 import {
   ColumnDef,
-  ColumnFiltersState,
-  RowSelectionState,
-  SortingState,
   flexRender,
   getCoreRowModel,
-  getFilteredRowModel,
-  getSortedRowModel,
   useReactTable,
-} from "@tanstack/react-table"
+  getPaginationRowModel,
+  RowSelectionState,
+  TableOptions,
+  Updater,
+} from "@tanstack/react-table";
+import { useRowSelection } from "@/hooks/use-row-selection";
 
 import {
   Table,
@@ -20,146 +20,130 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
+} from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
+import { LoadingSpinner } from "../loading-spinner";
 
-import { Input } from "@/components/ui/input"
-import { LoadingSpinner } from "../loading-spinner"
-import { cn } from "@/lib/utils"
-
-interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[]
-  data: TData[]
-  isLoading?: boolean
-  columnWidths?: { [key: string]: string }
-  filterableColumns?: { id: string; title: string }[]
-  pageSize?: number
-  onRowClick?: (row: TData) => void
-  rowClassName?: (row: TData) => string
-  onRowSelectionChange?: (selection: RowSelectionState) => void
-  onSort?: (field: string, direction: 'asc' | 'desc') => void
-  sortField?: string
-  sortDirection?: 'asc' | 'desc'
+// Custom column meta interface
+interface CustomColumnMeta {
+  isNumeric?: boolean;
 }
 
-type Column = {
-  id?: string;
-  accessorKey?: string;
-  columnDef?: {
-    header?: string;
-    accessorKey?: string;
-  };
-};
+// Memoize the checkbox component to prevent unnecessary renders
+const MemoizedCheckbox = React.memo(Checkbox);
 
-export function DataTable<TData, TValue>({
+// Memoize individual table cells for better performance
+const MemoizedCell = React.memo(
+  ({ cell, isNumeric }: { cell: any; isNumeric?: boolean }) => {
+    return (
+      <TableCell className={isNumeric ? "text-right tabular-nums" : ""}>
+        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+      </TableCell>
+    );
+  }
+);
+
+MemoizedCell.displayName = "MemoizedCell";
+
+interface DataTableProps<TData extends object, TValue> {
+  columns: ColumnDef<TData, TValue>[];
+  data: TData[];
+  columnWidths?: Record<string, string>;
+  pageSize?: number;
+  onRowSelectionChange?: (newSelection: RowSelectionState) => void;
+  onRowClick?: (row: TData, e?: React.MouseEvent) => void;
+  rowClassName?: (row: TData) => string;
+  enableSelection?: boolean;
+  isLoading?: boolean;
+  virtualized?: boolean;
+  preventFormSubmission?: boolean;
+}
+
+export function DataTable<TData extends object, TValue>({
   columns,
   data,
-  isLoading,
   columnWidths,
-  filterableColumns = [], // Add default value
+  pageSize = 10,
+  onRowSelectionChange,
   onRowClick,
   rowClassName,
-  onRowSelectionChange,
-  onSort,
-  sortField,
-  sortDirection
+  enableSelection = false,
+  isLoading = false,
+  preventFormSubmission = true,
 }: DataTableProps<TData, TValue>) {
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
-  const sorting = React.useMemo<SortingState>(() => {
-    if (sortField && sortDirection) {
-      return [{ id: sortField, desc: sortDirection === 'desc' }]
-    }
-    return []
-  }, [sortField, sortDirection])
+  // Use the custom hook for row selection
+  const [rowSelection, setRowSelection] = useRowSelection({}, onRowSelectionChange);
 
-  const handleSortingChange = React.useCallback((updaterOrValue: SortingState | ((old: SortingState) => SortingState)) => {
-    const newSorting = typeof updaterOrValue === 'function' ? updaterOrValue([]) : updaterOrValue
-    if (onSort && newSorting.length > 0) {
-      const { id, desc } = newSorting[0]
-      onSort(id, desc ? 'desc' : 'asc')
-    }
-  }, [onSort])
-  const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({})
-
-
-  const table = useReactTable({
+  // Prevent unnecessary table recalculation
+  const tableOptions = useMemo<TableOptions<TData>>(() => ({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    onColumnFiltersChange: setColumnFilters,
-    getFilteredRowModel: getFilteredRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    onSortingChange: handleSortingChange,
-    // onRowSelectionChange: setRowSelection,
-    onRowSelectionChange: (updatedSelection) => {
-      setRowSelection(updatedSelection);
-      // If updatedSelection is a function, call it with current selection
-      if (typeof updatedSelection === 'function') {
-        const newSelection = updatedSelection(rowSelection);
-        onRowSelectionChange?.(newSelection);
-      } else {
-        onRowSelectionChange?.(updatedSelection);
-      }
-    },
-
-
+    getPaginationRowModel: getPaginationRowModel(),
+    onRowSelectionChange: setRowSelection, // Use the wrapped setter function
     state: {
       rowSelection,
-      columnFilters,
-      sorting,
     },
-  })
+    enableRowSelection: enableSelection,
+    initialState: {
+      pagination: {
+        pageSize: pageSize,
+      },
+    },
+  }), [data, columns, pageSize, setRowSelection, enableSelection, rowSelection]);
 
+  const table = useReactTable(tableOptions);
 
-  return (
-    <div className="flex flex-col h-full">
-      {filterableColumns && filterableColumns.length > 0 && (
-        <div className="flex items-center gap-2 flex-wrap p-4 bg-white border-b">
-          {filterableColumns.map(column => (
-            <div key={column.id} className="flex items-center gap-2">
-              <Input
-                placeholder={`Filter ${column.title}...`}
-                value={(table.getColumn(column.id)?.getFilterValue() as string) ?? ""}
-                onChange={(event) =>
-                  table.getColumn(column.id)?.setFilterValue(event.target.value)
-                }
-                className="max-w-sm"
-              />
-            </div>
-          ))}
-        </div>
-      )}
+  // Handle row click with proper event prevention
+  const handleRowClick = useCallback((row: TData, e?: React.MouseEvent) => {
+    // Only prevent default if event exists and prevention is enabled
+    if (e && preventFormSubmission) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
 
-      <div className="flex-1 overflow-auto">
-        <Table>
-          {/* <TableHeader className="sticky top-0 bg-white z-10"> */}
-          <TableHeader className="sticky top-0 bg-white ">
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  const column = header.column.columnDef as Column
-                  const columnId = column.id || column.accessorKey || ''
-                  const width = columnWidths?.[columnId]
-                  
-                  return (
-                    <TableHead
-                      key={header.id}
-                      style={width ? { width } : undefined}
-                      className="whitespace-nowrap bg-white"
-                    >
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
+    if (onRowClick) {
+      onRowClick(row, e);
+    }
+  }, [onRowClick, preventFormSubmission]);
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="flex flex-col h-full ">
+        <div className="w-full overflow-auto">
+          <Table style={{ tableLayout: 'auto' }}>
+            <TableHeader className="sticky top-0 rounded-t-md">
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}
+                  style={{ position: 'relative' }}
+                // className="bg-amber-400"
+                >
+                  {headerGroup.headers.map((header) => {
+                    const width = header.column.columnDef.id
+                      ? columnWidths?.[header.column.columnDef.id]
+                      : undefined;
+                    return (
+                      <TableHead
+                        key={header.id}
+                        style={{ position: 'relative', width: width ? width : undefined }}
+                        className="min-w-[50px] overflow-hidden whitespace-nowrap text-ellipsis text-slate-600 text-m"
+                      >
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
                             header.column.columnDef.header,
                             header.getContext()
                           )}
-                    </TableHead>
-                  )
-                })}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
+                      </TableHead>
+                    );
+                  })}
+                </TableRow>
+              ))}
+            </TableHeader>
+            <TableBody>
               <TableRow>
                 <TableCell
                   colSpan={columns.length}
@@ -168,37 +152,83 @@ export function DataTable<TData, TValue>({
                   <LoadingSpinner />
                 </TableCell>
               </TableRow>
-            ) : data.length > 0 ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                  onClick={() => onRowClick?.(row.original)}
-                  className={rowClassName?.(row.original)}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
-                  No results.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+            </TableBody>
+          </Table>
+        </div>
       </div>
-    </div>
-  )
-}
+    )}
+
+    return (
+      <div className="flex flex-col h-full ">
+        <div className="w-full overflow-auto">
+          <Table style={{ tableLayout: 'auto' }}>
+            <TableHeader className="sticky top-0 rounded-t-md">
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}
+                  style={{ position: 'relative' }}
+                // className="bg-amber-400"
+                >
+                  {headerGroup.headers.map((header) => {
+                    const width = header.column.columnDef.id
+                      ? columnWidths?.[header.column.columnDef.id]
+                      : undefined;
+                    return (
+                      <TableHead
+                        key={header.id}
+                        style={{ position: 'relative', width: width ? width : undefined }}
+                        className="min-w-[50px] overflow-hidden whitespace-nowrap text-ellipsis text-slate-600 text-m"
+                      >
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                      </TableHead>
+                    );
+                  })}
+                </TableRow>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() ? "selected" : undefined}
+                    className={cn(
+                      onRowClick && "cursor-pointer",
+                      rowClassName?.(row.original)
+                    )}
+                    onClick={(e) => handleRowClick(row.original, e)}
+                  >
+                    {row.getVisibleCells().map((cell) => {
+                      // Safely access meta property with type assertion
+                      const meta = cell.column.columnDef.meta as CustomColumnMeta | undefined;
+                      const isNumeric = meta?.isNumeric;
+                      return (
+                        <MemoizedCell
+                          key={cell.id}
+                          cell={cell}
+                          isNumeric={isNumeric}
+                        />
+                      );
+                    })}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-24 text-center"
+                  >
+                    No results.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+    );
+  }

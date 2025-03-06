@@ -155,6 +155,17 @@ getCustomers: async function () {
 
     })
   },
+  getCustomerList: async function () {
+    return db.query.customers.findMany({
+      columns: {
+        customerId: true,
+        customerNumber: true,
+        displayName: true
+      },
+      orderBy: (customers, { desc }) => [desc(customers.displayName)]
+
+    })
+  },
   getSingleCustomersFULL: async function (customerId:string) {
     return db.query.customers.findFirst({
       with: {

@@ -1,6 +1,6 @@
 // src/server/services/customer-service.ts
 import { QUERIES } from '@/server/db/queries';
-import { customerSchema, EnrichedCustomer } from '@/types/customer';
+import { customerList, CustomerList, customerSchema, EnrichedCustomer } from '@/types/customer';
 import { z } from 'zod';
 
 export const customerService = {
@@ -8,6 +8,20 @@ export const customerService = {
         try {
             const rawCustomers = await QUERIES.getAllCustomersFULL();
             const validatedCustomers = z.array(customerSchema).parse(rawCustomers);
+            return validatedCustomers;
+        } catch (error) {
+            if (error instanceof z.ZodError) {
+                console.error("Data validation error:", JSON.stringify(error.errors, null, 2));
+                throw new Error("Invalid data structure received from database");
+            }
+            console.error("Database query error:", error);
+            throw new Error("Failed to fetch customers");
+        }
+    },
+    async getCustomerSelectList(): Promise<CustomerList[]> {
+        try {
+            const rawCustomers = await QUERIES.getCustomerList();
+            const validatedCustomers = z.array(customerList).parse(rawCustomers);
             return validatedCustomers;
         } catch (error) {
             if (error instanceof z.ZodError) {
