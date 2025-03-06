@@ -1,7 +1,7 @@
 "use client"
 import { useMemo } from "react"
 import { cn } from "@/lib/utils"
-import { OrderDetails } from "./details/OrderDetails"
+import { OrderDetails } from "./OrderDetails"
 import { useOrderDetails } from "@/hooks/data-fetcher"
 import { useStockMovementStore } from "@/stores/stock-movement-store"
 import { useGetMovementById } from "@/hooks/useGetMovementById"

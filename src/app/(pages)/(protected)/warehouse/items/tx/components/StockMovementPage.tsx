@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils"
 import { useStockMovementStore } from "@/stores/stock-movement-store"
 import { SearchPanel } from "./SearchPanel"
 import { MovementsTable } from "./MovementsTable"
-import { DetailsPanel } from "./DetailsPanel"
+import { DetailsPanel } from "./details/DetailsPanel"
 import { useUrlSync } from "@/hooks/useUrlSync"
 
 export function StockMovementPage() {
