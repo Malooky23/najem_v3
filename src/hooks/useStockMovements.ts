@@ -42,7 +42,7 @@ export function useStockMovements(
 
   // Calculate a reasonable stale time based on search
   const hasSearch = filters.search && filters.search.trim().length > 0;
-  const defaultStaleTime = hasSearch ? 0 : 30000; // No cache when searching
+  const defaultStaleTime = hasSearch ? 0 : 24 * 60 * 60 * 1000; // No cache when searching
 
   const query = useQuery({
     queryKey,
@@ -134,7 +134,7 @@ export function usePrefetchStockMovements(
           }
         };
       },
-      staleTime: 60*60*1000,
+      staleTime: 90 * 1000,
     });
   };
 }
