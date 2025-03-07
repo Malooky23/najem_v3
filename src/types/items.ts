@@ -1,11 +1,9 @@
 import { z } from "zod";
 import { type InsertItem, items, type Item } from "@/server/db/schema";
 import {createInsertSchema,} from 'drizzle-zod'
-import { stockMovement, stockReconciliation } from "./stockMovement";
+import { stockMovement, stockReconciliation, stockMovementsView } from "./stockMovement";
 
 export const emptyStringToNull = z.string().optional().nullable().nullish().transform((val) => val === '' ? null : val);
-
-
 
 export const itemTypes = z.enum(["SACK", "PALLET", "CARTON", "OTHER", "BOX", "EQUIPMENT", "CAR"])
 
@@ -18,9 +16,6 @@ export const itemStock = z.object({
   lastReconciliationAt: z.date().nullable(),
   lastReconciliationBy: z.string().nullable(),
 });
-// New schema for stock reconciliation
-
-
 
 export const createItemsSchema = z.object({
   itemType: itemTypes,
@@ -40,7 +35,6 @@ export const createItemsSchema = z.object({
   customerId: z.string().min(35, {message: "please select a customer"}),
   notes: emptyStringToNull,
   createdBy: z.string(),
-
 });
 
 export const ItemSchema = z.object({
@@ -65,20 +59,15 @@ export const ItemSchema = z.object({
   updatedAt: z.date().nullable(),
   isDeleted: z.boolean().default(false),
   itemStock: z.array(itemStock).nullable().optional(),
-  stockMovements: z.array(stockMovement).optional(),
+  stockMovements: z.array(stockMovementsView).optional(), // Changed to use enriched view
   stockReconciliations: z.array(stockReconciliation).optional(),
 });
 
-
 export const EnrichedItemsSchema = ItemSchema.extend({
-  customerDisplayName: z.string(), // Add the new field here, define its type
+  customerDisplayName: z.string(),
 });
 
-export type ItemSchemaType = z.infer< typeof ItemSchema>
-export type EnrichedItemsType = z.infer< typeof EnrichedItemsSchema>
-// export type CreateItemsSchemaType = z.infer< typeof createItemsSchema>
-
-
-export type CreateItemsSchemaType = z.infer< typeof createItemsSchema>
+export type ItemSchemaType = z.infer<typeof ItemSchema>
+export type EnrichedItemsType = z.infer<typeof EnrichedItemsSchema>
+export type CreateItemsSchemaType = z.infer<typeof createItemsSchema>
 export const insertItemZod = createInsertSchema(items)
-

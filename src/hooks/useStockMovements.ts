@@ -1,7 +1,9 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getStockMovements } from '@/server/actions/getStockMovements';
 import { StockMovementFilters, StockMovementSort } from '@/types/stockMovement';
 import { keepPreviousData } from '@tanstack/react-query';
+
+export { getStockMovements };
 
 export interface StockMovementsQueryParams {
   page?: number;
@@ -16,6 +18,7 @@ type QueryOptions = {
   refetchOnWindowFocus?: boolean;
   refetchOnMount?: boolean;
   refetchOnReconnect?: boolean;
+  notifyOnChangeProps?: any ,
 };
 
 export function useStockMovements(
@@ -88,3 +91,51 @@ export function useStockMovements(
     }
   };
 }
+
+/////////
+export function usePrefetchStockMovements(
+  params: StockMovementsQueryParams = {}, 
+  options: QueryOptions = {},
+) {
+  const queryClient = useQueryClient();
+  
+  // Reuse the same parameter defaults and query key construction logic
+  const page = params.page || 1;
+  const pageSize = params.pageSize || 10;
+  const filters = params.filters || {};
+  const sort = params.sort || { field: 'createdAt', direction: 'desc' };
+
+  const queryKey = [
+    'stockMovements', 
+    page.toString(), 
+    pageSize.toString(), 
+    JSON.stringify(filters), 
+    JSON.stringify(sort)
+  ];
+
+  // Use the simplified prefetch function
+  return () => {
+    return queryClient.prefetchQuery({
+      queryKey,
+      queryFn: async () => {
+        const result = await getStockMovements(page, pageSize, filters, sort);
+        
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to fetch stock movements');
+        }
+        
+        return {
+          data: result.data?.data || [],
+          pagination: result.data?.pagination || {
+            total: 0,
+            pageSize,
+            currentPage: page,
+            totalPages: 0
+          }
+        };
+      },
+      staleTime: 60*60*1000,
+    });
+  };
+}
+

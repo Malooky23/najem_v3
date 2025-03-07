@@ -88,9 +88,9 @@ function withSort<T extends PgSelect>(
 ) {
     // Clear any existing order by clauses
     const freshQuery = qb.orderBy();
-    
+
     return freshQuery.orderBy(
-        sort.direction === 'desc' 
+        sort.direction === 'desc'
             ? desc(stockMovementsView[sort.field])
             : asc(stockMovementsView[sort.field])
     );
@@ -101,7 +101,7 @@ export async function getStockMovements(
     page: number = 1,
     pageSize: number = 100,
     filters: StockMovementFilters = {},
-    sort: StockMovementSort = { field: 'createdAt', direction: 'desc' }
+    sort: StockMovementSort = { field: 'movementNumber', direction: 'desc' }
 ): Promise<GetStockMovementsResponse> {
     try {
         const session = await auth();
@@ -110,13 +110,34 @@ export async function getStockMovements(
         }
 
         // Debug incoming params
-        console.log("Server action called with page:", page, "pageSize:", pageSize);
-        console.log("Server action filters:", JSON.stringify(filters));
-        
+        // console.log("Server action called with page:", page, "pageSize:", pageSize);
+        // console.log("Server action filters:", JSON.stringify(filters));
+
         // Build base query and make it dynamic
-        let query = db.select()
+        let query = db.select(
+            {
+                movementId: stockMovementsView.movementId,
+                movementNumber: stockMovementsView.movementNumber,
+                itemId: stockMovementsView.itemId,
+                locationId: stockMovementsView.locationId,
+                movementType: stockMovementsView.movementType,
+                quantity: stockMovementsView.quantity,
+                referenceType: stockMovementsView.referenceType,
+                referenceId: stockMovementsView.referenceId,
+                notes: stockMovementsView.notes,
+                createdBy: stockMovementsView.createdBy,
+                createdAt: stockMovementsView.createdAt,
+                itemName: stockMovementsView.itemName,
+                customerId: stockMovementsView.customerId,
+                customerDisplayName: stockMovementsView.customerDisplayName,
+                stockLevelAfter: stockMovementsView.stockLevelAfter,
+                totalCount: sql<number>`count(*) over()::integer`,
+            }
+        )
             .from(stockMovementsView)
             .$dynamic();
+
+
 
         // Apply filters, pagination and sorting
         query = withFilters(query, filters, session);
@@ -127,22 +148,25 @@ export async function getStockMovements(
         const results = await query;
 
         // Build and execute count query
-        let countQuery = db.select({ 
-            count: sql<number>`count(*)::integer` 
-        })
-        .from(stockMovementsView)
-        .$dynamic();
-        
-        countQuery = withFilters(countQuery, filters, session);
-        const countResult = await countQuery;
+        // let countQuery = db.select({count: sql<number>`count(*)::integer`}).from(stockMovementsView).$dynamic();
+        // countQuery = withFilters(countQuery, filters, session);
+        // const countResult = await countQuery;
+        // const totalCount = countResult[0].count;
 
-        const totalCount = countResult[0].count;
-        
+        // Get total count from first row (or 0 if no results)
+        const totalCount = results.length > 0 ? results[0].totalCount : 0;
+
+        // Remove totalCount from result objects
+        const data = results.map(({ totalCount: _, ...rest }) => rest);
+
+
+
         // Return data with proper parsing
         return {
             success: true,
             data: {
-                data: results,
+                // data: results,
+                data,
                 pagination: {
                     total: totalCount,
                     pageSize,

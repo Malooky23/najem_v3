@@ -119,7 +119,6 @@ export function DataTable<TData extends object, TValue>({
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}
                   style={{ position: 'relative' }}
-                // className="bg-amber-400"
                 >
                   {headerGroup.headers.map((header) => {
                     const width = header.column.columnDef.id
@@ -156,79 +155,79 @@ export function DataTable<TData extends object, TValue>({
           </Table>
         </div>
       </div>
-    )}
+    );
+  }
 
-    return (
-      <div className="flex flex-col h-full ">
-        <div className="w-full overflow-auto">
-          <Table style={{ tableLayout: 'auto' }}>
-            <TableHeader className="sticky top-0 rounded-t-md">
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}
-                  style={{ position: 'relative' }}
-                // className="bg-amber-400"
+  return (
+    <div className="flex flex-col h-full ">
+      <div className="w-full overflow-auto">
+        <Table style={{ tableLayout: 'auto' }}>
+          <TableHeader className="sticky top-0 rounded-t-md">
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}
+                style={{ position: 'relative' }}
+              >
+                {headerGroup.headers.map((header) => {
+                  const width = header.column.columnDef.id
+                    ? columnWidths?.[header.column.columnDef.id]
+                    : undefined;
+                  return (
+                    <TableHead
+                      key={header.id}
+                      style={{ position: 'relative', width: width ? width : undefined }}
+                      className="min-w-[50px] overflow-hidden whitespace-nowrap text-ellipsis text-slate-600 text-m"
+                    >
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                    </TableHead>
+                  );
+                })}
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows?.length ? (
+              table.getRowModel().rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() ? "selected" : undefined}
+                  className={cn(
+                    onRowClick && "cursor-pointer",
+                    rowClassName?.(row.original)
+                  )}
+                  onClick={(e) => handleRowClick(row.original, e)}
                 >
-                  {headerGroup.headers.map((header) => {
-                    const width = header.column.columnDef.id
-                      ? columnWidths?.[header.column.columnDef.id]
-                      : undefined;
+                  {row.getVisibleCells().map((cell) => {
+                    // Safely access meta property with type assertion
+                    const meta = cell.column.columnDef.meta as CustomColumnMeta | undefined;
+                    const isNumeric = meta?.isNumeric;
                     return (
-                      <TableHead
-                        key={header.id}
-                        style={{ position: 'relative', width: width ? width : undefined }}
-                        className="min-w-[50px] overflow-hidden whitespace-nowrap text-ellipsis text-slate-600 text-m"
-                      >
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                      </TableHead>
+                      <MemoizedCell
+                        key={cell.id}
+                        cell={cell}
+                        isNumeric={isNumeric}
+                      />
                     );
                   })}
                 </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody>
-              {table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    data-state={row.getIsSelected() ? "selected" : undefined}
-                    className={cn(
-                      onRowClick && "cursor-pointer",
-                      rowClassName?.(row.original)
-                    )}
-                    onClick={(e) => handleRowClick(row.original, e)}
-                  >
-                    {row.getVisibleCells().map((cell) => {
-                      // Safely access meta property with type assertion
-                      const meta = cell.column.columnDef.meta as CustomColumnMeta | undefined;
-                      const isNumeric = meta?.isNumeric;
-                      return (
-                        <MemoizedCell
-                          key={cell.id}
-                          cell={cell}
-                          isNumeric={isNumeric}
-                        />
-                      );
-                    })}
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell
-                    colSpan={columns.length}
-                    className="h-24 text-center"
-                  >
-                    No results.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
+                  No results.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
       </div>
-    );
-  }
+    </div>
+  );
+}

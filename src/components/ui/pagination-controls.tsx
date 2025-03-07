@@ -12,9 +12,10 @@ interface PaginationControlsProps {
   totalPages: number
   pageSize: number
   total: number
-  selectedRows: number
+  selectedRows?: number
   onPageChange: (page: number) => void
   onPageSizeChange: (pageSize: number) => void
+  onNextPageHover?: () => void
 }
 
 export function PaginationControls({
@@ -22,9 +23,10 @@ export function PaginationControls({
   totalPages,
   pageSize,
   total,
-  selectedRows,
+  selectedRows = 0,
   onPageChange,
   onPageSizeChange,
+  onNextPageHover,
 }: PaginationControlsProps) {
   const canPreviousPage = currentPage > 1
   const canNextPage = currentPage < totalPages
@@ -175,6 +177,12 @@ export function PaginationControls({
             handlePageChange(currentPage + 1);
           }}
           disabled={!canNextPage}
+          onMouseEnter={() => {
+            console.log('HOVER');
+            if (canNextPage && onNextPageHover) {
+              onNextPageHover();
+            }
+          }}
         >
           <ChevronRight className="h-4 w-4" />
           <span className="sr-only">Next page</span>
