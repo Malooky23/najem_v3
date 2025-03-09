@@ -16,6 +16,7 @@ interface PaginationControlsProps {
   onPageChange: (page: number) => void
   onPageSizeChange: (pageSize: number) => void
   onNextPageHover?: () => void
+  isLoading?: boolean; // New prop
 }
 
 export function PaginationControls({
@@ -27,6 +28,7 @@ export function PaginationControls({
   onPageChange,
   onPageSizeChange,
   onNextPageHover,
+  isLoading = false
 }: PaginationControlsProps) {
   const canPreviousPage = currentPage > 1
   const canNextPage = currentPage < totalPages
@@ -119,7 +121,12 @@ export function PaginationControls({
   }, [currentPage, totalPages, handlePageChange]);
 
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex items-center gap-2 relative">
+      {/* If loading, add a subtle indicator */}
+      {isLoading && (
+        <div className="absolute -top-1 left-0 right-0 h-0.5 bg-blue-500 animate-pulse" />
+      )}
+      
       <div className="text-sm text-muted-foreground hidden sm:block relative overflow-hidden">
         <div className={`transition-transform duration-300 ${showSelectedRows ? "-translate-y-full" : ""}`}>
           {startItem}-{endItem} of {total}

@@ -8,6 +8,7 @@ import { ReactNode } from "react"
 interface UseOrderFormProps {
   order: EnrichedOrders
   onSave?: (updatedOrder: EnrichedOrders) => Promise<void>
+  isProcessing?: boolean
 }
 
 interface FormState {
@@ -19,9 +20,16 @@ interface FormState {
   handleCancel: () => void
 }
 
-export function useOrderForm({ order, onSave }: UseOrderFormProps): FormState {
+export function useOrderForm({ order, onSave, isProcessing = false }: UseOrderFormProps): FormState {
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+
+  // Reset the form when isProcessing changes to false (operation completed)
+  useEffect(() => {
+    if (!isProcessing && isSaving) {
+      setIsSaving(false);
+    }
+  }, [isProcessing, isSaving]);
 
   const form = useForm<EnrichedOrders>({
     resolver: zodResolver(updateOrderSchema),
@@ -39,6 +47,15 @@ export function useOrderForm({ order, onSave }: UseOrderFormProps): FormState {
 
   const handleSave = async () => {
     try {
+      // Don't allow saving if already processing
+      if (isProcessing) {
+        toast({
+          description: "Please wait, a save operation is already in progress",
+          variant: "default",
+        });
+        return;
+      }
+
       if (!onSave) {
         throw new Error('Cannot save: save callback is not provided')
       }
@@ -81,18 +98,10 @@ export function useOrderForm({ order, onSave }: UseOrderFormProps): FormState {
         setIsSaving(true)
         await onSave(values)
 
-        const changedFields = Object.entries(values)
-          .filter(([key, value]) => value !== originalValues[key as keyof typeof originalValues])
-          .map(([key, value]) => `${key}: ${value}`)
-          .join(', ')
+        // Don't show toast or set editing state here
+        // Let the external isProcessing prop control this
+        // This will be handled by the mutation's onSuccess callback
 
-        toast({
-          title: "Order updated successfully",
-          description: changedFields,
-          variant: "default",
-        })
-
-        setIsEditing(false)
       } catch (error) {
         // Revert form values on error
         form.reset(originalValues)
@@ -105,12 +114,16 @@ export function useOrderForm({ order, onSave }: UseOrderFormProps): FormState {
           variant: "destructive",
         })
 
-        throw error // Re-throw to trigger SaveButton error state
+        // throw error // Re-throw to trigger SaveButton error state
       }
     } catch (error) {
-      throw error // Re-throw to trigger SaveButton error state
+      // throw error // Re-throw to trigger SaveButton error state
     } finally {
-      setIsSaving(false)
+      // Only set isSaving to false if isProcessing is false
+      // Otherwise, let the external processing state control this
+      if (!isProcessing) {
+        setIsSaving(false)
+      }
     }
   }
 
@@ -119,10 +132,9 @@ export function useOrderForm({ order, onSave }: UseOrderFormProps): FormState {
       const confirmChange = window.confirm("Cannot modify COMPLETED order. Would you like to change status to DRAFT?")
       if (confirmChange) {
         form.setValue("status", "DRAFT")
+        setIsEditing(true) // set editing to true first
         // Save the status change immediately before allowing edits
-        handleSave().then(() => {
-          setIsEditing(true)
-        }).catch(() => {
+        handleSave().catch(() => { // remove then and just catch
           // If save fails, revert the status change
           form.setValue("status", "COMPLETED")
           toast({
@@ -146,7 +158,7 @@ export function useOrderForm({ order, onSave }: UseOrderFormProps): FormState {
   return {
     form,
     isEditing,
-    isSaving,
+    isSaving: isSaving || isProcessing,
     handleSave,
     handleEdit,
     handleCancel

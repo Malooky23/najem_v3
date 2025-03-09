@@ -38,7 +38,8 @@ function createDateFromString(dateString: string): Date {
   return new Date(dateString)
 }
 
-function OrderFiltersComponent({
+// Make OrderFilters a default export for dynamic import
+const OrderFilters = memo(function OrderFilters({
   status,
   customerId,
   movement,
@@ -229,7 +230,6 @@ function OrderFiltersComponent({
       )}
     </div>
   )
-}
+})
 
-// Export a memoized version of the component to prevent unnecessary rerenders
-export const OrderFilters = memo(OrderFiltersComponent);
+export default OrderFilters;

@@ -66,7 +66,6 @@ export function DataTable<TData extends object, TValue>({
   data,
   columnWidths,
   pageSize = 100,
-  // pageSize,
   onRowSelectionChange,
   onRowClick,
   rowClassName,
@@ -110,8 +109,8 @@ export function DataTable<TData extends object, TValue>({
     }
   }, [onRowClick, preventFormSubmission]);
 
-  // Loading state
-  if (isLoading) {
+  // Loading state - Only show full loading spinner when we have no data
+  if (isLoading && data.length === 0) {
     return (
       <div className="flex flex-col h-full">
         <div className="w-full overflow-x-auto overflow-y-auto"> {/* Added overflow-y-auto */}
@@ -229,8 +228,6 @@ export function DataTable<TData extends object, TValue>({
           </TableBody>
         </Table>
       </div>
-      <h1>Base Table Component-PageSize: {pageSize}</h1>
-
     </div>
   );
 }

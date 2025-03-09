@@ -1,10 +1,10 @@
 'use client';
-import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { type ItemSchemaType } from "@/types/items";
 import { CustomerList, EnrichedCustomer } from "@/types/customer";
 import { EnrichedOrders, type OrderFilters, type OrderSort } from "@/types/orders";
 import { getSession } from 'next-auth/react';
-import { getOrders, getOrderById } from "@/server/actions/orders";
+import { getOrders, getOrderById, updateOrder } from "@/server/actions/orders";
 import { EnrichedStockMovementView, StockMovementFilters, StockMovementSort } from "@/types/stockMovement";
 import { StockMovement } from "@/server/db/schema";
 import { getStockMovements } from "@/server/actions/getStockMovements";
@@ -28,45 +28,53 @@ export interface OrdersQueryResult {
   };
 }
 
-// Update the useOrderDetails hook to better handle errors and missing IDs
+// Optimize the order details fetch to minimize unnecessary requests
 export function useOrderDetails(
   orderId: string | null,
-  selectedOrder: any | null = null // add parameter
+  selectedOrder: EnrichedOrders | null = null 
 ) {
   const queryClient = useQueryClient();
 
   return useQuery({
     queryKey: ['order', orderId],
     queryFn: async () => {
-      if (!orderId) {
-        console.log("No order ID provided to fetch");
-        return null;
+      if (!orderId) return null;
+      
+      // Use cached order if possible to avoid network request
+      if (selectedOrder && selectedOrder.orderId === orderId) {
+        return selectedOrder;
       }
-      console.log("Fetching order details for ID:", orderId);
-      try {
-        const result = await getOrderById(orderId);
-        if (!result.success) {
-          console.error("Error fetching order:", result.error);
-          throw new Error(result.error || 'Failed to fetch order');
-        }
-        return result.data;
-      } catch (error) {
-        console.error("Exception in order fetch:", error);
-        throw error;
+      
+      const result = await getOrderById(orderId);
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to fetch order');
       }
+      return result.data;
     },
     enabled: !!orderId,
-    staleTime: 60 * 60 * 1000,
-    retry: 2, // Retry failed requests twice
-    retryDelay: attempt => Math.min(attempt * 1000, 3000), // Exponential backoff
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    retry: 1,
   });
 }
 
+// Completely refactored orders query for much better performance
 export function useOrdersQuery(params: OrdersQueryParams = {}) {
   const queryClient = useQueryClient();
+  
+  // Convert params to a stable string key to prevent unnecessary refetches
+  const stableQueryKey = useMemo(() => {
+    return [
+      'orders',
+      params.page || 1,
+      params.pageSize || 10,
+      JSON.stringify(params.filters || {}),
+      `${params.sort?.field || 'createdAt'}-${params.sort?.direction || 'desc'}`
+    ];
+  }, [params.page, params.pageSize, params.filters, params.sort]);
 
-  const query = useQuery<OrdersQueryResult>({
-    queryKey: ['orders', params],
+  const query = useQuery({
+    queryKey: stableQueryKey,
     queryFn: async () => {
       const result = await getOrders(
         params.page || 1,
@@ -78,40 +86,82 @@ export function useOrdersQuery(params: OrdersQueryParams = {}) {
       if (!result.success) {
         throw new Error(result.error || 'Failed to fetch orders');
       }
-      if (!result.data) {
-        throw new Error('Failed to fetch orders');
-      }
-
+      
       return {
-        orders: result.data.orders,
-        pagination: result.data.pagination
+        orders: result.data!.orders,
+        pagination: result.data!.pagination
       };
     },
     refetchOnMount: false,
     refetchOnWindowFocus: false,
-    staleTime: 60 * 60 * 1000,
+    staleTime: 3 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
     placeholderData: keepPreviousData,
-
   });
 
-  const invalidateOrders = async () => {
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ['orders'] }),
-      queryClient.invalidateQueries({ queryKey: ['items'] }),
-      queryClient.invalidateQueries({ queryKey: ['stockMovements'] })
-    ]);
+  // Better mutation handling with optimistic updates
+  const updateOrderMutation = useMutation({
+    mutationFn: async (updatedOrder: EnrichedOrders) => {
+      const result = await updateOrder(updatedOrder);
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to update order');
+      }
+      return result.data;
+    },
+    onMutate: async (updatedOrder) => {
+      // Cancel pending queries to avoid race conditions
+      await queryClient.cancelQueries({ queryKey: stableQueryKey });
+      await queryClient.cancelQueries({ queryKey: ['order', updatedOrder.orderId] });
+      
+      // Snapshot the previous values
+      const previousOrders = queryClient.getQueryData<OrdersQueryResult>(stableQueryKey);
+      
+      // Optimistically update orders list
+      if (previousOrders) {
+        queryClient.setQueryData<OrdersQueryResult>(stableQueryKey, {
+          ...previousOrders,
+          orders: previousOrders.orders.map(order => 
+            order.orderId === updatedOrder.orderId ? updatedOrder : order
+          )
+        });
+      }
+      
+      // Also update individual order details cache
+      queryClient.setQueryData(['order', updatedOrder.orderId], updatedOrder);
+      
+      return { previousOrders };
+    },
+    onError: (err, updatedOrder, context) => {
+      if (context?.previousOrders) {
+        queryClient.setQueryData(stableQueryKey, context.previousOrders);
+      }
+      queryClient.invalidateQueries({ queryKey: ['order', updatedOrder.orderId] });
+    },
+    onSettled: (data, error, variables) => {
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: stableQueryKey });
+      }, 500);
+    },
+  });
 
-    return Promise.all([
-      query.refetch(),
-      queryClient.refetchQueries({ queryKey: ['items'] }),
-      queryClient.refetchQueries({ queryKey: ['stockMovements'] })
-    ]);
-  };
+  // Use a cleaner return pattern with more informative loading states
   return {
-    ...query,
-    invalidateOrders,
     data: query.data?.orders || [],
-    pagination: query.data?.pagination
+    pagination: query.data?.pagination,
+    // Only show loading state for initial data load, not refetches
+    isInitialLoading: query.isLoading && query.fetchStatus === 'fetching' && !query.data,
+    // isFetching indicates any background loading (useful for subtle indicators)
+    isFetching: query.isFetching, 
+    // Add a status indicator for dev purposes
+    status: query.status,
+    fetchStatus: query.fetchStatus,
+    // Keep other states
+    isError: query.isError,
+    error: query.error,
+    updateOrder: updateOrderMutation.mutate,
+    updateOrderAsync: updateOrderMutation.mutateAsync,
+    isUpdating: updateOrderMutation.isPending,
+    updateError: updateOrderMutation.error,
   };
 }
 
