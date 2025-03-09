@@ -369,6 +369,7 @@ export default function OrdersPage() {
               sortDirection={sortDirection}
               onRowSelectionChange={handleRowSelection}
               selectedRows={selectedRows}
+              pageSize={pagination?.pageSize}
             />
           </div>
 

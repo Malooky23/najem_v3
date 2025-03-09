@@ -36,7 +36,7 @@ export const ItemsTable = memo<ItemsTableProps>(function ItemsTable({
         onRowClick={handleRowClick}
         rowClassName={getRowClassName}
         isLoading={isLoading}
-        pageSize={10}
+        pageSize={100}
       />
     </div>
   )

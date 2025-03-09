@@ -29,14 +29,18 @@ const MOVEMENT_OPTIONS = [
 const SearchInput = memo(function SearchInput({ 
   value, 
   onChange, 
-  isLoading 
+  isLoading,
+  isExpanded,
+  toggleExpanded
 }: { 
   value: string; 
   onChange: (value: string) => void; 
   isLoading: boolean;
+  isExpanded: boolean;
+  toggleExpanded: () => void;
 }) {
   return (
-    <div className="flex-1 relative rounded-lg bg-white">
+    <div className="flex-1   relative rounded-lg bg-white">
       {isLoading ? (
         <LoaderCircle 
           className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground animate-spin" 
@@ -49,8 +53,18 @@ const SearchInput = memo(function SearchInput({
         placeholder="Search movements..."
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="pl-8"
+        className="pl-8 pr-10"
       />
+      
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={toggleExpanded}
+        disabled={isLoading}
+        className="absolute right-0 top-0 h-9 w-9"
+      >
+        {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+      </Button>
     </div>
   );
 });
@@ -109,27 +123,23 @@ export function SearchPanel({ isLoading = false }: SearchPanelProps) {
   
   return (
     <div className="space-y-2">
-      <div className="flex gap-2">
+      <div className="flex gap-0">
         <SearchInput
           value={inputs.search}
           onChange={handleSearchChange}
           isLoading={isLoading}
+          isExpanded={isExpanded}
+          toggleExpanded={toggleExpanded}
         />
-        
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={toggleExpanded}
-          disabled={isLoading}
-        >
-          {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-        </Button>
         
         {hasActiveFilters && (
           <Button 
             variant="ghost" 
             size="icon" 
-            onClick={store.clearFilters}
+            onClick={()=>
+            {
+              inputs.search = ''
+              store.clearFilters()}}
             disabled={isLoading}
           >
             <X className="h-4 w-4" />

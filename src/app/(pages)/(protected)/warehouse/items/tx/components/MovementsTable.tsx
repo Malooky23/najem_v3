@@ -159,7 +159,7 @@ export const MovementsTable = memo<MovementsTableProps>(function MovementsTable(
 
   return (
     <>
-      <div className="flex-1 overflow-hidden flex flex-col rounded-lg bg-slate-50 border-2 border-slate-200">
+      <div className="flex-1 overflow-auto flex flex-col rounded-lg bg-slate-50 border-2 border-slate-200"> {/* Changed overflow-hidden to overflow-auto */}
         <StockMovementTable
           columns={stockMovementColumns}
           data={movements || []}

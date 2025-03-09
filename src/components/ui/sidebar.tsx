@@ -5,12 +5,17 @@ import { Slot } from "@radix-ui/react-slot"
 import { VariantProps, cva } from "class-variance-authority"
 import { PanelLeft } from "lucide-react"
 
-import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
-import { Sheet, SheetContent } from "@/components/ui/sheet"
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   Tooltip,
@@ -18,10 +23,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { useIsMobileTEST } from "@/hooks/use-media-query"
+import { Switch } from "./switch"
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state"
+const SIDEBAR_HOVER_COOKIE_NAME = "sidebar_hover_enabled"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
-const SIDEBAR_WIDTH = "16rem"
+const SIDEBAR_WIDTH = "14rem"
 const SIDEBAR_WIDTH_MOBILE = "18rem"
 const SIDEBAR_WIDTH_ICON = "3rem"
 const SIDEBAR_KEYBOARD_SHORTCUT = "b"
@@ -34,6 +42,13 @@ type SidebarContext = {
   setOpenMobile: (open: boolean) => void
   isMobile: boolean
   toggleSidebar: () => void
+  isHovering: boolean
+  setIsHovering: (hover: boolean) => void
+  hoverEnabled: boolean
+  setHoverEnabled: (enabled: boolean) => void
+  initialState: "expanded" | "collapsed" | null
+  setInitialState: (state: "expanded" | "collapsed" | null) => void
+  setOpenWithoutCookie: (open: boolean) => void // New function for hover state changes
 }
 
 const SidebarContext = React.createContext<SidebarContext | null>(null)
@@ -53,6 +68,7 @@ const SidebarProvider = React.forwardRef<
     defaultOpen?: boolean
     open?: boolean
     onOpenChange?: (open: boolean) => void
+    defaultHoverEnabled?: boolean
   }
 >(
   (
@@ -60,6 +76,7 @@ const SidebarProvider = React.forwardRef<
       defaultOpen = true,
       open: openProp,
       onOpenChange: setOpenProp,
+      defaultHoverEnabled = true,
       className,
       style,
       children,
@@ -67,13 +84,20 @@ const SidebarProvider = React.forwardRef<
     },
     ref
   ) => {
-    const isMobile = useIsMobile()
+    // const isMobile = useIsMobile()
+    const isMobile = useIsMobileTEST()
+
     const [openMobile, setOpenMobile] = React.useState(false)
+    const [isHovering, setIsHovering] = React.useState(false)
+    const [hoverEnabled, setHoverEnabled] = React.useState(defaultHoverEnabled)
+    const [initialState, setInitialState] = React.useState<"expanded" | "collapsed" | null>(null)
 
     // This is the internal state of the sidebar.
     // We use openProp and setOpenProp for control from outside the component.
     const [_open, _setOpen] = React.useState(defaultOpen)
     const open = openProp ?? _open
+    
+    // State setter that also updates the cookie - for user-triggered changes
     const setOpen = React.useCallback(
       (value: boolean | ((value: boolean) => boolean)) => {
         const openState = typeof value === "function" ? value(open) : value
@@ -85,9 +109,32 @@ const SidebarProvider = React.forwardRef<
 
         // This sets the cookie to keep the sidebar state.
         document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`
+        
+        // Update initialState when manual toggling happens (not due to hover)
+        if (!isHovering) {
+          setInitialState(openState ? "expanded" : "collapsed")
+        }
       },
-      [setOpenProp, open]
+      [setOpenProp, open, isHovering]
     )
+
+    // State setter that doesn't update cookies - for hover-triggered changes
+    const setOpenWithoutCookie = React.useCallback(
+      (value: boolean) => {
+        if (setOpenProp) {
+          setOpenProp(value)
+        } else {
+          _setOpen(value)
+        }
+      },
+      [setOpenProp]
+    )
+
+    // Function to update hover enabled state and cookie
+    const updateHoverEnabled = React.useCallback((enabled: boolean) => {
+      setHoverEnabled(enabled);
+      document.cookie = `${SIDEBAR_HOVER_COOKIE_NAME}=${enabled}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
+    }, []);
 
     // Helper to toggle the sidebar.
     const toggleSidebar = React.useCallback(() => {
@@ -95,6 +142,36 @@ const SidebarProvider = React.forwardRef<
         ? setOpenMobile((open) => !open)
         : setOpen((open) => !open)
     }, [isMobile, setOpen, setOpenMobile])
+
+    // Initialize from cookies on mount
+    React.useEffect(() => {
+      const cookies = document.cookie.split('; ');
+      
+      // Read hover enabled state
+      const hoverCookie = cookies.find(cookie => cookie.startsWith(`${SIDEBAR_HOVER_COOKIE_NAME}=`));
+      if (hoverCookie) {
+        const hoverValue = hoverCookie.split('=')[1];
+        setHoverEnabled(hoverValue === 'true');
+      }
+      
+      // Read sidebar state
+      const stateCookie = cookies.find(cookie => cookie.startsWith(`${SIDEBAR_COOKIE_NAME}=`));
+      if (stateCookie) {
+        const stateValue = stateCookie.split('=')[1];
+        const isOpen = stateValue === 'true';
+        
+        // Only set if not controlled externally
+        if (!openProp) {
+          _setOpen(isOpen);
+        }
+        
+        // Set initial state
+        setInitialState(isOpen ? "expanded" : "collapsed");
+      } else {
+        // If no cookie exists, use the current state
+        setInitialState(open ? "expanded" : "collapsed");
+      }
+    }, [openProp]);
 
     // Adds a keyboard shortcut to toggle the sidebar.
     React.useEffect(() => {
@@ -125,8 +202,19 @@ const SidebarProvider = React.forwardRef<
         openMobile,
         setOpenMobile,
         toggleSidebar,
+        isHovering,
+        setIsHovering,
+        hoverEnabled,
+        setHoverEnabled: updateHoverEnabled,
+        initialState,
+        setInitialState,
+        setOpenWithoutCookie,
       }),
-      [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar]
+      [
+        state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar,
+        isHovering, setIsHovering, hoverEnabled, updateHoverEnabled, initialState, 
+        setInitialState, setOpenWithoutCookie
+      ]
     )
 
     return (
@@ -175,7 +263,39 @@ const Sidebar = React.forwardRef<
     },
     ref
   ) => {
-    const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
+    const {
+      isMobile,
+      state,
+      openMobile,
+      setOpenMobile,
+      setOpenWithoutCookie,
+      setIsHovering,
+      hoverEnabled,
+      initialState,
+      setInitialState
+    } = useSidebar()
+
+    // Set initial state when component mounts
+    React.useEffect(() => {
+      if (initialState === null) {
+        setInitialState(state);
+      }
+    }, [state, initialState, setInitialState]);
+
+    // Hover handlers - now using setOpenWithoutCookie to avoid persisting hover states
+    const handleMouseEnter = React.useCallback(() => {
+      if (!isMobile && state === "collapsed" && hoverEnabled) {
+        setIsHovering(true);
+        setOpenWithoutCookie(true);
+      }
+    }, [isMobile, state, setIsHovering, setOpenWithoutCookie, hoverEnabled]);
+
+    const handleMouseLeave = React.useCallback(() => {
+      if (!isMobile && initialState === "collapsed" && hoverEnabled) {
+        setIsHovering(false);
+        setOpenWithoutCookie(false);
+      }
+    }, [isMobile, setIsHovering, initialState, setOpenWithoutCookie, hoverEnabled]);
 
     if (collapsible === "none") {
       return (
@@ -206,6 +326,10 @@ const Sidebar = React.forwardRef<
             }
             side={side}
           >
+            <SheetHeader className="sr-only">
+              <SheetTitle>Sidebar</SheetTitle>
+              <SheetDescription>Displays the mobile sidebar.</SheetDescription>
+            </SheetHeader>
             <div className="flex h-full w-full flex-col">{children}</div>
           </SheetContent>
         </Sheet>
@@ -220,11 +344,14 @@ const Sidebar = React.forwardRef<
         data-collapsible={state === "collapsed" ? collapsible : ""}
         data-variant={variant}
         data-side={side}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
       >
         {/* This is what handles the sidebar gap on desktop */}
         <div
           className={cn(
-            "relative h-svh w-[--sidebar-width] bg-transparent transition-[width] duration-200 ease-linear",
+            // "relative w-[--sidebar-width] bg-transparent transition-[width] duration-200 ease-linear",
+            "relative w-[--sidebar-width] bg-transparent transition-[width] ",
             "group-data-[collapsible=offcanvas]:w-0",
             "group-data-[side=right]:rotate-180",
             variant === "floating" || variant === "inset"
@@ -234,7 +361,8 @@ const Sidebar = React.forwardRef<
         />
         <div
           className={cn(
-            "fixed inset-y-0 z-10 hidden h-svh w-[--sidebar-width] transition-[left,right,width] duration-200 ease-linear md:flex",
+            // "fixed inset-y-0 z-10 hidden h-svh w-[--sidebar-width] transition-[left,right,width] duration-200 ease-linear md:flex",
+            "fixed inset-y-0 z-10 hidden h-svh w-[--sidebar-width] transition-[left,right,width]  md:flex",
             side === "left"
               ? "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]"
               : "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
@@ -322,8 +450,8 @@ const SidebarInset = React.forwardRef<
     <main
       ref={ref}
       className={cn(
-        "relative flex min-h-svh flex-1 flex-col bg-background",
-        "peer-data-[variant=inset]:min-h-[calc(100svh-theme(spacing.4))] md:peer-data-[variant=inset]:m-2 md:peer-data-[state=collapsed]:peer-data-[variant=inset]:ml-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow",
+        "relative flex w-full flex-1 flex-col bg-background",
+        "md:peer-data-[variant=inset]:m-2 md:peer-data-[state=collapsed]:peer-data-[variant=inset]:ml-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow",
         className
       )}
       {...props}
@@ -439,7 +567,7 @@ const SidebarGroupLabel = React.forwardRef<
       ref={ref}
       data-sidebar="group-label"
       className={cn(
-        "flex h-8 shrink-0 items-center rounded-md px-2 text-xs font-medium text-sidebar-foreground/70 outline-none ring-sidebar-ring transition-[margin,opa] duration-200 ease-linear focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
+        "flex h-8 shrink-0 items-center rounded-md px-2 text-xs font-medium text-sidebar-foreground/70 outline-none ring-sidebar-ring transition-[margin,opacity] duration-200 ease-linear focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
         "group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0",
         className
       )}
@@ -614,7 +742,7 @@ const SidebarMenuAction = React.forwardRef<
         "peer-data-[size=lg]/menu-button:top-2.5",
         "group-data-[collapsible=icon]:hidden",
         showOnHover &&
-          "group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 peer-data-[active=true]/menu-button:text-sidebar-accent-foreground md:opacity-0",
+        "group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 peer-data-[active=true]/menu-button:text-sidebar-accent-foreground md:opacity-0",
         className
       )}
       {...props}
@@ -735,6 +863,52 @@ const SidebarMenuSubButton = React.forwardRef<
 })
 SidebarMenuSubButton.displayName = "SidebarMenuSubButton"
 
+import * as SwitchPrimitives from "@radix-ui/react-switch"
+// Add a new component to toggle hover functionality
+const SidebarHoverToggle = React.forwardRef<
+  HTMLButtonElement,
+  // React.ComponentProps<"button">
+  React.ComponentPropsWithoutRef<typeof SwitchPrimitives.Root> // Props type
+
+>(({ className, children, ...props }, ref) => {
+  const { hoverEnabled, setHoverEnabled } = useSidebar();
+
+  return (
+    <>
+      {/* <button
+        ref={ref}
+        className={cn("flex items-center gap-2 text-xs", className)}
+        onClick={() => setHoverEnabled(!hoverEnabled)}
+        {...props}
+      >
+        {children || `Hover to expand: ${hoverEnabled ? 'On' : 'Off'}`}
+      </button> */}
+        {/* <Switch
+          checked={hoverEnabled}
+          onCheckedChange={() => setHoverEnabled(!hoverEnabled)}
+        /> */}
+      <div className="flex items-center gap-2 group-data-[collapsible=icon]:hidden pl-2">
+        <Switch
+          ref={ref}
+          checked={hoverEnabled}
+          onCheckedChange={() => setHoverEnabled(!hoverEnabled)}
+          {...props}
+        />
+        <span className={cn("text-xs text-nowrap animate-ease-in-out duration-500", className,
+    "group-data-[collapsible=icon]:hidden" // This hides when sidebar is collapsed
+  )}>
+            Expand on hover</span>
+      </div>
+
+
+    </>
+  );
+});
+SidebarHoverToggle.displayName = "SidebarHoverToggle";
+
+
+
+
 export {
   Sidebar,
   SidebarContent,
@@ -760,4 +934,5 @@ export {
   SidebarSeparator,
   SidebarTrigger,
   useSidebar,
+  SidebarHoverToggle,
 }

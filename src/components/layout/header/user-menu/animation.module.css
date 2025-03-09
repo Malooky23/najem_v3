@@ -1,0 +1,28 @@
+.floating:hover {
+
+  transform: translateX(0) rotate(360deg);
+  animation: floating 5s linear infinite; /* Use `linear` for smooth looping */
+}
+
+@keyframes floating {
+  0% {
+    transform: translateX(0) rotate(360deg);
+    /* background-color: #f56565; */
+  }
+  25% {
+    transform: translateX(-100px) rotate(0deg);
+    /* background-color: #48bb78; */
+  }
+  50% {
+    transform: translateX(0) rotate(360deg);
+    /* background-color: #4299e1;÷ */
+  }
+  75% {
+    transform: translateX(-100px) rotate(0deg);
+    /* background-color: #9f7aea; */
+  }
+  100% {
+    transform: translateX(0) rotate(360deg);
+    /* background-color: #f56565; */
+  }
+}

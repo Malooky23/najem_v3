@@ -31,8 +31,10 @@ export function DetailsPanel({ isMobile }: DetailsPanelProps) {
   
   return (
     <div className={cn(
-      "bg-white rounded-md border relative transition-all duration-300 flex-1 w-[100%] overflow-auto",
-      isMobile ? "fixed inset-0 z-50 m-0" : "w-[70%]"
+      "bg-slate-50 rounded-md  relative transition-all duration-300 flex-1 border-2 border-slate-200 overflow-auto mb-12",
+      // "bg-white rounded-md border relative transition-all duration-300 flex-1 w-[100%] overflow-auto mb-12",
+      isMobile && "fixed inset-0 z-50 m-0",
+      // "hover:shadow-md "
     )}>
       <OrderDetails
         order={order || null}

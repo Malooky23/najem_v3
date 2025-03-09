@@ -1,6 +1,17 @@
 import  * as LucideIcons  from "lucide-react";
-import { NavConfig } from "./types";
-
+// import { NavConfig } from "./types";
+interface NavConfig {
+  EMPLOYEE: {
+    basic: NavItem[];
+    admin: NavItem[];
+  };
+  CUSTOMER: NavItem[];
+}
+interface NavItem {
+  href: string;
+  label: string;
+  icon: LucideIcons.LucideIcon;
+}
 export const navigationConfig: NavConfig = {
   EMPLOYEE: {
     basic: [
@@ -24,26 +35,6 @@ export const navigationConfig: NavConfig = {
         label: "Seeder",
         icon: LucideIcons.Trees,
       },
-      // {
-      //   href: "/inventory",
-      //   label: "Inventory",
-      //   icon: LucideIcons.Warehouse,
-      // },
-      // {
-      //   href: "/items",
-      //   label: "My Items",
-      //   icon: LucideIcons.PackageSearch,
-      // },
-      // {
-      //   href: "/tx",
-      //   label: "Transactions",
-      //   icon: LucideIcons.Receipt,
-      // },
-      // {
-      //   href: "/vendors",
-      //   label: "Vendors",
-      //   icon: LucideIcons.Truck,
-      // },
     ],
     admin: [
       {

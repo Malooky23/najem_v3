@@ -9,6 +9,9 @@ import { eq } from "drizzle-orm";
 import { format } from "date-fns";
 import { Suspense } from "react";
 import styles from "./animation.module.css";
+import { MoveLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import BackButton from "@/components/redirectBack";
 
 export default async function Page() {
   return (

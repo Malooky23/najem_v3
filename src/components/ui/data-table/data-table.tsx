@@ -65,7 +65,8 @@ export function DataTable<TData extends object, TValue>({
   columns,
   data,
   columnWidths,
-  pageSize = 10,
+  pageSize = 100,
+  // pageSize,
   onRowSelectionChange,
   onRowClick,
   rowClassName,
@@ -112,9 +113,9 @@ export function DataTable<TData extends object, TValue>({
   // Loading state
   if (isLoading) {
     return (
-      <div className="flex flex-col h-full ">
-        <div className="w-full overflow-auto">
-          <Table style={{ tableLayout: 'auto' }}>
+      <div className="flex flex-col h-full">
+        <div className="w-full overflow-x-auto overflow-y-auto"> {/* Added overflow-y-auto */}
+          <Table style={{ tableLayout: 'auto', minWidth: '100%' }}> {/* Add minWidth: 100% */}
             <TableHeader className="sticky top-0 rounded-t-md">
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}
@@ -159,9 +160,9 @@ export function DataTable<TData extends object, TValue>({
   }
 
   return (
-    <div className="flex flex-col h-full ">
-      <div className="w-full overflow-auto">
-        <Table style={{ tableLayout: 'auto' }}>
+    <div className="flex flex-col h-full">
+      <div className="w-full overflow-x-auto overflow-y-auto"> {/* Added overflow-y-auto */}
+        <Table style={{ tableLayout: 'auto', minWidth: '100%' }}> {/* Add minWidth: 100% */}
           <TableHeader className="sticky top-0 rounded-t-md">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}
@@ -228,6 +229,8 @@ export function DataTable<TData extends object, TValue>({
           </TableBody>
         </Table>
       </div>
+      <h1>Base Table Component-PageSize: {pageSize}</h1>
+
     </div>
   );
 }

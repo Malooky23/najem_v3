@@ -20,6 +20,7 @@ interface OrdersTableProps {
   sortDirection?: 'asc' | 'desc'
   onRowSelectionChange?: (selection: RowSelectionState) => void;
   selectedRows?: RowSelectionState;
+  pageSize?: number;
 }
 
 type ExtendedColumnDef = ColumnDef<EnrichedOrders, any> & {
@@ -95,7 +96,8 @@ export function OrdersTable({
   onSort,
   sortField,
   sortDirection,
-  onRowSelectionChange
+  onRowSelectionChange,
+  pageSize
 }: OrdersTableProps) {
   // Define base column widths
   const baseColumnWidths: { [key: string]: string } = {
@@ -191,7 +193,7 @@ export function OrdersTable({
         data={data}
         isLoading={isLoading}
         columnWidths={columnWidths}
-        pageSize={isCompact ? 25 : 50}
+        // pageSize={pageSize?? 100}
         onRowSelectionChange={onRowSelectionChange}
         onRowClick={handleRowClick}
         rowClassName={(row) =>

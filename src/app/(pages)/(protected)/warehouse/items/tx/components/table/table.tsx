@@ -4,9 +4,10 @@ import { DataTable } from "@/components/ui/data-table/data-table"
 import { ColumnDef, RowSelectionState } from "@tanstack/react-table"
 import { cn } from "@/lib/utils"
 import { useMemo, useCallback } from "react"
-import { ChevronUp, ChevronDown } from "lucide-react"
 import { EnrichedStockMovementView, StockMovementSortFields } from "@/types/stockMovement"
 import React from "react"
+import SortHeader from "@/components/ui/data-table/sort-headers"
+import page from "../../../../orders/test/page"
 
 interface StockMovementTableProps {
   columns: ColumnDef<EnrichedStockMovementView>[]
@@ -15,7 +16,7 @@ interface StockMovementTableProps {
   onRowClick?: (order: EnrichedStockMovementView) => void
   selectedId?: string | null
   isCompact?: boolean
-  onSort?: (field: StockMovementSortFields, direction: 'asc' | 'desc') => void
+  onSort?: (field: string, direction: 'asc' | 'desc') => void
   sortField?: StockMovementSortFields
   sortDirection?: 'asc' | 'desc'
   onRowSelectionChange?: (selection: RowSelectionState) => void
@@ -28,63 +29,6 @@ type ExtendedColumnDef = ColumnDef<EnrichedStockMovementView> & {
   header?: string | ((props: any) => React.ReactNode);
 };
 
-// Memoized sort header component to prevent unnecessary re-renders
-const SortHeader = React.memo(({
-  columnId,
-  originalHeader,
-  sortField,
-  sortDirection,
-  onSort
-}: {
-  columnId: string,
-  originalHeader: string | React.ReactNode,
-  sortField?: StockMovementSortFields,
-  sortDirection?: 'asc' | 'desc',
-  onSort?: (field: StockMovementSortFields, direction: 'asc' | 'desc') => void
-}) => {
-  // Use useCallback to keep function reference stable
-  const handleSortClick = useCallback(() => {
-    const isAsc = sortField === columnId && sortDirection === 'asc';
-    onSort?.(columnId as StockMovementSortFields, isAsc ? 'desc' : 'asc');
-  }, [columnId, sortField, sortDirection, onSort]);
-
-  return (
-    <div
-      className="flex items-center gap-1 cursor-pointer select-none"
-      onClick={handleSortClick}
-    >
-      <span className={cn("",
-        originalHeader === "#" ? "ml-auto text-center pr-1" : "",
-        originalHeader === "Status" ? "ml-auto text-center pr-1" : ""
-      )}
-      >
-        {originalHeader}
-      </span>
-
-      <div className="flex flex-col mr-auto items-start">
-        <ChevronUp strokeWidth="4px"
-          className={cn(
-            "h-4 w-4 -mb-1",
-            sortField === columnId && sortDirection === 'asc'
-              ? "text-foreground"
-              : "text-muted-foreground/30"
-          )}
-        />
-        <ChevronDown strokeWidth="4px"
-          className={cn(
-            "h-4 w-4 -mt-1",
-            sortField === columnId && sortDirection === 'desc'
-              ? "text-foreground"
-              : "text-muted-foreground/30"
-          )}
-        />
-      </div>
-    </div>
-  );
-});
-
-SortHeader.displayName = "SortHeader";
-
 export function StockMovementTable({
   columns,
   data,
@@ -95,38 +39,57 @@ export function StockMovementTable({
   onSort,
   sortField,
   sortDirection,
-  onRowSelectionChange
+  onRowSelectionChange,
 }: StockMovementTableProps) {
+
+  // Memoize column widths to prevent unnecessary recalculations
   const columnWidths = useMemo(() => ({
-    //  movementType: '12px',
-    //  quantity: '100px',
-    //  itemName: '200px',
-    //  customerDisplayName: '200px',
-    //  createdAt: '150px',
-    //  actions: '50px'
+    select: '12px',
+    movementNumber: '12px',
   }), []);
+
+  // Define column priorities once and memoize
+  const columnPriorities = useMemo(() => ({
+    select: 1,
+    movementNumber: 2,
+    movementType: 3,
+    quantity: 4,
+    stockLevelAfter: 5,
+    itemName: 6,
+    customerDisplayName: 7,
+    createdAt: 8,
+    actions: 9
+  }), []);
+
+  // Center headers definition
+  const centerHeaders = useMemo(() =>
+    [
+      'movementNumber',
+      'movementType',
+      'quantity',
+      'stockLevelAfter'
+    ],
+    []);
 
   // Optimize row click handler with useCallback
   const handleRowClick = useCallback((row: EnrichedStockMovementView) => {
     onRowClick?.(row);
   }, [onRowClick]);
 
+  // Process columns to add sorting capability - memoized
   const visibleColumns = useMemo(() => {
-    const sortableFields: StockMovementSortFields[] = ['createdAt', 'movementType', 'quantity', 'itemName', 'customerDisplayName', 'movementNumber'];
-
     return columns.map((column: ExtendedColumnDef): ExtendedColumnDef => {
       const columnId = column.accessorKey || column.id;
-      if (!columnId || !sortableFields.includes(columnId as StockMovementSortFields)) {
+
+      if (!columnId || column.enableSorting === false) {
         return column;
       }
 
-      // Get the original header content
       const originalHeader = typeof column.header === 'string'
         ? column.header
         : columnId;
 
-      // Create a new column definition with custom header using the memoized component
-      const newColumn: ExtendedColumnDef = {
+      return {
         ...column,
         id: columnId,
         header: () => (
@@ -136,39 +99,49 @@ export function StockMovementTable({
             sortField={sortField}
             sortDirection={sortDirection}
             onSort={onSort}
+            centerHeaders={centerHeaders}
           />
         )
       };
-
-      return newColumn;
     });
-  }, [columns, onSort, sortField, sortDirection]);
+  }, [columns, onSort, sortField, sortDirection, centerHeaders]);
 
+  // Compute which columns to display based on compact mode - using a predefined set in compact mode
   const displayColumns = useMemo(() => {
-    if (isCompact) {
-      return visibleColumns.filter((column: ExtendedColumnDef) => {
-        const columnId = column.accessorKey || column.id;
-        return [
-          'movementNumber',
-          'itemName',
-          'movementType',
-          'quantity',
-        ].includes(columnId || '');
-      });
+    if (!isCompact) {
+      return visibleColumns;
     }
-    return visibleColumns;
+
+    // Predefined set of columns to show in compact mode
+    const compactModeColumns = [
+      'select',
+      'movementNumber',
+      'itemName',
+      'movementType',
+      'quantity',
+      'date',
+      'actions'
+
+    ];
+
+    return visibleColumns.filter((column: ExtendedColumnDef) => {
+      const columnId = column.accessorKey || column.id;
+      if (!columnId) return true; // Keep columns without ID
+
+      return compactModeColumns.includes(columnId);
+    });
   }, [visibleColumns, isCompact]);
 
   return (
-    <div className="h-full flex-1 overflow-hidden rounded-md">
+    <div className="overflow-auto flex-1 rounded-md">
       <DataTable
         columns={displayColumns}
         data={data}
         isLoading={isLoading}
         columnWidths={columnWidths}
-        pageSize={isCompact ? 25 : 50}
         onRowSelectionChange={onRowSelectionChange}
         onRowClick={handleRowClick}
+        pageSize={100}
         rowClassName={(row) =>
           cn(
             "hover:bg-slate-200 cursor-pointer",

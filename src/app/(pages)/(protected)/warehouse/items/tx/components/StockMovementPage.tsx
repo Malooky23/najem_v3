@@ -7,19 +7,32 @@ import { SearchPanel } from "./SearchPanel"
 import { MovementsTable } from "./MovementsTable"
 import { DetailsPanel } from "./details/DetailsPanel"
 import { useUrlSync } from "@/hooks/useUrlSync"
+import { DropDownMenuButton } from "@/components/drop-down-menu-button"
 
 interface PageHeaderProps {
   isLoading: boolean;
 }
 
+const createOptions = [
+  { id: "1", label: "Create" },
+  { id: "2", label: "Import" },
+  { id: "3", label: "Export" },
+  { id: "4", label: "Print" },
+];
+
 // Memoized header component
 const PageHeader = memo<PageHeaderProps>(function PageHeader({ isLoading }) {
   return (
-    <div className="flex justify-between mt-2">
+    <div className="flex justify-between mt-2 gap-1 max-w-full">
       <h1 className="text-2xl font-bold text-gray-900 text-nowrap pr-2">
         Item Movements
       </h1>
+      <div className="">
       <SearchPanel isLoading={isLoading} />
+        </div>
+      <div className="pr-2">
+        <DropDownMenuButton MENU_ITEMS={createOptions} />
+      </div>
     </div>
   );
 });
@@ -33,10 +46,10 @@ const ContentLayout = memo<{
   return (
     <div
       className={cn(
-        "flex flex-col rounded-md transition-all duration-300",
-        isMobile 
-          ? (isDetailsOpen ? "hidden" : "w-full") 
-          : (isDetailsOpen ? "w-[40%]" : "w-full")
+        "flex flex-col rounded-md transition-all duration-300 overflow-hidden", // Add overflow-hidden
+        isMobile
+          ? (isDetailsOpen ? "hidden" : "w-full")
+          : (isDetailsOpen ? "w-[60%]" : "w-full")
       )}
     >
       {children}
@@ -47,7 +60,7 @@ const ContentLayout = memo<{
 export function StockMovementPage() {
   // Media query for responsive design
   const isMobile = useMediaQuery("(max-width: 768px)")
-  
+
   // Loading state with debounce to prevent flashing
   const [isPageLoading, setIsPageLoading] = useState(true)
   const handleLoadingChange = useCallback((loading: boolean) => {
@@ -59,29 +72,30 @@ export function StockMovementPage() {
       return () => clearTimeout(timer)
     }
   }, [])
-  
+
   // Get store state
   const store = useStockMovementStore()
-  
+
   // Setup URL synchronization
   useUrlSync()
-  
+
   // Reset loading state after initial render
   useEffect(() => {
     const timer = setTimeout(() => setIsPageLoading(false), 0)
     return () => clearTimeout(timer)
   }, [])
-  
+
   return (
-    <div className="px-4 h-[calc(100vh-3rem)] flex flex-col">
+    // <div className="px-4 h-full flex flex-col overflow-hidden"> {/* Add overflow-hidden */}
+    <div className="px-4 h-[100vh] flex flex-col overflow-hidden"> {/* Add overflow-hidden */}
       <PageHeader isLoading={isPageLoading} />
-      
-      <div className="flex gap-4 flex-1 min-h-0 overflow-hidden mt-0">
-        <ContentLayout 
-          isMobile={isMobile} 
+
+      <div className="flex gap-2 flex-1 min-h-0 overflow-hidden mt-0">
+        <ContentLayout
+          isMobile={isMobile}
           isDetailsOpen={store.isDetailsOpen}
         >
-          <MovementsTable 
+          <MovementsTable
             isMobile={isMobile}
             onLoadingChange={handleLoadingChange}
           />
