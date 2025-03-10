@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge"
 import { DateRange } from "react-day-picker"
 import Loading from "@/components/ui/loading"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
+import { CustomerList } from "@/types/customer"
 
 interface OrderFiltersProps {
   status: OrderStatus | null
@@ -26,6 +27,8 @@ interface OrderFiltersProps {
   onDateRangeChange: (from: Date | null, to: Date | null) => void
   onResetFilters: () => void
   isLoading?: boolean
+    customers: CustomerList[] | undefined;
+    isLoadingCustomers: boolean;
 }
 
 // Helper function to get date string in YYYY-MM-DD format
@@ -49,9 +52,11 @@ const OrderFilters = memo(function OrderFilters({
   onMovementChange,
   onDateRangeChange,
   onResetFilters,
-  isLoading
+    isLoading,
+    customers,
+    isLoadingCustomers
 }: OrderFiltersProps) {
-  const { data: customers, isLoading: isLoadingCustomers } = useSelectCustomerList()
+//   const { data: customers, isLoading: isLoadingCustomers } = useSelectCustomerList()
   const [date, setDate] = useState<DateRange | undefined>(
     dateRange ? { from: dateRange.from, to: dateRange.to } : undefined
   )

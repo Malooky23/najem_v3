@@ -77,11 +77,16 @@ export function StockMovementPage() {
   const store = useStockMovementStore()
 
   // Setup URL synchronization
-  useUrlSync()
+    useUrlSync(useStockMovementStore, {
+        syncedKeys: ['page', 'pageSize', 'sortField', 'sortDirection', 'search', 'movement', 'itemName', 'customerDisplayName', 'dateFrom', 'dateTo']
+    });
+
+    const [temp, setTemp] = useState(false);
 
   // Reset loading state after initial render
   useEffect(() => {
     const timer = setTimeout(() => setIsPageLoading(false), 0)
+      setTemp(t => !t); // force re-render
     return () => clearTimeout(timer)
   }, [])
 

@@ -58,13 +58,10 @@ export function OrderItemsTable({ order }: OrderItemsTableProps) {
                   <TableCell className="font-medium">{item.itemId}</TableCell>
                   <TableCell>{item.itemName || "Unknown Item"}</TableCell>
                   <TableCell className="text-right">{item.quantity}</TableCell>
-                  {/* <TableCell className="text-right">${(item.unitPrice || 0).toFixed(2)}</TableCell>
-                  <TableCell className="text-right">${((item.quantity || 0) * (item.unitPrice || 0)).toFixed(2)}</TableCell> */}
                 </TableRow>
               ))}
               <TableRow className="bg-gray-50">
                 <TableCell colSpan={4} className="text-right font-medium">Total</TableCell>
-                {/* <TableCell className="text-right font-bold">${(order.totalAmount || 0).toFixed(2)}</TableCell> */}
               </TableRow>
             </TableBody>
           </Table>
@@ -73,5 +70,3 @@ export function OrderItemsTable({ order }: OrderItemsTableProps) {
     </Card>
   );
 }
-
-

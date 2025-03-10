@@ -7,7 +7,7 @@ interface SortHeaderProps {
   originalHeader: string | React.ReactNode;
   sortField?: string;
   sortDirection?: 'asc' | 'desc';
-  onSort?: (field: string, direction: 'asc' | 'desc') => void;
+  onSort?: (sort: { field: string, direction: 'asc' | 'desc' }) => void;
   centerHeaders?: string[]; // Array of column IDs to center
 }
 
@@ -21,7 +21,8 @@ const SortHeader = React.memo(({
 }: SortHeaderProps) => {
   const handleSortClick = useCallback(() => {
     const isAsc = sortField === columnId && sortDirection === 'asc';
-    onSort?.(columnId , isAsc ? 'desc' : 'asc');
+    const newDirection = isAsc ? 'desc' : 'asc';
+    onSort?.({ field: columnId, direction: newDirection });
   }, [columnId, sortField, sortDirection, onSort]);
 
   // Check if this column's ID is in the centerHeaders array

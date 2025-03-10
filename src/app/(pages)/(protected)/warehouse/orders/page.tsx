@@ -1,100 +1,104 @@
 "use client";
-import React, { Suspense } from "react";
-import dynamic from 'next/dynamic';
+import React, { Suspense, useState, useCallback, useEffect, useMemo } from "react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { useOrdersStore } from "@/stores/orders-store";
-import { useOrdersQuery } from "@/hooks/data-fetcher";
-import { CreateOrderDialog } from "./components/order-form/create-order-dialog";
+import { useOrdersQuery, useSelectCustomerList } from "@/hooks/data-fetcher";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { OrderSort } from "@/types/orders";
-
-// Dynamically loaded components with loading fallbacks
-const OrderFilters = dynamic(() => import('./components/order-filters/OrderFilters'), { 
-  ssr: false,
-  loading: () => <div className="h-12 animate-pulse bg-gray-100 rounded-md"></div>
-});
-
-const OrdersTable = dynamic(() => import('./components/order-table/OrdersTableContainer'), {
-  ssr: false,
-  loading: () => <div className="flex-1 animate-pulse bg-gray-100 rounded-md"></div>
-});
-
-const OrderDetails = dynamic(() => import('./components/order-details/OrderDetailsContainer'), {
-  ssr: false,
-  loading: () => (
-    <div className="flex-1 flex items-center justify-center">
-      <LoadingSpinner />
-    </div>
-  )
-});
+import { OrderSort, OrderSortField } from "@/types/orders";
+import { PageHeader } from "./components/PageHeader";
+import  ContentLayout  from "./components/ContentLayout";
+import { OrdersTable } from "./components/order-table/orders-table";
+import { OrderDetails } from "./components/order-details/OrderDetails";
+import { useUrlSync } from "@/hooks/useUrlSync";
+import Loading from "@/components/ui/loading";
+import { EnrichedOrders } from "@/types/orders";
 
 // Main page component using Zustand for state
 export default function OrdersPage() {
   const isMobile = useMediaQuery("(max-width: 768px)");
   const store = useOrdersStore();
-  
+
   // Extract all state from store
-  const { 
-    page, pageSize, sort, filters,
-    selectedOrderId, isDetailsOpen,
-    selectOrder, setPage, setPageSize, 
-    setSort, setFilter, resetFilters
-  } = store;
-  
-  // Data fetching with query params from store state
   const {
-    data: orders,
-    pagination,
-    isInitialLoading,
-    isFetching
-  } = useOrdersQuery({ page, pageSize, sort, filters });
+    page,
+    pageSize,
+    sort,
+    filters,
+    selectedOrderId,
+    isDetailsOpen,
+    selectOrder,
+    setPage,
+    setPageSize,
+    setSort,
+    setFilter,
+    resetFilters,
+  } = store;
+
+  // Data fetching with query params from store state
+  const { data: orders, pagination, isInitialLoading, isFetching } = useOrdersQuery({
+    page,
+    pageSize,
+    sort,
+    filters,
+  });
+
+    const [temp, setTemp] = useState(false);
+
+  // Setup URL synchronization
+    useUrlSync(useOrdersStore, {
+        syncedKeys: ['page', 'pageSize', 'sort', 'filters']
+    });
+
+    useEffect(() => {
+        setTemp(t => !t); // force re-render
+    }, []);
+
+    const { data: customers, isLoading: isLoadingCustomers } = useSelectCustomerList();
+
+    const handleStatusChange = useCallback((value: any) => setFilter('status', value), [setFilter]);
+    const handleCustomerChange = useCallback((value: any) => setFilter('customerId', value), [setFilter]);
+    const handleMovementChange = useCallback((value: any) => setFilter('movement', value), [setFilter]);
+    const handleDateRangeChange = useCallback((from: Date | null, to: Date | null) => setFilter('dateRange', { from, to }), [setFilter]);
+
 
   return (
     <div className="px-4 h-[calc(100vh-3rem)] flex flex-col">
-      <div className="flex justify-between m-2">
-        <h1 className="text-2xl font-bold text-gray-900">Orders</h1>
-        <CreateOrderDialog isMobile={isMobile} />
-      </div>
-      
-      <OrderFilters 
-        status={filters.status || null}
-        customerId={filters.customerId || null}
-        movement={filters.movement || null}
-        dateRange={filters.dateRange || null}
-        isLoading={isFetching}
-        onStatusChange={(value) => setFilter('status', value)}
-        onCustomerChange={(value) => setFilter('customerId', value)}
-        onMovementChange={(value) => setFilter('movement', value)}
-        onDateRangeChange={(value) => setFilter('dateRange', value)}
+      <PageHeader
+        isMobile={isMobile}
+        isFetching={isFetching}
+        customers={customers}
+        isLoadingCustomers={isLoadingCustomers}
+        onStatusChange={handleStatusChange}
+        onCustomerChange={handleCustomerChange}
+        onMovementChange={handleMovementChange}
+        onDateRangeChange={handleDateRangeChange}
         onResetFilters={resetFilters}
+        filters={filters}
       />
-      
+
       <div className="flex gap-4 flex-1 min-h-0 overflow-hidden">
-        <Suspense fallback={<div className="flex-1 animate-pulse bg-gray-100 rounded-md"></div>}>
-          <OrdersTable 
-            isDetailsOpen={isDetailsOpen}
-            isMobile={isMobile}
-            orders={orders || []}
-            selectedOrderId={selectedOrderId}
+        <ContentLayout isMobile={isMobile} isDetailsOpen={isDetailsOpen}>
+          <OrdersTable
+            data={orders || []}
+            selectedOrderId={selectedOrderId || undefined}
             isLoading={isInitialLoading}
             pagination={pagination}
             sort={sort}
-            onOrderClick={(order) => selectOrder(order.orderId)}
-            onSortChange={setSort }
+            onRowClick={(order: EnrichedOrders) => selectOrder(order.orderId)}
+            onSortChange={(newSort: { field: string, direction: 'asc' | 'desc' }) => setSort({field: newSort.field as OrderSortField, direction: newSort.direction})}
             onPageChange={setPage}
             onPageSizeChange={setPageSize}
           />
-        </Suspense>
-        
+        </ContentLayout>
+
         {isDetailsOpen && selectedOrderId && (
-          <Suspense fallback={<div className="flex-1 flex items-center justify-center"><LoadingSpinner /></div>}>
             <OrderDetails
+              key={selectedOrderId}
               isMobile={isMobile}
               selectedOrderId={selectedOrderId}
               onClose={() => selectOrder(null)}
               orders={orders || []}
             />
-          </Suspense>
         )}
       </div>
     </div>

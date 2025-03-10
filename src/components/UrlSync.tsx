@@ -1,17 +1,18 @@
 import { useEffect, useRef } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { StoreApi } from 'zustand';
 
-interface Store {
+interface UrlSyncProps {
+  store: {
     syncWithUrl: (params: URLSearchParams) => void;
-    subscribe: any; // Most permissive type for subscribe
+    subscribe: (
+      selector: (state: any) => any,
+      listener: (state: any) => void
+    ) => () => void;
+    getState: () => any;
+  };
 }
 
-interface UseUrlSyncConfig {
-    syncedKeys: string[];
-}
-
-export function useUrlSync(store: any, config?: UseUrlSyncConfig) {
+export function UrlSync({ store }: UrlSyncProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -19,48 +20,29 @@ export function useUrlSync(store: any, config?: UseUrlSyncConfig) {
 
   // Initialize store from URL on mount only
   useEffect(() => {
-    console.log("useUrlSync store:", store.getState()); // Log the store object
     if (!isInitialized.current) {
-      store.getState().syncWithUrl(searchParams);
+      store.syncWithUrl(searchParams);
       isInitialized.current = true;
     }
   }, [searchParams, store]);
 
   // Subscribe to store changes to update URL
   useEffect(() => {
-
-    // Check if subscribe method exists
-    if (typeof store.subscribe !== 'function') {
-      console.error('Store does not have a subscribe method. URL sync will not work.');
-      return;
-    }
-
     const unsubscribe = store.subscribe(
-      (state: any) => {
+      (state) => state, // Select the entire state
+      (state) => {
         // Create a new URLSearchParams instance each time
         const params = new URLSearchParams();
 
         // Only add non-default and non-null values
         Object.entries(state).forEach(([key, value]) => {
-          if (config && config.syncedKeys && !config.syncedKeys.includes(key)) {
-            return; // Skip if key is not in syncedKeys
-          }
           if (value !== undefined && value !== null && value !== '' &&
               !(key === 'page' && value === 1) &&
               !(key === 'pageSize' && value === 50) &&
               !(key === 'sortField' && value === 'createdAt') &&
               !(key === 'sortDirection' && value === 'desc')
           ) {
-            if (typeof value === 'object') {
-                // Handle nested objects (like filters and sort)
-                Object.entries(value).forEach(([subKey, subValue]) => {
-                    if (subValue !== undefined && subValue !== null && subValue !== '') {
-                        params.set(subKey, String(subValue));
-                    }
-                });
-            } else {
-                params.set(key, String(value));
-            }
+            params.set(key, String(value));
           }
         });
 
@@ -77,5 +59,7 @@ export function useUrlSync(store: any, config?: UseUrlSyncConfig) {
     );
 
     return () => unsubscribe();
-  }, [pathname, router, searchParams, store, config]);
+  }, [pathname, router, searchParams, store]);
+
+  return null; // This component doesn't render anything
 }

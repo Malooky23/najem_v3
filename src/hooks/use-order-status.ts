@@ -40,74 +40,36 @@ export function useOrderStatusMutation() {
       };
 
       // Call the API
-      try {
-        const result = await updateOrder(updatedOrder);
+      const result = await updateOrder(updatedOrder);
 
-        if (!result) {
-          return {
-            success: false,
-            error: {
-              message: 'No response received from server',
-              code: 'NO_RESPONSE'
-            }
-          };
-        }
-
-        if (!result.success) {
-          // Ensure error.message is always a string
-          let errorMessage: string;
-          if (typeof result.error?.message === 'string') {
-            errorMessage = result.error.message;
-          } else if (typeof result.error?.message === 'object' && result.error.message) {
-            errorMessage = result.error.message;
-          } else {
-            errorMessage = 'Failed to update order status';
-          }
-
-          return {
-            success: false,
-            error: {
-              message: errorMessage,
-              code: 'UPDATE_FAILED',
-            },
-          };
-        }
-
-        // Show success toast
-        toast({
-          title: "Status Updated",
-          description: `Order status changed to ${status}`,
-        });
-
-        return {
-          success: true,
-          data: result.data as EnrichedOrders
-        };
-      } catch (err) {
-        //   const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
-        //   return {
-        //     success: false,
-        //     error: {
-        //       message: errorMessage,
-        //       code: 'NETWORK_ERROR'
-        //     }
-        //   };
-        // }
-
-        let errorMessage: string;
-        if (err instanceof Error) {
-          errorMessage = err.message;
-        } else {
-          errorMessage = 'An unexpected error occurred';
-        }
-        return {
-          success: false,
-          error: {
-            message: errorMessage,
-            code: 'NETWORK_ERROR',
-          },
-        };
+      if (!result) {
+        throw new Error('No response received from server'); // Throw error for no response
       }
+
+      if (!result.success) {
+        // Throw an error if the update failed
+        let errorMessage: string;
+        if (typeof result.error?.message === 'string') {
+          errorMessage = result.error.message;
+        } else if (typeof result.error?.message === 'object' && result.error.message) {
+          errorMessage = result.error.message;
+        } else {
+          errorMessage = 'Failed to update order status';
+        }
+        throw new Error(errorMessage); // Throw the error
+      }
+
+      // Show success toast
+      toast({
+        title: "Status Updated",
+        description: `Order status changed to ${status}`,
+      });
+
+      return {
+        success: true,
+        data: result.data as EnrichedOrders
+      };
+
     },
 
     // Optimistically update UI

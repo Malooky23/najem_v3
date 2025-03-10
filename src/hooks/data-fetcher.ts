@@ -47,7 +47,7 @@ type MutationContext = {
 // Optimize the order details fetch to minimize unnecessary requests
 export function useOrderDetails(
   orderId: string | null,
-  selectedOrder: EnrichedOrders | null = null 
+  selectedOrder: EnrichedOrders | null = null
 ) {
   const queryClient = useQueryClient();
 
@@ -168,7 +168,7 @@ export function useOrderStatusMutation() {
       
       // Snapshot the previous value
       const previousData = queryClient.getQueryData<EnrichedOrders>(['order', orderId]);
-      
+
       // Optimistically update the cache
       if (previousData) {
         queryClient.setQueryData<EnrichedOrders>(['order', orderId], {
@@ -197,7 +197,7 @@ export function useOrderStatusMutation() {
     // Handle errors and revert optimistic update
     onError: (err, { orderId }, context) => {
       console.error('Error updating order status:', err);
-      
+
       // Revert the optimistic update
       if (context?.previousData) {
         queryClient.setQueryData(['order', orderId], context.previousData);
@@ -222,6 +222,7 @@ export function useOrderStatusMutation() {
     onSettled: (result, error, { orderId }) => {
       queryClient.invalidateQueries({ queryKey: ['order', orderId] });
       queryClient.invalidateQueries({ queryKey: ['orders'] });
+        queryClient.refetchQueries({queryKey: ['order', orderId]})
     }
   });
 }
@@ -325,17 +326,17 @@ export function useItems() {
 //     queryKey: ['stockMovements', params],
 //     queryFn: async () => {
 //       const session = await getSession();
-      
+//       
 //       const queryParams = new URLSearchParams();
 //       if (params.page) queryParams.set('page', String(params.page));
 //       if (params.pageSize) queryParams.set('pageSize', String(params.pageSize));
 //       if (params.filters) queryParams.set('filters', JSON.stringify(params.filters));
 //       if (params.sort) queryParams.set('sort', JSON.stringify(params.sort));
-      
+//       
 //       // Create an AbortController for timeout handling
 //       const controller = new AbortController();
 //       const timeoutId = setTimeout(() => controller.abort(), 15000); // 15-second timeout
-      
+//       
 //       try {
 //         const res = await fetch(`/api/stock-movements?${queryParams.toString()}`, {
 //           headers: {
@@ -343,9 +344,9 @@ export function useItems() {
 //           },
 //           signal: controller.signal
 //         });
-        
+//         
 //         clearTimeout(timeoutId);
-        
+//         
 //         if (!res.ok) {
 //           let errorResponse;
 //           try {
@@ -360,9 +361,9 @@ export function useItems() {
 //           console.error("API error response:", errorResponse);
 //           throw new Error(`Failed to fetch stock movements. API Response: ${JSON.stringify(errorResponse)}`);
 //         }
-        
+//         
 //         const data = await res.json();
-        
+//         
 //         return {
 //           data: data.stockMovements || [],
 //           pagination: data.pagination || {
@@ -387,4 +388,3 @@ export function useItems() {
 //     retryDelay: 1000, // 1 second between retries
 //   });
 // }
-

@@ -148,8 +148,8 @@ export const MovementsTable = memo<MovementsTableProps>(function MovementsTable(
     setPageSize(newSize)
   }, [setPageSize])
 
-  const handleSortChange = useCallback((field: string, direction: string) => {
-    setSort(field as StockMovementSortFields, direction as 'asc' | 'desc')
+  const handleSortChange = useCallback(({field, direction}:{field: string, direction: 'asc' | 'desc'}) => {
+    setSort(field as StockMovementSortFields, direction)
   }, [setSort])
 
   // Error handling

@@ -39,7 +39,7 @@ export async function createOrder(formData: FormData): Promise<OrderActionRespon
         //     //     "status:", formData.get('status'),
         //     //     "addressId:", formData.get('addressId'),
         //     //     "notes:", formData.get('notes'),
-        //     "items:", JSON.parse(formData.get('items') as string)
+        //     //     "items:", JSON.parse(formData.get('items') as string)
         // );
         const formObject: Record<string, any> = {};
         const items: { itemId: string; quantity: number, itemLocationId: string }[] = [];
@@ -130,62 +130,52 @@ export async function createOrder(formData: FormData): Promise<OrderActionRespon
 
 
 export async function updateOrder(orderData: EnrichedOrders): Promise<OrderUpdateResult> {
-    // await new Promise((resolve) => setTimeout(resolve, 3000))
     try {
-        const session = await auth();
-        if (!session?.user?.id) {
-            return { success: false, error: { message: "Unauthorized: Must be logged in to update orders." } }  ;
+      const session = await auth();
+      if (!session?.user?.id) {
+        return { success: false, error: { message: "Unauthorized: Must be logged in to update orders." } };
+      }
+  
+      // Validate the update data
+      const validatedFields = updateOrderSchema.safeParse(orderData);
+  
+      if (!validatedFields.success) {
+        return { success: false, error: { message: validatedFields.error.message } };
+      }
+  
+      const updateData = validatedFields.data;
+  
+      // Start a transaction to update the order
+      const result = await db.transaction(async (tx) => {
+        // Update order
+        const [updatedOrder] = await tx
+          .update(orders)
+          .set({
+            status: updateData.status,
+            movement: updateData.movement,
+            packingType: updateData.packingType,
+            deliveryMethod: updateData.deliveryMethod,
+            notes: updateData.notes,
+            updatedAt: new Date(),
+          })
+          .where(eq(orders.orderId, updateData.orderId))
+          .returning();
+  
+        if (!updatedOrder) {
+          throw new Error('Order update failed: No rows affected.'); // This line was already correct
         }
-
-        // Validate the update data
-        const validatedFields = updateOrderSchema.safeParse({
-            orderId: orderData.orderId,
-            status: orderData.status,
-            movement: orderData.movement,
-            packingType: orderData.packingType,
-            deliveryMethod: orderData.deliveryMethod,
-            notes: orderData.notes,
-            items: orderData.items.map(item => ({
-                itemId: item.itemId,
-                quantity: item.quantity,
-                itemLocationId: item.itemLocationId
-            }))
-        });
-
-        if (!validatedFields.success) {
-            return { success: false, error: { message: validatedFields.error.message } };
-        }
-
-        const updateData = validatedFields.data;
-
-        // Start a transaction to update order and items
-        const result = await db.transaction(async (tx) => {
-            // Update order
-            const updatedOrder = await tx
-                .update(orders)
-                .set({
-                    status: updateData.status,
-                    movement: updateData.movement,
-                    packingType: updateData.packingType,
-                    deliveryMethod: updateData.deliveryMethod,
-                    notes: updateData.notes,
-                    updatedAt: new Date()
-                })
-                .where(eq(orders.orderId, updateData.orderId))
-                .returning();
-
-
-            return updatedOrder;
-        });
-        return { success: true, data: result[0] as EnrichedOrders  };
+        return updatedOrder
+      });
+      console.log('Result:', result)
+        return { success: true, data: result as EnrichedOrders };
     } catch (error:any) {
-        // console.log('Error in updateOrder:', error?.message);
+        console.error('Error in updateOrder:', error);
         return {
             success: false,
             error: {message: error instanceof Error ? error.message : 'Failed to update order'}
         };
     }
-}
+  }
 
 export type GetSingleOrderResponse = {
     success: boolean;

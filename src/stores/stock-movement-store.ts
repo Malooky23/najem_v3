@@ -7,11 +7,11 @@ interface StockMovementState {
   // Pagination
   page: number;
   pageSize: number;
-  
+
   // Sorting
   sortField: StockMovementSortFields;
   sortDirection: 'asc' | 'desc';
-  
+
   // Filters
   search: string | null;
   movement: MovementType | null;
@@ -19,12 +19,12 @@ interface StockMovementState {
   customerDisplayName: string | null;
   dateFrom: string | null;
   dateTo: string | null;
-  
+
   // UI State
   selectedMovementId: string | null;
   isDetailsOpen: boolean;
   isLoading: boolean;
-  
+
   // Actions
   setPage: (page: number) => void;
   setPageSize: (size: number) => void;
@@ -37,7 +37,7 @@ interface StockMovementState {
   selectMovement: (id: string | null) => void;
   clearFilters: () => void;
   setLoading: (isLoading: boolean) => void;
-  
+
   // Derived state
   getFilters: () => StockMovementFilters;
   getSort: () => StockMovementSort;
@@ -46,9 +46,9 @@ interface StockMovementState {
 
 // Correctly define the middleware type
 type StoreWithSubscribe = StateCreator<
-  StockMovementState, 
-  [['zustand/subscribeWithSelector', never]], 
-  [], 
+  StockMovementState,
+  [['zustand/subscribeWithSelector', never]],
+  [],
   StockMovementState
 >;
 
@@ -68,7 +68,7 @@ const createStockMovementStore: StoreWithSubscribe = (set, get) => ({
   selectedMovementId: null,
   isDetailsOpen: false,
   isLoading: false,
-  
+
   // Actions
   setPage: (page) => {
     const prevPage = get().page;
@@ -76,14 +76,14 @@ const createStockMovementStore: StoreWithSubscribe = (set, get) => ({
       set({ page });
     }
   },
-  
+
   setPageSize: (pageSize) => {
     const prevPageSize = get().pageSize;
     if (prevPageSize !== pageSize) {
       set({ pageSize, page: 1 });
     }
   },
-  
+
   setSort: (sortField, sortDirection) => {
     const prevSortField = get().sortField;
     const prevSortDirection = get().sortDirection;
@@ -91,7 +91,7 @@ const createStockMovementStore: StoreWithSubscribe = (set, get) => ({
       set({ sortField, sortDirection, page: 1 });
     }
   },
-  
+
   setSearch: (search) => {
     const normalizedSearch = search === '' ? null : search;
     const prevSearch = get().search;
@@ -99,28 +99,28 @@ const createStockMovementStore: StoreWithSubscribe = (set, get) => ({
       set({ search: normalizedSearch, page: 1 });
     }
   },
-  
+
   setMovement: (movement) => {
     const prevMovement = get().movement;
     if (prevMovement !== movement) {
       set({ movement, page: 1 });
     }
   },
-  
+
   setItemName: (itemName) => {
     const prevItemName = get().itemName;
     if (prevItemName !== itemName) {
       set({ itemName, page: 1 });
     }
   },
-  
+
   setCustomerName: (customerDisplayName) => {
     const prevCustomerName = get().customerDisplayName;
     if (prevCustomerName !== customerDisplayName) {
       set({ customerDisplayName, page: 1 });
     }
   },
-  
+
   setDateRange: (dateFrom, dateTo) => {
     const prevDateFrom = get().dateFrom;
     const prevDateTo = get().dateTo;
@@ -128,14 +128,14 @@ const createStockMovementStore: StoreWithSubscribe = (set, get) => ({
       set({ dateFrom, dateTo, page: 1 });
     }
   },
-  
+
   selectMovement: (id) => {
     const prevId = get().selectedMovementId;
     if (prevId !== id) {
       set({ selectedMovementId: id, isDetailsOpen: !!id });
     }
   },
-  
+
   clearFilters: () => {
     set({
       search: null,
@@ -147,42 +147,42 @@ const createStockMovementStore: StoreWithSubscribe = (set, get) => ({
       page: 1
     });
   },
-  
+
   setLoading: (isLoading) => {
     const currentIsLoading = get().isLoading;
     if (currentIsLoading !== isLoading) {
       set({ isLoading });
     }
   },
-  
+
   // Derived state getters
   getFilters: () => {
     const { search, movement, itemName, customerDisplayName, dateFrom, dateTo } = get();
     const filters: StockMovementFilters = {};
-    
+
     if (search !== null && search !== undefined && search !== '') {
       filters.search = search.trim();
     }
-    
+
     if (movement) filters.movement = movement;
     if (itemName) filters.itemName = itemName;
     if (customerDisplayName) filters.customerDisplayName = customerDisplayName;
-    
+
     if (dateFrom && dateTo) {
       filters.dateRange = {
         from: new Date(dateFrom),
         to: new Date(dateTo)
       };
     }
-    
+
     return filters;
   },
-  
+
   getSort: () => ({
     field: get().sortField,
     direction: get().sortDirection
   }),
-  
+
   // URL synchronization
   syncWithUrl: (searchParams) => {
     try {
@@ -197,7 +197,7 @@ const createStockMovementStore: StoreWithSubscribe = (set, get) => ({
       const dateFrom = searchParams.get('dateFrom');
       const dateTo = searchParams.get('dateTo');
       const selectedMovementId = searchParams.get('movementId');
-      
+
       set({
         page,
         pageSize,

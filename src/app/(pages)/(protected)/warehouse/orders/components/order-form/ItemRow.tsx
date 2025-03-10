@@ -75,6 +75,7 @@ export const ItemRow: React.FC<ItemRowProps> = ({
 
                             }}
                         />
+                        {/* TODO: Get itemLocationId from the selected item or make it selectable */}
                         <input 
                             type="hidden" 
                             name={`items.${index}.itemId`} 

@@ -1,24 +1,24 @@
 "use client"
-import { useMemo, useCallback, memo } from 'react';
+import { useMemo, useCallback, useState, memo } from 'react';
 import { DataTable } from "@/components/ui/data-table/data-table";
 import { ColumnDef, RowSelectionState } from "@tanstack/react-table";
 import { cn } from "@/lib/utils";
-import { EnrichedOrders, OrderSortField } from "@/types/orders";
+import { EnrichedOrders, OrderSortField, OrderSort } from "@/types/orders";
 import SortHeader from "@/components/ui/data-table/sort-headers"; // Import the external SortHeader component
+import { PaginationControls } from "@/components/ui/pagination-controls";
+import { ordersColumns } from './orders-columns';
 
 interface OrdersTableProps {
-  columns: ColumnDef<EnrichedOrders, any>[]
-  data: EnrichedOrders[]
-  isLoading?: boolean
-  onRowClick?: (order: EnrichedOrders) => void
-  selectedId?: string
-  isCompact?: boolean
-  onSort?: (field: string, direction: 'asc' | 'desc') => void
-  sortField?: OrderSortField
-  sortDirection?: 'asc' | 'desc'
-  onRowSelectionChange?: (selection: RowSelectionState) => void;
-  selectedRows?: RowSelectionState;
-  pageSize?: number;
+  data: EnrichedOrders[];
+  isLoading: boolean;
+  isFetching?: boolean;
+  onRowClick?: (order: EnrichedOrders) => void;
+  selectedOrderId?: string;
+  pagination: any;
+  sort: OrderSort;
+  onSortChange: (sort: { field: string, direction: 'asc' | 'desc' }) => void;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (size: number) => void;
 }
 
 type ExtendedColumnDef = ColumnDef<EnrichedOrders, any> & {
@@ -29,24 +29,25 @@ type ExtendedColumnDef = ColumnDef<EnrichedOrders, any> & {
 
 // Optimize the component with strict memoization
 export const OrdersTable = memo(function OrdersTable({
-  columns,
   data,
   isLoading,
+  isFetching = false,
   onRowClick,
-  selectedId,
-  isCompact = false,
-  onSort,
-  sortField,
-  sortDirection,
-  onRowSelectionChange,
-  pageSize
+  selectedOrderId,
+  pagination,
+  sort,
+  onSortChange,
+  onPageChange,
+  onPageSizeChange
 }: OrdersTableProps) {
+    const [selectedRows, setSelectedRows] = useState<RowSelectionState>({});
+
   // Memoize visible columns to prevent recalculation
   const visibleColumns = useMemo(() => {
     const sortableFields: OrderSortField[] = ['orderNumber', 'status', 'createdAt', 'customerName'];
     const centeredColumns = ['orderNumber', 'status']; // Add columns that should be centered
 
-    return columns.map((column: ExtendedColumnDef) => {
+    return ordersColumns.map((column: ExtendedColumnDef) => {
       const columnId = column.accessorKey || column.id;
       if (!columnId || !sortableFields.includes(columnId as OrderSortField)) {
         return column;
@@ -65,9 +66,9 @@ export const OrdersTable = memo(function OrdersTable({
           <SortHeader
             columnId={columnId}
             originalHeader={originalHeader}
-            sortField={sortField}
-            sortDirection={sortDirection}
-            onSort={onSort}
+            sortField={sort.field}
+            sortDirection={sort.direction}
+            onSort={onSortChange}
             centerHeaders={centeredColumns}
           />
         )
@@ -75,26 +76,24 @@ export const OrdersTable = memo(function OrdersTable({
 
       return newColumn;
     });
-  }, [columns, onSort, sortField, sortDirection]);
+  }, [onSortChange, sort.field, sort.direction]);
 
-  // Filter columns for compact mode
-  const displayColumns = useMemo(() => {
-    if (isCompact) {
-      return visibleColumns.filter((column: ExtendedColumnDef) => {
-        const columnId = column.accessorKey || column.id;
-        return ['orderNumber', 'customerName', 'status', "items"].includes(columnId || '');
-      });
-    }
-    return visibleColumns;
-  }, [visibleColumns, isCompact]);
+
+    const handleRowSelection = useCallback((selection: RowSelectionState) => {
+    setSelectedRows(selection);
+  }, []);
+
+    const selectedCount = Object.keys(selectedRows)
+    .filter(key => selectedRows[key])
+    .length;
 
   // Use a more efficient row className function
   const getRowClassName = useCallback((row: any) => {
     return cn(
       "hover:bg-slate-200 cursor-pointer transition-colors",
-      row.orderId === selectedId && "bg-blue-50 hover:bg-blue-100"
+      row.orderId === selectedOrderId && "bg-blue-50 hover:bg-blue-100"
     );
-  }, [selectedId]);
+  }, [selectedOrderId]);
 
   // Handle row click optimized
   const handleRowClick = useCallback((row: EnrichedOrders) => {
@@ -104,16 +103,36 @@ export const OrdersTable = memo(function OrdersTable({
   }, [onRowClick]);
 
   return (
-    <div className="h-full flex-1 overflow-hidden rounded-md">
-      <DataTable
-        columns={displayColumns}
-        data={data}
-        isLoading={isLoading}
-        onRowSelectionChange={onRowSelectionChange}
-        rowClassName={getRowClassName}
-        onRowClick={handleRowClick}
-        pageSize={pageSize}
-      />
-    </div>
+      <div className="flex flex-col rounded-md h-full">
+        <div className="flex-1 overflow-hidden flex flex-col rounded-lg bg-slate-50 border-2 border-slate-200 relative">
+        {/* Subtle loading indicator that doesn't block UI */}
+        {isFetching && !isLoading && (
+          <div className="absolute top-0 left-0 w-full h-0.5 bg-blue-500 animate-pulse z-10" />
+        )}
+        <DataTable
+          columns={visibleColumns}
+          data={data}
+          isLoading={isLoading}
+          onRowSelectionChange={handleRowSelection}
+          rowClassName={getRowClassName}
+          onRowClick={handleRowClick}
+          pageSize={pagination?.pageSize}
+        />
+      </div>
+      {pagination && (
+        <div className="p-2 flex w-full justify-center min-w-0">
+          <PaginationControls
+            currentPage={pagination.currentPage}
+            totalPages={pagination.totalPages}
+            pageSize={pagination.pageSize}
+            total={pagination.total}
+            onPageChange={onPageChange}
+            onPageSizeChange={onPageSizeChange}
+            selectedRows={selectedCount}
+            isLoading={isFetching && !isLoading} // Show subtle loading in pagination
+          />
+        </div>
+      )}
+      </div>
   );
 });

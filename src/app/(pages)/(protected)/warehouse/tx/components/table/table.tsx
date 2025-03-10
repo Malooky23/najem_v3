@@ -15,7 +15,7 @@ interface StockMovementTableProps {
   onRowClick?: (order: EnrichedStockMovementView) => void
   selectedId?: string | null
   isCompact?: boolean
-  onSort?: (field: string, direction: 'asc' | 'desc') => void
+  onSort?: (sort: { field: string, direction: 'asc' | 'desc' }) => void;
   sortField?: StockMovementSortFields
   sortDirection?: 'asc' | 'desc'
   onRowSelectionChange?: (selection: RowSelectionState) => void
