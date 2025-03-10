@@ -14,6 +14,16 @@ export type OrderActionResponse = {
     error?: string;
 };
 
+export interface OrderUpdateResult {
+  success: boolean;
+  data?: EnrichedOrders;
+  error?: {
+    message: string;
+    code?: string;
+    field?: string;
+  };
+}
+
 export async function createOrder(formData: FormData): Promise<OrderActionResponse> {
     try {
         const session = await auth();
@@ -119,12 +129,12 @@ export async function createOrder(formData: FormData): Promise<OrderActionRespon
 }
 
 
-export async function updateOrder(orderData: EnrichedOrders): Promise<OrderActionResponse> {
+export async function updateOrder(orderData: EnrichedOrders): Promise<OrderUpdateResult> {
     // await new Promise((resolve) => setTimeout(resolve, 3000))
     try {
         const session = await auth();
         if (!session?.user?.id) {
-            return { success: false, error: "Unauthorized: Must be logged in to update orders." };
+            return { success: false, error: { message: "Unauthorized: Must be logged in to update orders." } }  ;
         }
 
         // Validate the update data
@@ -143,7 +153,7 @@ export async function updateOrder(orderData: EnrichedOrders): Promise<OrderActio
         });
 
         if (!validatedFields.success) {
-            return { success: false, error: validatedFields.error.message };
+            return { success: false, error: { message: validatedFields.error.message } };
         }
 
         const updateData = validatedFields.data;
@@ -151,7 +161,7 @@ export async function updateOrder(orderData: EnrichedOrders): Promise<OrderActio
         // Start a transaction to update order and items
         const result = await db.transaction(async (tx) => {
             // Update order
-            const [updatedOrder] = await tx
+            const updatedOrder = await tx
                 .update(orders)
                 .set({
                     status: updateData.status,
@@ -164,32 +174,15 @@ export async function updateOrder(orderData: EnrichedOrders): Promise<OrderActio
                 .where(eq(orders.orderId, updateData.orderId))
                 .returning();
 
-            // Delete existing items
-            await tx
-                .delete(orderItems)
-                .where(eq(orderItems.orderId, updateData.orderId));
-
-            // Insert updated items
-            if (updateData.items && updateData.items.length > 0) {
-                const orderItemsData = updateData.items.map(item => ({
-                    orderId: updateData.orderId,
-                    itemId: item.itemId,
-                    quantity: item.quantity,
-                    itemLocationId: item.itemLocationId
-                }));
-
-                await tx.insert(orderItems).values(orderItemsData);
-            }
 
             return updatedOrder;
         });
-
-        return { success: true, data: result };
-    } catch (error) {
-        console.error('Error in updateOrder:', error);
+        return { success: true, data: result[0] as EnrichedOrders  };
+    } catch (error:any) {
+        // console.log('Error in updateOrder:', error?.message);
         return {
             success: false,
-            error: error instanceof Error ? error.message : 'Failed to update order'
+            error: {message: error instanceof Error ? error.message : 'Failed to update order'}
         };
     }
 }

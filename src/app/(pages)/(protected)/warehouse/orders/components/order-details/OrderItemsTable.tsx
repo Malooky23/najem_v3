@@ -1,77 +1,77 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { UseFormReturn } from "react-hook-form"
-import { EnrichedOrders } from "@/types/orders"
-import { Input } from "@/components/ui/input"
-import Link from "next/link"
+import { EnrichedOrders } from "@/types/orders";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface OrderItemsTableProps {
-  order: EnrichedOrders
-  form: UseFormReturn<EnrichedOrders>
-  isEditing: boolean
+  order: EnrichedOrders;
 }
 
-export function OrderItemsTable({ order, form, isEditing }: OrderItemsTableProps) {
+interface OrderItemDisplayProps {
+  id?: string;
+  itemId: string;
+  item?: {
+    name: string;
+    [key: string]: any;
+  };
+  quantity?: number;
+  unitPrice?: number;
+  [key: string]: any;
+}
+
+export function OrderItemsTable({ order }: OrderItemsTableProps) {
+  // Safely cast and handle potentially undefined orderItems
+  const orderItems = Array.isArray(order.items) ? order.items : [];
+
+  if (!orderItems.length) {
+    return (
+      <Card className="mt-4 bg-white/70 backdrop-blur-sm shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-lg">Order Items</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-center text-gray-500 py-4">No items in this order</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <Card className="mt-6 bg-white/70 shadow-md hover:shadow-lg transition-shadow">
-      <CardHeader className="p-4">
-        <CardTitle className="text-lg text-gray-700">Order Items</CardTitle>
+    <Card className="mt-4 bg-white/70 backdrop-blur-sm shadow-sm">
+      <CardHeader>
+        <CardTitle className="text-lg">Order Items</CardTitle>
       </CardHeader>
-      <CardContent className="p-0">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-gray-100/50">
-              <TableHead className="w-[70%]">Item</TableHead>
-              <TableHead className="w-[30%]">Quantity</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {order.items.map((item, index) => (
-              <TableRow key={`${item.itemId}-${index}`} className="hover:bg-gray-100/50 transition-colors">
-                <TableCell className="font-medium">
-                  {isEditing ? (
-                    <Input
-                      value={form.watch(`items.${index}.itemName`)}
-                      onChange={(e) => {
-                        const newItems = [...form.getValues("items")]
-                        newItems[index] = { ...newItems[index], itemName: e.target.value }
-                        form.setValue("items", newItems)
-                      }}
-                    />
-                  ) : (
-                    <Link 
-                    href={{
-                      pathname: '/warehouse/items/tx',
-                      query: { itemName: item.itemName },
-                    }}>  {item.itemName}  </Link>
-                  )}
-                </TableCell>
-                <TableCell>
-                  {isEditing ? (
-                    <Input
-                      type="number"
-                      min="1"
-                      value={form.watch(`items.${index}.quantity`)}
-                      onChange={(e) => {
-                        const newItems = [...form.getValues("items")]
-                        newItems[index] = { 
-                          ...newItems[index], 
-                          quantity: Math.max(1, parseInt(e.target.value) || 1) 
-                        }
-                        form.setValue("items", newItems)
-                      }}
-                    />
-                  ) : (
-                    item.quantity
-                  )}
-                </TableCell>
+      <CardContent>
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[80px]">Item #</TableHead>
+                <TableHead>Description</TableHead>
+                <TableHead className="text-right">Qty</TableHead>
+                <TableHead className="text-right">Unit Price</TableHead>
+                <TableHead className="text-right">Total</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {orderItems.map((item, index) => (
+                <TableRow key={ index}>
+                  <TableCell className="font-medium">{item.itemId}</TableCell>
+                  <TableCell>{item.itemName || "Unknown Item"}</TableCell>
+                  <TableCell className="text-right">{item.quantity}</TableCell>
+                  {/* <TableCell className="text-right">${(item.unitPrice || 0).toFixed(2)}</TableCell>
+                  <TableCell className="text-right">${((item.quantity || 0) * (item.unitPrice || 0)).toFixed(2)}</TableCell> */}
+                </TableRow>
+              ))}
+              <TableRow className="bg-gray-50">
+                <TableCell colSpan={4} className="text-right font-medium">Total</TableCell>
+                {/* <TableCell className="text-right font-bold">${(order.totalAmount || 0).toFixed(2)}</TableCell> */}
+              </TableRow>
+            </TableBody>
+          </Table>
+        </div>
       </CardContent>
     </Card>
-  )
+  );
 }
 
 

@@ -56,7 +56,7 @@ type StoreWithSubscribe = StateCreator<
 const createStockMovementStore: StoreWithSubscribe = (set, get) => ({
   // Default state
   page: 1,
-  pageSize: 10,
+  pageSize: 50,
   sortField: 'createdAt',
   sortDirection: 'desc',
   search: null,

@@ -1,41 +1,36 @@
 import { OrderStatus } from "@/types/orders"
 import { Button } from "@/components/ui/button"
 import { StatusDropdown } from "./StatusDropdown"
-import { Edit, Printer, Save, X } from "lucide-react"
+import { Printer, X } from "lucide-react"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
-import { SaveButton } from "@/components/ui/SaveButton"
 import { Badge } from "@/components/ui/badge"
 
 interface OrderHeaderProps {
   orderNumber: string
   status: OrderStatus
-  isEditing: boolean
+  isEditing?: boolean
   isMobile?: boolean
   isLoading?: boolean
-  onStatusChange: (status: OrderStatus) => Promise<void>
-  onEdit: () => void
-  onSave: () => void
+  statusUpdating: OrderStatus | null
+  // Make sure this matches the function type from OrderDetails
+  onStatusChange: (status: OrderStatus) => void
+  onEdit?: () => void
+  onSave?: () => Promise<any>
   onClose: () => void
 }
 
 export function OrderHeader({
   orderNumber,
   status,
-  isEditing,
   isMobile = false,
   isLoading = false,
+  statusUpdating,
   onStatusChange,
-  onEdit,
-  onSave,
   onClose
 }: OrderHeaderProps) {
-  const handleStatusChange = async (newStatus: OrderStatus) => {
-    try {
-      await onStatusChange(newStatus)
-    } catch (error) {
-      // Error handling is done in the StatusDropdown component
-      throw error
-    }
+  // Simple pass-through function, no async
+  const handleStatusChange = (newStatus: OrderStatus) => {
+    onStatusChange(newStatus);
   }
 
   return (
@@ -54,7 +49,8 @@ export function OrderHeader({
             <StatusDropdown
               currentStatus={status}
               onStatusChange={handleStatusChange}
-              isEditing={isEditing}
+              isLoading={!!statusUpdating}
+              loadingStatus={statusUpdating}
             />
           </>
         )}
@@ -62,30 +58,12 @@ export function OrderHeader({
 
       <div className="flex items-center gap-2">
         {!isLoading && (
-          isEditing ? (
-
-            <SaveButton
-              onClick={async () => onSave()}
-            />
-          ) : (
-            <>
-              <Button
-                className="gap-2 bg-blue-500 hover:bg-blue-600 transition-colors"
-                size="sm"
-              >
-                <Printer className="w-4 h-4" />
-              </Button>
-              <Button
-                className="gap-2 bg-purple-500 hover:bg-purple-600 transition-colors"
-                // variant="outline"
-                size="sm"
-                onClick={onEdit}
-              >
-                <Edit className="w-4 h-4" />
-              </Button>
-
-            </>
-          )
+          <Button
+            className="gap-2 bg-blue-500 hover:bg-blue-600 transition-colors"
+            size="sm"
+          >
+            <Printer className="w-4 h-4" />
+          </Button>
         )}
 
         <Button

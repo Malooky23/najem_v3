@@ -2,7 +2,7 @@
 import { keepPreviousData, useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { type ItemSchemaType } from "@/types/items";
 import { CustomerList, EnrichedCustomer } from "@/types/customer";
-import { EnrichedOrders, type OrderFilters, type OrderSort } from "@/types/orders";
+import { EnrichedOrders, type OrderFilters, type OrderSort, OrderStatus } from "@/types/orders";
 import { getSession } from 'next-auth/react';
 import { getOrders, getOrderById, updateOrder } from "@/server/actions/orders";
 import { EnrichedStockMovementView, StockMovementFilters, StockMovementSort } from "@/types/stockMovement";
@@ -27,6 +27,22 @@ export interface OrdersQueryResult {
     totalPages: number;
   };
 }
+
+// Define better types for order update responses
+export interface OrderUpdateResult {
+  success: boolean;
+  data?: EnrichedOrders;
+  error?: {
+    message: string;
+    code?: string;
+    field?: string;
+  };
+}
+
+type MutationContext = {
+  previousOrders?: OrdersQueryResult;
+  previousSingleOrder?: EnrichedOrders;
+} | undefined;
 
 // Optimize the order details fetch to minimize unnecessary requests
 export function useOrderDetails(
@@ -99,51 +115,6 @@ export function useOrdersQuery(params: OrdersQueryParams = {}) {
     placeholderData: keepPreviousData,
   });
 
-  // Better mutation handling with optimistic updates
-  const updateOrderMutation = useMutation({
-    mutationFn: async (updatedOrder: EnrichedOrders) => {
-      const result = await updateOrder(updatedOrder);
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to update order');
-      }
-      return result.data;
-    },
-    onMutate: async (updatedOrder) => {
-      // Cancel pending queries to avoid race conditions
-      await queryClient.cancelQueries({ queryKey: stableQueryKey });
-      await queryClient.cancelQueries({ queryKey: ['order', updatedOrder.orderId] });
-      
-      // Snapshot the previous values
-      const previousOrders = queryClient.getQueryData<OrdersQueryResult>(stableQueryKey);
-      
-      // Optimistically update orders list
-      if (previousOrders) {
-        queryClient.setQueryData<OrdersQueryResult>(stableQueryKey, {
-          ...previousOrders,
-          orders: previousOrders.orders.map(order => 
-            order.orderId === updatedOrder.orderId ? updatedOrder : order
-          )
-        });
-      }
-      
-      // Also update individual order details cache
-      queryClient.setQueryData(['order', updatedOrder.orderId], updatedOrder);
-      
-      return { previousOrders };
-    },
-    onError: (err, updatedOrder, context) => {
-      if (context?.previousOrders) {
-        queryClient.setQueryData(stableQueryKey, context.previousOrders);
-      }
-      queryClient.invalidateQueries({ queryKey: ['order', updatedOrder.orderId] });
-    },
-    onSettled: (data, error, variables) => {
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: stableQueryKey });
-      }, 500);
-    },
-  });
-
   // Use a cleaner return pattern with more informative loading states
   return {
     data: query.data?.orders || [],
@@ -158,11 +129,101 @@ export function useOrdersQuery(params: OrdersQueryParams = {}) {
     // Keep other states
     isError: query.isError,
     error: query.error,
-    updateOrder: updateOrderMutation.mutate,
-    updateOrderAsync: updateOrderMutation.mutateAsync,
-    isUpdating: updateOrderMutation.isPending,
-    updateError: updateOrderMutation.error,
   };
+}
+
+// Enhanced order update mutation that properly handles the cache
+export function useOrderStatusMutation() {
+  const queryClient = useQueryClient();
+  
+  return useMutation<
+    OrderUpdateResult,
+    Error,
+    { orderId: string; status: OrderStatus },
+    { previousData: EnrichedOrders | undefined }
+  >({
+    mutationFn: async ({ orderId, status }) => {
+      // Get the current order from cache
+      const currentOrder = queryClient.getQueryData<EnrichedOrders>(['order', orderId]);
+      
+      if (!currentOrder) {
+        throw new Error('Order not found in cache');
+      }
+      
+      // Create updated order with new status
+      const updatedOrder: EnrichedOrders = {
+        ...currentOrder,
+        status
+      };
+      
+      // Call the API
+      const result = await updateOrder(updatedOrder);
+      return result;
+    },
+    
+    // Optimistically update UI
+    onMutate: async ({ orderId, status }) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['order', orderId] });
+      
+      // Snapshot the previous value
+      const previousData = queryClient.getQueryData<EnrichedOrders>(['order', orderId]);
+      
+      // Optimistically update the cache
+      if (previousData) {
+        queryClient.setQueryData<EnrichedOrders>(['order', orderId], {
+          ...previousData,
+          status
+        });
+      }
+      
+      // Update the order in the list as well
+      const ordersKey = queryClient.getQueryCache().findAll({ queryKey: ['orders'] });
+      ordersKey.forEach(query => {
+        const data = query.state.data as OrdersQueryResult;
+        if (data?.orders) {
+          queryClient.setQueryData(query.queryKey, {
+            ...data,
+            orders: data.orders.map(order => 
+              order.orderId === orderId ? { ...order, status } : order
+            )
+          });
+        }
+      });
+      
+      return { previousData };
+    },
+    
+    // Handle errors and revert optimistic update
+    onError: (err, { orderId }, context) => {
+      console.error('Error updating order status:', err);
+      
+      // Revert the optimistic update
+      if (context?.previousData) {
+        queryClient.setQueryData(['order', orderId], context.previousData);
+        
+        // Also revert in the list
+        const ordersKey = queryClient.getQueryCache().findAll({ queryKey: ['orders'] });
+        ordersKey.forEach(query => {
+          const data = query.state.data as OrdersQueryResult;
+          if (data?.orders) {
+            queryClient.setQueryData(query.queryKey, {
+              ...data,
+              orders: data.orders.map(order => 
+                order.orderId === orderId ? context.previousData : order
+              )
+            });
+          }
+        });
+      }
+    },
+    
+    // Refresh data after mutation
+    onSettled: (result, error, { orderId }) => {
+      queryClient.invalidateQueries({ queryKey: ['order', orderId] });
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+    }
+  });
 }
 
 export function useCustomers() {

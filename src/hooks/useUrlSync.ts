@@ -41,7 +41,7 @@ export function useUrlSync() {
         if (state.page !== 1) {
           params.set('page', state.page.toString());
         }
-        if (state.pageSize !== 10) {
+        if (state.pageSize !== 50) {
           params.set('pageSize', state.pageSize.toString());
         }
         if (state.sortField !== 'createdAt') {

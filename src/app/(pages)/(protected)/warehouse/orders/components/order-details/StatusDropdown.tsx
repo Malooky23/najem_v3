@@ -1,189 +1,85 @@
 import { useState } from "react"
-import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ChevronDown } from "lucide-react"
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
-import { toast } from "@/hooks/use-toast"
-import { cn } from "@/lib/utils"
-import { OrderStatus, orderStatus } from "@/types/orders"
-
-const statusColors: Record<OrderStatus, string> = {
-  DRAFT: "bg-gray-500",
-  PENDING: "bg-yellow-500",
-  PROCESSING: "bg-blue-500",
-  READY: "bg-purple-500",
-  COMPLETED: "bg-green-500",
-  CANCELLED: "bg-red-500",
-}
+import { LoadingSpinner } from "@/components/ui/loading-spinner"
+import { OrderStatus } from "@/types/orders"
 
 interface StatusDropdownProps {
   currentStatus: OrderStatus
-  onStatusChange: (status: OrderStatus) => Promise<void>
-  isEditing: boolean
+  onStatusChange: (status: OrderStatus) => void // Matches OrderHeader's type
+  isLoading: boolean
+  loadingStatus: OrderStatus | null
 }
 
 export function StatusDropdown({
   currentStatus,
   onStatusChange,
-  isEditing,
+  isLoading,
+  loadingStatus
 }: StatusDropdownProps) {
-  const [isOpen, setIsOpen] = useState(false)
-  const [pendingStatus, setPendingStatus] = useState<OrderStatus | null>(null)
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [internalLoading, setInternalLoading] = useState(false);
+  
+  // Combined loading state
+  const isUpdating = isLoading || internalLoading;
 
-  const handleStatusSelect = async (status: OrderStatus) => {
-    if (isEditing) {
-      try {
-        await onStatusChange(status)
-      } catch (error) {
-        toast({
-          title: "Failed to update status",
-          description: error instanceof Error ? error.message : 'An error occurred',
-          variant: "destructive",
-        })
-      }
-      return
+  // Get color based on status
+  const getStatusColor = (status: OrderStatus): string => {
+    switch (status) {
+      case "DRAFT": return "bg-gray-100 text-gray-800";
+      case "PENDING": return "bg-yellow-100 text-yellow-800";
+      case "PROCESSING": return "bg-blue-100 text-blue-800";
+      case "READY": return "bg-purple-100 text-purple-800";
+      case "COMPLETED": return "bg-green-100 text-green-800";
+      case "CANCELLED": return "bg-red-100 text-red-800";
+      default: return "bg-gray-100 text-gray-800";
     }
-
-    if (status !== currentStatus) {
-      setPendingStatus(status)
-      setShowConfirmDialog(true)
-    }
-    setIsOpen(false)
   }
 
-  const handleConfirm = async () => {
-    if (!pendingStatus) return
-
-    setIsLoading(true)
-    setError(null)
-
+  // Handle status change without async
+  const handleChange = (value: string) => {
+    const newStatus = value as OrderStatus;
+    if (isUpdating || newStatus === currentStatus) return;
+    
+    setInternalLoading(true);
     try {
-      await onStatusChange(pendingStatus)
-      
-      toast({
-        title: "Status updated successfully",
-        description: `New Status: ${pendingStatus}`,
-        variant: "default",
-      })
-      setPendingStatus(null)
-      setShowConfirmDialog(false)
-      setError(null)
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to update status'
-      setError(errorMessage)
-      toast({
-        title: "Failed to update status",
-        description: errorMessage,
-        variant: "destructive",
-      })
+      onStatusChange(newStatus);
     } finally {
-      setIsLoading(false)
+      // Clean up after a delay to ensure animation is visible
+      setTimeout(() => setInternalLoading(false), 100);
     }
-  }
-
-  if (isEditing) {
-    return (
-      <Select 
-        onValueChange={handleStatusSelect} 
-        defaultValue={currentStatus}
-        disabled={isLoading}
-      >
-        <SelectTrigger className="w-[180px]">
-          <SelectValue placeholder="Select status" />
-        </SelectTrigger>
-        <SelectContent>
-          {orderStatus.options.map((status) => (
-            <SelectItem key={status} value={status}>
-              {status}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    )
   }
 
   return (
-    <>
-      <div className="relative">
-        <Badge
-          variant="secondary"
-          className={cn(
-            "h-7 px-3 cursor-pointer transition-all duration-300 ease-in-out hover:shadow-md text-white",
-            statusColors[currentStatus],
-            isLoading && "opacity-50 cursor-not-allowed"
-          )}
-          onClick={() => !isLoading && setIsOpen(!isOpen)}
-        >
-          {currentStatus}
-          <ChevronDown className="w-4 h-4 ml-1" />
-        </Badge>
-        {isOpen && (
-          <div className="absolute top-full left-0 mt-1 w-40 bg-white rounded-md shadow-lg overflow-hidden z-10">
-            {orderStatus.options.map((status) => (
-              <div
-                key={status}
-                className={cn(
-                  "px-4 py-2 cursor-pointer text-white transition-all duration-200",
-                  statusColors[status],
-                  "hover:opacity-80 hover:translate-x-1",
-                  isLoading && "opacity-50 cursor-not-allowed pointer-events-none",
-                  status === currentStatus && "font-semibold"
-                )}
-                onClick={() => !isLoading && handleStatusSelect(status)}
-              >
-                {status}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <AlertDialog open={showConfirmDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Change Order Status</AlertDialogTitle>
-            <AlertDialogDescription className="space-y-2">
-              Are you sure you want to change the order status from {currentStatus} to {pendingStatus}?
-
-              {error && (
-                <p className="text-red-500 text-sm bg-red-50 p-2 rounded border border-red-200">
-                  Error: {error}
-                </p>
+    <div className="relative">
+      <Select
+        value={currentStatus}
+        onValueChange={handleChange}
+        disabled={isUpdating}
+      >
+        <SelectTrigger className={`w-[180px] font-medium ${getStatusColor(currentStatus)}`}>
+          <SelectValue>
+            <div className="flex items-center gap-2">
+              {isUpdating && loadingStatus === currentStatus && (
+                <LoadingSpinner className="w-4 h-4" />
               )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel
-              disabled={isLoading}
-              onClick={() => {
-                setPendingStatus(null)
-                setError(null)
-                setShowConfirmDialog(false)
-              }}
-            >
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirm}
-              disabled={isLoading}
-              className={cn(
-                "relative",
-                isLoading && "text-transparent"
-              )}
-            >
-              {isLoading && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                </div>
-              )}
-              Confirm
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+              {currentStatus}
+            </div>
+          </SelectValue>
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="DRAFT" className={getStatusColor("DRAFT")}>DRAFT</SelectItem>
+          <SelectItem value="PENDING" className={getStatusColor("PENDING")}>PENDING</SelectItem>
+          <SelectItem value="PROCESSING" className={getStatusColor("PROCESSING")}>PROCESSING</SelectItem>
+          <SelectItem value="READY" className={getStatusColor("READY")}>READY</SelectItem>
+          <SelectItem value="COMPLETED" className={getStatusColor("COMPLETED")}>COMPLETED</SelectItem>
+          <SelectItem value="CANCELLED" className={getStatusColor("CANCELLED")}>CANCELLED</SelectItem>
+        </SelectContent>
+      </Select>
+      
+      {isUpdating && loadingStatus !== currentStatus && (
+        <div className="absolute right-0 top-0 bottom-0 flex items-center mr-8">
+          <LoadingSpinner className="w-4 h-4" />
+        </div>
+      )}
+    </div>
   )
 }

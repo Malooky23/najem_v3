@@ -1,15 +1,16 @@
 import { memo, useMemo } from 'react';
 import { cn } from "@/lib/utils";
-import { EnrichedOrders } from "@/types/orders";
+import { EnrichedOrders, OrderStatus } from "@/types/orders";
 import { OrderDetails } from "./OrderDetails";
 import { useOrderDetails } from "@/hooks/data-fetcher";
+import { useOrderStatusMutation } from "@/hooks/use-order-status"; 
+import { showStatusUpdateErrorToast } from "@/lib/order-status-errors";
+import { toast } from "@/hooks/use-toast";
 
 interface OrderDetailsContainerProps {
   isMobile: boolean;
   selectedOrderId: string | null;
   onClose: () => void;
-  onSave: (order: EnrichedOrders) => void;
-  isUpdating: boolean;
   orders: EnrichedOrders[];
 }
 
@@ -17,23 +18,57 @@ const OrderDetailsContainer = memo(function OrderDetailsContainer({
   isMobile,
   selectedOrderId,
   onClose,
-  onSave,
-  isUpdating,
   orders
 }: OrderDetailsContainerProps) {
-  // Try to find the order in the existing data first
+  // Find order in the list for initial data
   const cachedOrder = useMemo(() => 
-    orders?.find(order => order.orderId === selectedOrderId) ?? null,
-  [orders, selectedOrderId]);
+    selectedOrderId ? orders?.find(order => order.orderId === selectedOrderId) : null, 
+    [orders, selectedOrderId]
+  );
   
-  // Fetch full order details but show cached data immediately
+  // Get detailed order data
   const { data: orderDetails, isLoading } = useOrderDetails(selectedOrderId, cachedOrder);
   
-  // Use cached order immediately if available, then update with full details when loaded
-  const displayOrder = orderDetails || cachedOrder;
-
-  // Only show loading if we have no data to display at all
-  const showLoading = isLoading && !displayOrder;
+  // Status mutation hook with explicit typing
+  const statusMutation = useOrderStatusMutation();
+  
+  // The order to display - ensure it's never undefined
+  const order = orderDetails || cachedOrder || null; // Fix: add null fallback
+  
+  // Handle status change with improved error handling
+  const handleStatusChange = (status: OrderStatus) => {
+    if (!selectedOrderId || !order) {
+      toast({
+        title: "Error",
+        description: "Cannot update order: missing order data",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Don't update if status hasn't changed
+    if (order.status === status) return;
+    
+    statusMutation.mutate({ 
+      orderId: selectedOrderId,
+      status
+    }, {
+      // These callbacks are properly typed now
+      onError: (error: Error) => {
+        showStatusUpdateErrorToast(status, {
+          message: error.message,
+          code: 'UPDATE_ERROR'
+        });
+      },
+      onSuccess: (data) => {
+        if (!data || !data.success) {
+          showStatusUpdateErrorToast(status, data?.error || {
+            message: 'Failed to update order status'
+          });
+        }
+      }
+    });
+  };
 
   return (
     <div
@@ -43,12 +78,12 @@ const OrderDetailsContainer = memo(function OrderDetailsContainer({
       )}
     >
       <OrderDetails
-        order={displayOrder}
+        order={order} // Now this is guaranteed to be EnrichedOrders | null
         isMobile={isMobile}
         handleClose={onClose}
-        onSave={onSave}
-        isProcessing={isUpdating}
-        isLoading={showLoading} // Only show loading when we have no data at all
+        isLoading={isLoading && !cachedOrder}
+        isProcessing={statusMutation.isPending}
+        onStatusChange={handleStatusChange}
       />
     </div>
   );

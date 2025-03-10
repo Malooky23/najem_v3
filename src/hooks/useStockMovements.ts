@@ -27,7 +27,7 @@ export function useStockMovements(
 ) {
   // Default values
   const page = params.page || 1;
-  const pageSize = params.pageSize || 10;
+  const pageSize = params.pageSize || 50;
   const filters = params.filters || {};
   const sort = params.sort || { field: 'createdAt', direction: 'desc' };
 
@@ -101,7 +101,7 @@ export function usePrefetchStockMovements(
   
   // Reuse the same parameter defaults and query key construction logic
   const page = params.page || 1;
-  const pageSize = params.pageSize || 10;
+  const pageSize = params.pageSize || 50;
   const filters = params.filters || {};
   const sort = params.sort || { field: 'createdAt', direction: 'desc' };
 
