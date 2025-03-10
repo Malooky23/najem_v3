@@ -113,8 +113,8 @@ export function DataTable<TData extends object, TValue>({
   if (isLoading && data.length === 0) {
     return (
       <div className="flex flex-col h-full">
-        <div className="w-full overflow-x-auto overflow-y-auto"> {/* Added overflow-y-auto */}
-          <Table style={{ tableLayout: 'auto', minWidth: '100%' }}> {/* Add minWidth: 100% */}
+        <div className="w-full overflow-x-auto overflow-y-auto">{/* Added overflow-y-auto */}
+          <Table style={{ tableLayout: 'auto', minWidth: '100%' }}>{/* Add minWidth: 100% */}
             <TableHeader className="sticky top-0 rounded-t-md">
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}
@@ -160,8 +160,8 @@ export function DataTable<TData extends object, TValue>({
 
   return (
     <div className="flex flex-col h-full">
-      <div className="w-full overflow-x-auto overflow-y-auto"> {/* Added overflow-y-auto */}
-        <Table style={{ tableLayout: 'auto', minWidth: '100%' }}> {/* Add minWidth: 100% */}
+      <div className="w-full overflow-x-auto overflow-y-auto">{/* Added overflow-y-auto */}
+        <Table style={{ tableLayout: 'auto', minWidth: '100%' }}>{/* Add minWidth: 100% */}
           <TableHeader className="sticky top-0 rounded-t-md">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}

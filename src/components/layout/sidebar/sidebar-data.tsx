@@ -38,7 +38,7 @@ const warehouse = {
         },
         {
             title: "Movements",
-            url: "/warehouse/items/tx",
+            url: "/warehouse/tx",
             icon: ArrowRightLeft,
         },
     ],

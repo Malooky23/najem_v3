@@ -120,7 +120,7 @@ The items/tx page is a Next.js application page that displays and manages stock 
 ## File Structure
 
 ```
-src/app/(pages)/(protected)/warehouse/items/tx/
+src/app/(pages)/(protected)/warehouse/tx/
 ├── page.tsx
 ├── components/
 │   ├── StockMovementPage.tsx

@@ -19,10 +19,10 @@ import { Card } from "@/components/ui/card";
 const menuItems = [
   { title: 'Items', icon: Package2, path: '/warehouse/items', active: true },
   { title: 'Orders', icon: ShoppingCart, path: '/warehouse/orders', active: true },
-  { title: 'Item Transactions', icon: ArrowLeftRight, path: '/warehouse/items/tx', active: true },
+  { title: 'Item Transactions', icon: ArrowLeftRight, path: '/warehouse/tx', active: true },
   { title: 'Forklift', icon: Forklift, path: '/warehouse/forklift', active: false },
   { title: 'Labour', icon: Users, path: '/warehouse/labour', active: false },
-  { title: 'Deliveries', icon: Truck, path: '/warehouse/Deliveries', active: false },
+  { title: 'Deliveries', icon: Truck, path: '/warehouse/', active: false },
 ] as const;
 
 export default function WarehousePage() {

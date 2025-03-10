@@ -7,7 +7,6 @@ import { useMemo, useCallback } from "react"
 import { EnrichedStockMovementView, StockMovementSortFields } from "@/types/stockMovement"
 import React from "react"
 import SortHeader from "@/components/ui/data-table/sort-headers"
-import page from "../../../../orders/test/page"
 
 interface StockMovementTableProps {
   columns: ColumnDef<EnrichedStockMovementView>[]
@@ -132,8 +131,17 @@ export function StockMovementTable({
     });
   }, [visibleColumns, isCompact]);
 
+  // Pre-compute the row className function to avoid recreating it during render
+  const getRowClassName = useCallback((row: any) => {
+    return cn(
+      "hover:bg-slate-200 cursor-pointer",
+      selectedId === (row as EnrichedStockMovementView).movementId && "bg-blue-50 hover:bg-blue-100"
+    );
+  }, [selectedId]);
+
   return (
-    <div className="overflow-auto flex-1 rounded-md">
+    <div className="overflow-auto flex-1 rounded-md">{
+      // Using a fragment with expression syntax to prevent whitespace
       <DataTable
         columns={displayColumns}
         data={data}
@@ -142,13 +150,8 @@ export function StockMovementTable({
         onRowSelectionChange={onRowSelectionChange}
         onRowClick={handleRowClick}
         pageSize={100}
-        rowClassName={(row) =>
-          cn(
-            "hover:bg-slate-200 cursor-pointer",
-            selectedId === (row as EnrichedStockMovementView).movementId && "bg-blue-50 hover:bg-blue-100"
-          )
-        }
+        rowClassName={getRowClassName}
       />
-    </div>
+    }</div>
   );
 }

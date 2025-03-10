@@ -1,6 +1,6 @@
 "use client"
 import { useEffect, useState, useCallback, memo } from "react"
-import { useMediaQuery } from "@/hooks/use-media-query"
+import { useIsMobileTEST, useMediaQuery } from "@/hooks/use-media-query"
 import { cn } from "@/lib/utils"
 import { useStockMovementStore } from "@/stores/stock-movement-store"
 import { SearchPanel } from "./SearchPanel"
@@ -20,23 +20,22 @@ const createOptions = [
   { id: "4", label: "Print" },
 ];
 
-// Memoized header component
-const PageHeader = memo<PageHeaderProps>(function PageHeader({ isLoading }) {
+
+function PageHeader({ isLoading }: PageHeaderProps) {
   return (
     <div className="flex justify-between mt-2 gap-1 max-w-full">
       <h1 className="text-2xl font-bold text-gray-900 text-nowrap pr-2">
         Item Movements
       </h1>
       <div className="">
-      <SearchPanel isLoading={isLoading} />
-        </div>
+        <SearchPanel isLoading={isLoading} />
+      </div>
       <div className="pr-2">
         <DropDownMenuButton MENU_ITEMS={createOptions} />
       </div>
     </div>
   );
-});
-
+}
 // Memoized content layout component
 const ContentLayout = memo<{
   isMobile: boolean;
@@ -60,6 +59,7 @@ const ContentLayout = memo<{
 export function StockMovementPage() {
   // Media query for responsive design
   const isMobile = useMediaQuery("(max-width: 768px)")
+
 
   // Loading state with debounce to prevent flashing
   const [isPageLoading, setIsPageLoading] = useState(true)
