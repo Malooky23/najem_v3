@@ -5,7 +5,7 @@ import { db } from '@/server/db';
 import { auth } from '@/lib/auth/auth';
 import { orders, orderItems, customers, items, users } from '@/server/db/schema';
 import { eq, and, desc, asc, sql, gte, lte } from 'drizzle-orm';
-import { createOrderSchema, deliveryMethod, EnrichedOrders, packingType, updateOrderSchema, type OrderFilters, type OrderSort } from '@/types/orders';
+import { createOrderSchema, deliveryMethod, EnrichedOrders, packingType, UpdateOrderInput, updateOrderSchema, type OrderFilters, type OrderSort } from '@/types/orders';
 import useDelay from '@/hooks/useDelay';
 
 export type OrderActionResponse = {
@@ -303,6 +303,70 @@ export type GetOrderActionResponse = {
     error?: string;
 };
 
+// Helper functions for query building 
+function withFilters(
+    qb: any,
+    filters: OrderFilters,
+    session: any
+) {
+    let query = qb;
+
+    // User type restriction
+    if (session.user.userType === 'CUSTOMER' && session.user.customerId) {
+        query = query.where(eq(orders.customerId, session.user.customerId));
+    }
+
+    if (filters.customerId) {
+        query = query.where(eq(orders.customerId, filters.customerId));
+    }
+
+    if (filters.status) {
+        query = query.where(eq(orders.status, filters.status));
+    }
+
+    if (filters.movement) {
+        query = query.where(eq(orders.movement, filters.movement));
+    }
+
+    if (filters.dateRange) {
+        query = query.where(
+            and(
+                gte(orders.createdAt, filters.dateRange.from),
+                lte(orders.createdAt, filters.dateRange.to)
+            )
+        );
+    }
+
+    return query;
+}
+
+function withPagination(
+    qb: any,
+    page: number = 1,
+    pageSize: number = 100
+) {
+    return qb.limit(pageSize).offset((page - 1) * pageSize);
+}
+
+function withSort(
+    qb: any,
+    sort: OrderSort
+) {
+    // Clear any existing order by clauses
+    const freshQuery = qb.orderBy();
+
+    // Map field names to schema properties
+    let field;
+    if (sort.field === 'orderNumber') field = orders.orderNumber;
+    else if (sort.field === 'status') field = orders.status;
+    else if (sort.field === 'customerName') field = customers.displayName;
+    else field = orders.createdAt;
+
+    return freshQuery.orderBy(
+        sort.direction === 'desc' ? desc(field) : asc(field)
+    );
+}
+
 export async function getOrders(
     page: number = 1,
     pageSize: number = 100,
@@ -312,185 +376,127 @@ export async function getOrders(
     try {
         const session = await auth();
         if (!session?.user?.id) {
-            return { success: false, error: "Unauthorized: Must be logged in to fetch orders." };
+            return { success: false, error: "Unauthorized: Please login." };
         }
 
-        const offset = (page - 1) * pageSize;
+        // Build optimized query with total count included
+        let query = db.select({
+            orderId: orders.orderId,
+            orderNumber: orders.orderNumber,
+            customerId: orders.customerId,
+            orderType: orders.orderType,
+            movement: orders.movement,
+            packingType: orders.packingType,
+            deliveryMethod: orders.deliveryMethod,
+            status: orders.status,
+            notes: orders.notes,
+            createdAt: orders.createdAt,
+            updatedAt: orders.updatedAt,
+            customerName: customers.displayName,
+            creatorFirstName: users.firstName,
+            creatorLastName: users.lastName,
+            totalCount: sql<number>`count(*) over()::integer`,
+            // Only include essential fields for list view
+            items: sql<any>`COALESCE(
+                json_agg(
+                    jsonb_build_object(
+                        'itemId', ${items.itemId},
+                        'itemName', ${items.itemName},
+                        'quantity', ${orderItems.quantity}
+                    ) 
+                    ORDER BY ${items.itemName}
+                ) FILTER (WHERE ${items.itemId} IS NOT NULL),
+                '[]'::json)`
+        })
+        .from(orders)
+        .leftJoin(customers, eq(orders.customerId, customers.customerId))
+        .leftJoin(orderItems, eq(orders.orderId, orderItems.orderId))
+        .leftJoin(items, eq(orderItems.itemId, items.itemId))
+        .leftJoin(users, eq(orders.createdBy, users.userId))
+        .groupBy(
+            orders.orderId,
+            customers.customerId,
+            customers.displayName,
+            users.firstName,
+            users.lastName
+        )
+        .$dynamic();
 
-        // Build the WHERE clause conditions
-        let conditions = sql``;
+        // Apply filters, sorting and pagination
+        query = withFilters(query, filters, session);
+        query = withSort(query, sort);
+        query = withPagination(query, page, pageSize);
 
-        if (filters.status || filters.customerId || filters.movement || filters.dateRange || session.user.userType === 'CUSTOMER') {
-            const whereClauses = [];
+        // Execute query
+        const results = await query;
 
-            if (session.user.userType === 'CUSTOMER') {
-                if (session.user.customerId) {
-                    whereClauses.push(sql`${orders.customerId} = ${session.user.customerId}`);
-                }
-            }
-
-            if (filters.status) {
-                whereClauses.push(sql`${orders.status} = ${filters.status}`);
-            }
-            if (filters.customerId) {
-                whereClauses.push(sql`${orders.customerId} = ${filters.customerId}`);
-            }
-            if (filters.movement) {
-                whereClauses.push(sql`${orders.movement} = ${filters.movement}`);
-            }
-            if (filters.dateRange) {
-                whereClauses.push(sql`${orders.createdAt} >= ${filters.dateRange.from} AND ${orders.createdAt} <= ${filters.dateRange.to}`);
-            }
-
-            conditions = sql`WHERE ${and(...whereClauses)}`;
-        }
-
-        // Determine ORDER BY clause
-        const orderBySql = sql`ORDER BY ${sort.field === 'orderNumber' ? orders.orderNumber :
-            sort.field === 'status' ? orders.status :
-                orders.createdAt
-            } ${sort.direction === 'desc' ? sql`DESC` : sql`ASC`}`;
-
-        // Construct the main query
-        const rawQuery = sql<EnrichedOrders[]>`
-            SELECT
-                ${orders}.*,
-                ${customers}.display_name as "displayName",
-                ${users}.first_name as "creatorFirstName",
-                ${users}.last_name as "creatorLastName",
-                ${users}.user_type as "creatorUserType",
-                COALESCE(json_agg(
-                    CASE WHEN ${items}.item_id IS NOT NULL THEN
-                        jsonb_build_object(
-                            'itemId', ${items}.item_id,
-                            'itemName', ${items}.item_name,
-                            'quantity', ${orderItems}.quantity,
-                            'itemLocationId', ${orderItems}.item_location_id
-                        )
-                    END
-                ) FILTER (WHERE ${items}.item_id IS NOT NULL), '[]') AS items
-            FROM ${orders}
-            LEFT JOIN ${customers} ON ${orders}.customer_id = ${customers}.customer_id
-            LEFT JOIN ${orderItems} ON ${orders}.order_id = ${orderItems}.order_id
-            LEFT JOIN ${items} ON ${orderItems}.item_id = ${items}.item_id
-            LEFT JOIN ${users} ON ${orders}.created_by = ${users}.user_id
-            ${conditions}
-            GROUP BY ${orders}.order_id, ${customers}.customer_id, ${users}.user_id
-            ${orderBySql}
-            LIMIT ${pageSize} OFFSET ${offset}
-        `;
-
-        const results = await db.execute(rawQuery);
-        // console.log(results.rows[0])
-        // Add type validation for raw query results
-        if (!results?.rows || !Array.isArray(results.rows)) {
-            throw new Error('Invalid query results structure');
-        }
-
-        // Transform and validate each order
-        const enrichedOrders = results.rows.map((order, index) => {
-            // Validate required fields
-            if (!order.order_id || !order.customer_id || !order.created_by) {
-                throw new Error(`Missing required fields in order at index ${index}`);
-            }
-
-            // Validate and transform dates
-            const createdAt = order.created_at ? new Date(order.created_at.toString()) : new Date();
-            const updatedAt = order.updated_at ? new Date(order.updated_at.toString()) : null;
-            const fulliedAt = order.fullied_at ? new Date(order.fullied_at.toString()) : null;
-
-            // Validate and transform items array
-            const items = Array.isArray(order.items)
-                ? order.items.map((item: any) => ({
-                    itemId: item.itemId || '',
-                    itemName: item.itemName || '',
-                    quantity: Number(item.quantity) || 0,
-                    itemLocationId: item.itemLocationId
-                })).filter(item => item.itemId && item.quantity > 0)
-                : [];
-
-            return {
-                orderId: order.order_id,
-                orderNumber: Number(order.order_number) || 0,
-                customerId: order.customer_id,
-                orderType: order.order_type || 'CUSTOMER_ORDER',
-                movement: order.movement || 'IN',
-                packingType: order.packing_type || 'NONE',
-                deliveryMethod: order.delivery_method || 'NONE',
-                status: order.status || 'PENDING',
-                addressId: order.address_id || null,
-                fulliedAt,
-                notes: order.notes || null,
-                createdBy: order.created_by,
-                createdAt,
-                updatedAt,
-                isDeleted: Boolean(order.is_deleted),
-                customerName: order.displayName || 'Unknown Customer',
-                creator: {
-                    userId: order.created_by,
-                    firstName: order.creatorFirstName || '',
-                    lastName: order.creatorLastName || '',
-                    userType: order.creatorUserType || 'EMPLOYEE',
-                },
-                items
-            };
-        });
-
-        // Validate entire array against schema
-        try {
-            // console.log(enrichedOrders)
-            const parsedOrders = EnrichedOrders.array().parse(enrichedOrders);
-            // Get total count for pagination
-            //     const countQuery: any = await db.execute(sql<{ count: number }[]>`
-            //     SELECT count(*) as count
-            //     FROM ${orders}
-            //     ${conditions}
-            // `);
-
-            // const countQuery = await db
-            //     .select({ count: sql`count(*)` })
-            //     .from(orders)
-            //     .where(conditions ? conditions : undefined);
-
-            // const countQuery = await db
-            //     .select({
-            //         count: sql<number>`count(*)::integer`
-            //     })
-            //     .from(orders)
-            //     .where(conditions ? conditions : undefined);
-
-            // const totalCount = Number(countQuery[0]?.count) || 0;
-
-            const countQuery = await db.execute(sql<{ count: number }>`
-                SELECT count(*)::integer as count 
-                FROM ${orders} 
-                ${conditions ? conditions : sql``}
-            `);
-            
-            const totalCount = Number(countQuery.rows[0]?.count) || 0;
-            
-
-            console.log(countQuery.rows[0])
-            // const totalCount = Number(countQuery[0]?.count) || 0;
-
+        if (!results || results.length === 0) {
             return {
                 success: true,
                 data: {
-                    orders: parsedOrders,
+                    orders: [],
                     pagination: {
-                        total: totalCount,
+                        total: 0,
                         pageSize,
                         currentPage: page,
-                        totalPages: Math.ceil(totalCount / pageSize)
+                        totalPages: 0
                     }
                 }
             };
-        } catch (error) {
-            console.error('Error in getOrders:', error);
-            return { success: false, error: 'Failed to fetch orders' };
         }
+
+        // Get total count from first row
+        const totalCount = results[0].totalCount || 0;
+
+        // Transform and validate orders
+        const enrichedOrders = results.map(order => {
+            // Parse items to ensure they're in the correct format
+            const itemsArray = Array.isArray(order.items) 
+                ? order.items.map((item: any) => ({
+                    itemId: item.itemId || '',
+                    itemName: item.itemName || '',
+                    quantity: Number(item.quantity) || 0
+                }))
+                : [];
+
+            return {
+                orderId: order.orderId,
+                orderNumber: Number(order.orderNumber) || 0,
+                customerId: order.customerId,
+                orderType: order.orderType || 'CUSTOMER_ORDER',
+                movement: order.movement || 'IN',
+                packingType: order.packingType || 'NONE',
+                deliveryMethod: order.deliveryMethod || 'NONE',
+                status: order.status || 'PENDING',
+                notes: order.notes || '',
+                createdAt: order.createdAt ? new Date(order.createdAt) : new Date(),
+                updatedAt: order.updatedAt ? new Date(order.updatedAt) : null,
+                customerName: order.customerName || 'Unknown Customer',
+                creator: {
+                    firstName: order.creatorFirstName || '',
+                    lastName: order.creatorLastName || ''
+                },
+                items: itemsArray
+            };
+        });
+
+        // Remove totalCount from result objects
+        const data = enrichedOrders.map(({ totalCount: _, ...rest }: any) => rest);
+
+        return {
+            success: true,
+            data: {
+                orders: data,
+                pagination: {
+                    total: totalCount,
+                    pageSize,
+                    currentPage: page,
+                    totalPages: Math.ceil(totalCount / pageSize)
+                }
+            }
+        };
     } catch (error) {
         console.error('Error in getOrders:', error);
-        return { success: false, error: 'Failed to fetch orders' };
+        return { success: false, error: error instanceof Error ? error.message : "Unknown error fetching orders" };
     }
 }

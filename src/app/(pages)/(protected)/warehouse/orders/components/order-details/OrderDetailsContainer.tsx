@@ -1,91 +1,127 @@
-import { memo, useMemo } from 'react';
+'use client';
+
+import { memo, useCallback } from 'react';
 import { cn } from "@/lib/utils";
-import { EnrichedOrders, OrderStatus } from "@/types/orders";
-import { OrderDetails } from "./OrderDetails";
-import { useOrderDetails } from "@/hooks/data-fetcher";
-import { useOrderStatusMutation } from "@/hooks/use-order-status"; 
-import { showStatusUpdateErrorToast } from "@/lib/order-status-errors";
-import { toast } from "@/hooks/use-toast";
+import { OrderHeader } from "./OrderHeader";
+import { OrderInfoCard } from "./OrderInfoCard";
+import { OrderItemsTable } from "./OrderItemsTable";
+import { OrderNotesCard } from "./OrderNotesCard";
+import { useOrderDetails } from '@/hooks/data-fetcher';
+import { ChevronLeft, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useOrdersStore } from '@/stores/orders-store';
+import { StatusDropdown } from './StatusDropdown';
+import Loading from '@/components/ui/loading';
 
 interface OrderDetailsContainerProps {
+  orderId: string;
   isMobile: boolean;
-  selectedOrderId: string | null;
-  onClose: () => void;
-  orders: EnrichedOrders[];
 }
 
-const OrderDetailsContainer = memo(function OrderDetailsContainer({
-  isMobile,
-  selectedOrderId,
-  onClose,
-  orders
+export const OrderDetailsContainer = memo(function OrderDetailsContainer({
+  orderId,
+  isMobile
 }: OrderDetailsContainerProps) {
-  // Find order in the list for initial data
-  const cachedOrder = useMemo(() => 
-    selectedOrderId ? orders?.find(order => order.orderId === selectedOrderId) : null, 
-    [orders, selectedOrderId]
-  );
+  const { selectOrder } = useOrdersStore();
   
-  // Get detailed order data
-  const { data: orderDetails, isLoading } = useOrderDetails(selectedOrderId, cachedOrder);
-  
-  // Status mutation hook with explicit typing
-  const statusMutation = useOrderStatusMutation();
-  
-  // The order to display - ensure it's never undefined
-  const order = orderDetails || cachedOrder || null; // Fix: add null fallback
-  
-  // Handle status change with improved error handling
-  const handleStatusChange = (status: OrderStatus) => {
-    if (!selectedOrderId || !order) {
-      toast({
-        title: "Error",
-        description: "Cannot update order: missing order data",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    // Don't update if status hasn't changed
-    if (order.status === status) return;
-    
-    statusMutation.mutate({ 
-      orderId: selectedOrderId,
-      status
-    }, {
-      // These callbacks are properly typed now
-      onError: (error: Error) => {
-        showStatusUpdateErrorToast(status, {
-          message: error.message,
-          code: 'UPDATE_ERROR'
-        });
-      },
-      onSuccess: (data) => {
-        if (!data || !data.success) {
-          showStatusUpdateErrorToast(status, data?.error || {
-            message: 'Failed to update order status'
-          });
-        }
-      }
-    });
-  };
+  // Fetch detailed order data with optimized hook
+  const { 
+    data: orderData, 
+    isLoading, 
+    isError, 
+    error 
+  } = useOrderDetails(orderId);
+
+  const handleClose = useCallback(() => {
+    selectOrder(null);
+  }, [selectOrder]);
+
+  // Loading and error states
+  if (isLoading) {
+    return (
+      <div className={cn(
+        "bg-white rounded-md border relative transition-all duration-300 flex flex-col items-center justify-center flex-1 overflow-auto",
+        isMobile ? "fixed inset-0 z-50 m-0" : "w-[40%]"
+      )}>
+        <Loading />
+      </div>
+    );
+  }
+
+  if (isError || !orderData) {
+    return (
+      <div className={cn(
+        "bg-white rounded-md border relative transition-all duration-300 flex flex-col items-center justify-center flex-1 overflow-auto",
+        isMobile ? "fixed inset-0 z-50 m-0" : "w-[40%]"
+      )}>
+        <div className="text-red-600 mb-4">
+          Error loading order: {error instanceof Error ? error.message : 'Unknown error'}
+        </div>
+        <Button onClick={handleClose} variant="outline">Close</Button>
+      </div>
+    );
+  }
 
   return (
-    <div
-      className={cn(
-        "bg-white rounded-md border relative transition-all duration-300 flex-1 w-[100%] overflow-auto",
-        isMobile ? "fixed inset-0 z-50 m-0" : "w-[70%]"
+    <div className={cn(
+      "bg-white rounded-md border relative transition-all duration-300 flex-1 overflow-auto",
+      isMobile ? "fixed inset-0 z-50 m-0" : "w-[40%]"
+    )}>
+      {/* Close button for mobile */}
+      {isMobile && (
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="absolute top-2 left-2 z-50" 
+          onClick={handleClose}
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </Button>
       )}
-    >
-      <OrderDetails
-        selectedOrderId={order?.orderId ?? ""} // Now this is guaranteed to be EnrichedOrders | null
-        isMobile={isMobile}
-        onClose={onClose}
-        orders={orders}
-        // isLoading={isLoading && !cachedOrder}
-        // isProcessing={statusMutation.isPending}
-        // onStatusChange={handleStatusChange}
-      />
+
+      {/* Close button for desktop */}
+      {!isMobile && (
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="absolute top-2 right-2 z-50" 
+          onClick={handleClose}
+        >
+          <X className="h-5 w-5" />
+        </Button>
+      )}
+
+      <div className="p-4 space-y-4">
+        <OrderHeader 
+          orderNumber={orderData.orderNumber} 
+          status={orderData.status}
+          createdAt={orderData.createdAt}
+        />
+
+        <div className="flex justify-between items-center">
+          <h2 className="text-lg font-medium">Order Details</h2>
+          <StatusDropdown 
+            currentStatus={orderData.status} 
+            orderId={orderData.orderId}
+          />
+        </div>
+
+        <OrderInfoCard
+          customerId={orderData.customerId}
+          customerName={orderData.customerName}
+          orderType={orderData.orderType}
+          movement={orderData.movement}
+          packingType={orderData.packingType}
+          deliveryMethod={orderData.deliveryMethod}
+        />
+
+        <OrderItemsTable items={orderData.items} />
+
+        <OrderNotesCard 
+          notes={orderData.notes || ""} 
+          orderId={orderData.orderId}
+        />
+      </div>
     </div>
   );
 });

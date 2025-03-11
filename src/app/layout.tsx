@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Providers } from "@/lib/providers";
 import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Header } from "@/components/layout/header/page";
 import Loading from "@/components/ui/loading";
 import { SpeedInsights } from '@vercel/speed-insights/next';
@@ -45,6 +46,7 @@ export default function RootLayout({
               </Suspense>
             </div>
             <Toaster />
+            <Sonner /> 
           </div>
         </body>
       </Providers>

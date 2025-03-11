@@ -1,5 +1,5 @@
 "use client"
-import { useMemo, useCallback, useState, memo } from 'react';
+import { useMemo, useCallback, useState, memo, useEffect, useRef } from 'react';
 import { DataTable } from "@/components/ui/data-table/data-table";
 import { ColumnDef, RowSelectionState } from "@tanstack/react-table";
 import { cn } from "@/lib/utils";
@@ -14,7 +14,12 @@ interface OrdersTableProps {
   isFetching?: boolean;
   onRowClick?: (order: EnrichedOrders) => void;
   selectedOrderId?: string;
-  pagination: any;
+  pagination: {
+    total: number;
+    pageSize: number;
+    currentPage: number;
+    totalPages: number;
+  };
   sort: OrderSort;
   onSortChange: (sort: { field: string, direction: 'asc' | 'desc' }) => void;
   onPageChange: (page: number) => void;
@@ -40,7 +45,25 @@ export const OrdersTable = memo(function OrdersTable({
   onPageChange,
   onPageSizeChange
 }: OrdersTableProps) {
-    const [selectedRows, setSelectedRows] = useState<RowSelectionState>({});
+  const [selectedRows, setSelectedRows] = useState<RowSelectionState>({});
+  const prevPagination = useRef(pagination);
+
+  // Debug pagination
+  console.log('OrdersTable pagination:', pagination);
+  console.log('OrdersTable data length:', data?.length || 0);
+
+  // Track when pagination changes to scroll to top
+  useEffect(() => {
+    if (prevPagination.current?.currentPage !== pagination?.currentPage) {
+      // Scroll table container to top when page changes
+      const tableContainer = document.querySelector('.data-table-container');
+      if (tableContainer) {
+        tableContainer.scrollTop = 0;
+      }
+    }
+    
+    prevPagination.current = pagination;
+  }, [pagination]);
 
   // Memoize visible columns to prevent recalculation
   const visibleColumns = useMemo(() => {
@@ -79,11 +102,11 @@ export const OrdersTable = memo(function OrdersTable({
   }, [onSortChange, sort.field, sort.direction]);
 
 
-    const handleRowSelection = useCallback((selection: RowSelectionState) => {
+  const handleRowSelection = useCallback((selection: RowSelectionState) => {
     setSelectedRows(selection);
   }, []);
 
-    const selectedCount = Object.keys(selectedRows)
+  const selectedCount = Object.keys(selectedRows)
     .filter(key => selectedRows[key])
     .length;
 
@@ -102,37 +125,69 @@ export const OrdersTable = memo(function OrdersTable({
     }
   }, [onRowClick]);
 
+  // Ensure pagination object is valid
+  const validPagination = useMemo(() => {
+    if (!pagination) {
+      return {
+        total: 0,
+        pageSize: 10,
+        currentPage: 1,
+        totalPages: 0
+      };
+    }
+    
+    return {
+      total: pagination.total || 0,
+      pageSize: pagination.pageSize || 10,
+      currentPage: pagination.currentPage || 1,
+      totalPages: pagination.totalPages || Math.max(1, Math.ceil((pagination.total || 0) / (pagination.pageSize || 10)))
+    };
+  }, [pagination]);
+
+  // Handle pagination actions
+  const handlePageChange = useCallback((page: number) => {
+    console.log('Table requesting page change to:', page);
+    onPageChange(page);
+  }, [onPageChange]);
+
+  const handlePageSizeChange = useCallback((size: number) => {
+    console.log('Table requesting page size change to:', size);
+    onPageSizeChange(size);
+  }, [onPageSizeChange]);
+
+  const isLoadingEffective = isLoading || isFetching;
+
   return (
-      <div className="flex flex-col rounded-md h-full">
-        <div className="flex-1 overflow-hidden flex flex-col rounded-lg bg-slate-50 border-2 border-slate-200 relative">
+    <div className="flex flex-col rounded-md h-full">
+      <div className="flex-1 overflow-hidden flex flex-col rounded-lg bg-slate-50 border-2 border-slate-200 relative data-table-container">
         {/* Subtle loading indicator that doesn't block UI */}
-        {isFetching && !isLoading && (
+        {isFetching && (
           <div className="absolute top-0 left-0 w-full h-0.5 bg-blue-500 animate-pulse z-10" />
         )}
         <DataTable
           columns={visibleColumns}
           data={data}
-          isLoading={isLoading}
+          isLoading={isLoadingEffective}
           onRowSelectionChange={handleRowSelection}
           rowClassName={getRowClassName}
           onRowClick={handleRowClick}
-          pageSize={pagination?.pageSize}
+          pageSize={validPagination.pageSize}
         />
       </div>
-      {pagination && (
+      {validPagination && (
         <div className="p-2 flex w-full justify-center min-w-0">
           <PaginationControls
-            currentPage={pagination.currentPage}
-            totalPages={pagination.totalPages}
-            pageSize={pagination.pageSize}
-            total={pagination.total}
-            onPageChange={onPageChange}
-            onPageSizeChange={onPageSizeChange}
+            currentPage={validPagination.currentPage}
+            totalPages={validPagination.totalPages}
+            pageSize={validPagination.pageSize}
+            total={validPagination.total}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
             selectedRows={selectedCount}
-            isLoading={isFetching && !isLoading} // Show subtle loading in pagination
+            isLoading={isFetching}
           />
         </div>
       )}
-      </div>
+    </div>
   );
 });

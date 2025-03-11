@@ -1,25 +1,21 @@
-import { EnrichedOrders } from "@/types/orders";
+'use client';
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
 
-interface OrderItemsTableProps {
-  order: EnrichedOrders;
-  isEditing: boolean;
-  updateOrderItems: (newItems: Array<{
-    itemId: string;
-    itemName: string;
-    quantity: number;
-    itemLocationId: string;
-  }>) => void;
+interface OrderItem {
+  itemId: string;
+  itemName: string;
+  quantity: number;
+  itemLocationId?: string;
 }
 
-export function OrderItemsTable({ order, isEditing, updateOrderItems }: OrderItemsTableProps) {
-  // Safely cast and handle potentially undefined orderItems
-  const orderItems = Array.isArray(order.items) ? order.items : [];
+interface OrderItemsTableProps {
+  items: OrderItem[];
+}
 
-
-  if (!orderItems.length) {
+export function OrderItemsTable({ items }: OrderItemsTableProps) {
+  if (!items || !items.length) {
     return (
       <Card className="mt-4 bg-white/70 backdrop-blur-sm shadow-sm">
         <CardHeader>
@@ -47,37 +43,13 @@ export function OrderItemsTable({ order, isEditing, updateOrderItems }: OrderIte
               </TableRow>
             </TableHeader>
             <TableBody>
-              {orderItems.map((item, index) => (
-                <TableRow key={index}>
+              {items.map((item, index) => (
+                <TableRow key={item.itemId || index}>
                   <TableCell className="font-medium">
-                    {isEditing ? (
-                      <Input value={item.itemName || "Unknown Item"} onChange={(e) => {
-                        const newItems = [...orderItems];
-                        newItems[index] = { ...newItems[index], itemName: e.target.value };
-                        updateOrderItems(newItems);
-
-                      }}/>
-                    ) : (
-                      item.itemName || "Unknown Item"
-                    )}
+                    {item.itemName || "Unknown Item"}
                   </TableCell>
                   <TableCell className="text-right">
-                  {isEditing ? (
-                      <Input 
-                        type="number"
-                        min="1"
-                        value={item.quantity} 
-                        onChange={(e) => {
-                          const newItems = [...orderItems];
-                          newItems[index] = { 
-                            ...newItems[index], 
-                            quantity: Number(e.target.value) || 1 
-                          };
-                          updateOrderItems(newItems);
-                        }}/>
-                    ) : (
-                      item.quantity
-                    )}
+                    {item.quantity}
                   </TableCell>
                 </TableRow>
               ))}

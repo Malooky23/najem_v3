@@ -1,5 +1,6 @@
+"use client"
 
-import React, { use, useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Check, ChevronsUpDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
@@ -18,123 +19,138 @@ import {
 } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
 import { EnrichedCustomer } from '@/types/customer'
-import { SelectItem } from './select'
-import { useFormContext } from "react-hook-form";
+import { Loader2 } from 'lucide-react'
+import { useCustomers } from '@/hooks/data-fetcher'
 
-interface CustomerSelectorProps {
-  customersInput: EnrichedCustomer[]
-  value?: string | null
-  onChange?: (value: string | null) => void
-  isRequired?: boolean
+// Support both old and new prop interfaces
+interface CustomerDropdownProps {
+  // New interface
+  selectedCustomerId?: string;
+  onSelect?: (customerId: string) => void;
+  
+  // Old interface
+  customersInput?: EnrichedCustomer[];
+  value?: string | null;
+  onChange?: (value: string | null) => void;
+  isRequired?: boolean;
+  
+  // Common props
+  disabled?: boolean;
 }
 
-const CustomerSelector = ({
+export function CustomerDropdown({
+  // Use all possible props with defaults
+  selectedCustomerId,
+  onSelect,
   customersInput,
   value,
   onChange,
   isRequired,
-  
-}: CustomerSelectorProps) => {
-  const [openCustomerDropdown, setOpenCustomerDropdown] = useState(false)
+  disabled = false,
+}: CustomerDropdownProps) {
+  const [open, setOpen] = useState(false)
   const [selectedCustomer, setSelectedCustomer] = useState<EnrichedCustomer | null>(null)
-  // const methods = useFormContext() // retrieve those props
-  const formContextValue = useFormContext();
-  // console.log("useFormContext Value:", formContextValue); // ADD THIS LINE
-
+  
+  // Use the real customers hook if customersInput is not provided
+  const { data: fetchedCustomers = [], isLoading, isError } = useCustomers();
+  
+  // Use the provided customers list or the fetched one
+  const customers = customersInput || fetchedCustomers || [];
+  
+  // Determine the actual customer ID from the different prop options
+  const effectiveCustomerId = selectedCustomerId || value || null;
+  
+  // Update selected customer when the id changes
   useEffect(() => {
-    if (value) {
-      const customer = customersInput.find(c => c.customerId === value);
+    if (effectiveCustomerId && customers.length > 0) {
+      const customer = customers.find(c => c.customerId === effectiveCustomerId);
       if (customer) {
         setSelectedCustomer(customer);
       }
+    } else {
+      setSelectedCustomer(null);
     }
-  }, [value, customersInput]);
+  }, [effectiveCustomerId, customers]);
 
-  const handleCustomerSelect = (customer: EnrichedCustomer | null) => {
-    onChange?.(customer!.customerId)
-    setOpenCustomerDropdown(false)
-    setSelectedCustomer(customer)
-    // formContextValue.trigger('customerId')
-    // console.log(formContextValue.watch())
-
-  }
+  const handleSelect = useCallback((customer: EnrichedCustomer) => {
+    setSelectedCustomer(customer);
+    
+    // Call the appropriate callback based on which prop was provided
+    if (onSelect) {
+      onSelect(customer.customerId);
+    } else if (onChange) {
+      onChange(customer.customerId);
+    }
+    
+    setOpen(false);
+  }, [onSelect, onChange]);
 
   return (
-    <div className="flex gap-4 relative">
-      <input
-        type="hidden"
-        name="customerId" // **Name attribute here for FormData**
-        value={selectedCustomer?.customerId ? selectedCustomer?.customerId : ""} // Use selectedCustomer to set value
-        // required={isRequired}
-
-      />
-      <Popover
-        modal={true}
-        open={openCustomerDropdown}
-        onOpenChange={setOpenCustomerDropdown}
-      >
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            role="combobox"
-            aria-expanded={openCustomerDropdown}
-            className="w-full justify-between"
-          >
-            {value ? (
-              <div className="flex items-center gap-2">
-                <span>{selectedCustomer?.displayName}</span>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-full justify-between"
+          disabled={disabled || isLoading}
+        >
+          {selectedCustomer ? (
+            <span>{selectedCustomer.displayName}</span>
+          ) : (
+            <span className="text-muted-foreground">Select customer...</span>
+          )}
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+        <Command>
+          <CommandInput placeholder="Search customers..." />
+          <CommandList>
+            <CommandEmpty>No customers found</CommandEmpty>
+            {isLoading && !customersInput ? (
+              <div className="flex items-center justify-center p-4">
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                <span>Loading customers...</span>
+              </div>
+            ) : isError && !customersInput ? (
+              <div className="flex items-center justify-center p-4 text-red-500">
+                Error loading customers
               </div>
             ) : (
-              <span>Select Customer...</span>
-            )}
-            <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent
-          align="start"
-          className="w-[--radix-popover-trigger-width] p-0"
-        >
-          <Command>
-            <CommandInput placeholder="Search customer..."
-              name="customerId"
-            />
-            <CommandList>
-
-
-              <CommandEmpty>No customer found.</CommandEmpty>
               <CommandGroup>
-                <ScrollArea className="">
-                  {customersInput.map((customer) => (
+                <ScrollArea className="h-[200px]">
+                  {customers.map((customer) => (
                     <CommandItem
                       key={customer.customerId}
-                      value={customer.displayName!}
-                      onSelect={() => {
-                        handleCustomerSelect(customer)
-                      }}
-                      className="flex cursor-pointer items-center justify-between text-sm"
+                      value={customer.displayName || customer.customerId}
+                      onSelect={() => handleSelect(customer)}
                     >
-                      <div className="flex items-center gap-2">
-                        <span>{customer.displayName}</span>
-                      </div>
-                      <Check
-                        className={cn(
-                          'h-4 w-4',
-                          selectedCustomer?.customerId === customer.customerId
-                            ? 'opacity-100'
-                            : 'opacity-0',
-                        )}
-                      />
+                      <span>{customer.displayName || `Customer ${customer.customerId}`}</span>
+                      {selectedCustomer?.customerId === customer.customerId && (
+                        <Check className="ml-auto h-4 w-4" />
+                      )}
                     </CommandItem>
                   ))}
                   <ScrollBar orientation="vertical" />
                 </ScrollArea>
               </CommandGroup>
-            </CommandList>
-          </Command>
-        </PopoverContent>
-      </Popover>
-    </div>
+            )}
+          </CommandList>
+        </Command>
+      </PopoverContent>
+      
+      {/* Hidden input for form data */}
+      {isRequired !== undefined && (
+        <input
+          type="hidden"
+          name="customerId"
+          value={selectedCustomer?.customerId || ""}
+          required={isRequired}
+        />
+      )}
+    </Popover>
   )
 }
 
-export default CustomerSelector
+export default CustomerDropdown
