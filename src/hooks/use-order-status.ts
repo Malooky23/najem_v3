@@ -72,39 +72,6 @@ export function useOrderStatusMutation() {
 
     },
 
-    // Optimistically update UI
-    onMutate: async ({ orderId, status }) => {
-      // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ['order', orderId] });
-
-      // Snapshot the previous value
-      const previousData = queryClient.getQueryData<EnrichedOrders>(['order', orderId]);
-
-      // Optimistically update the cache
-      if (previousData) {
-        queryClient.setQueryData<EnrichedOrders>(['order', orderId], {
-          ...previousData,
-          status
-        });
-      }
-
-      // Update the order in the list as well
-      const ordersKey = queryClient.getQueryCache().findAll({ queryKey: ['orders'] });
-      ordersKey.forEach(query => {
-        const data = query.state.data as OrdersQueryResult;
-        if (data?.orders) {
-          queryClient.setQueryData(query.queryKey, {
-            ...data,
-            orders: data.orders.map(order =>
-              order.orderId === orderId ? { ...order, status } : order
-            )
-          });
-        }
-      });
-
-      return { previousData };
-    },
-
     // Handle errors and revert optimistic update
     onError: (err, { orderId, status }, context) => {
       // Show error toast
@@ -112,25 +79,6 @@ export function useOrderStatusMutation() {
         message: err.message || 'Failed to update order status',
         code: 'UPDATE_ERROR'
       });
-
-      // Revert the optimistic update
-      if (context?.previousData) {
-        queryClient.setQueryData(['order', orderId], context.previousData);
-
-        // Also revert in the list
-        const ordersKey = queryClient.getQueryCache().findAll({ queryKey: ['orders'] });
-        ordersKey.forEach(query => {
-          const data = query.state.data as OrdersQueryResult;
-          if (data?.orders) {
-            queryClient.setQueryData(query.queryKey, {
-              ...data,
-              orders: data.orders.map(order =>
-                order.orderId === orderId ? { ...order, status: context?.previousData?.status } : order
-              )
-            });
-          }
-        });
-      }
     },
 
     // Refresh data after mutation

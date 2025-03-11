@@ -129,7 +129,7 @@ export async function createOrder(formData: FormData): Promise<OrderActionRespon
 }
 
 
-export async function updateOrder(orderData: EnrichedOrders): Promise<OrderUpdateResult> {
+export async function updateOrder(orderData: UpdateOrderInput): Promise<OrderUpdateResult> {
     try {
       const session = await auth();
       if (!session?.user?.id) {
@@ -162,12 +162,37 @@ export async function updateOrder(orderData: EnrichedOrders): Promise<OrderUpdat
           .returning();
   
         if (!updatedOrder) {
-          throw new Error('Order update failed: No rows affected.'); // This line was already correct
+          throw new Error('Order update failed: No rows affected.');
         }
-        return updatedOrder
+
+        // Update order items if they're provided
+        if (updateData.items && updateData.items.length > 0) {
+          // First delete existing items
+          await tx
+            .delete(orderItems)
+            .where(eq(orderItems.orderId, updateData.orderId));
+          
+          // Then insert the updated items
+          const orderItemsData = updateData.items.map(item => ({
+            orderId: updateData.orderId,
+            itemId: item.itemId,
+            quantity: item.quantity,
+            itemLocationId: item.itemLocationId
+          }));
+          
+          await tx.insert(orderItems).values(orderItemsData);
+        }
+        
+        // Get complete updated order with items for return
+        const fullOrder = await getOrderById(updateData.orderId);
+        if (!fullOrder.success || !fullOrder.data) {
+          throw new Error('Failed to retrieve updated order.');
+        }
+        
+        return fullOrder.data;
       });
-      console.log('Result:', result)
-        return { success: true, data: result as EnrichedOrders };
+      
+      return { success: true, data: result as EnrichedOrders };
     } catch (error:any) {
         console.error('Error in updateOrder:', error);
         return {

@@ -78,12 +78,13 @@ const OrderDetailsContainer = memo(function OrderDetailsContainer({
       )}
     >
       <OrderDetails
-        order={order} // Now this is guaranteed to be EnrichedOrders | null
+        selectedOrderId={order?.orderId ?? ""} // Now this is guaranteed to be EnrichedOrders | null
         isMobile={isMobile}
-        handleClose={onClose}
-        isLoading={isLoading && !cachedOrder}
-        isProcessing={statusMutation.isPending}
-        onStatusChange={handleStatusChange}
+        onClose={onClose}
+        orders={orders}
+        // isLoading={isLoading && !cachedOrder}
+        // isProcessing={statusMutation.isPending}
+        // onStatusChange={handleStatusChange}
       />
     </div>
   );
