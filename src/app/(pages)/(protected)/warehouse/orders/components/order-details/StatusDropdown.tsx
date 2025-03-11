@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils"
 import { OrderStatus } from "@/types/orders"
 import { updateOrder } from "@/server/actions/orders"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useItems } from "@/hooks/data-fetcher"
 
 interface StatusDropdownProps {
   /** The current status of the order. */
@@ -55,7 +56,7 @@ export const StatusDropdown = memo(function StatusDropdown({
       if (!result.success) {
         throw new Error(result.error?.message || 'Failed to update status');
       }
-      
+
       return { data: result.data, newStatus };
     },
     onSuccess: (result) => {
@@ -66,9 +67,13 @@ export const StatusDropdown = memo(function StatusDropdown({
       // Invalidate and refetch queries
       queryClient.invalidateQueries({ queryKey: ['order', orderId] });
       queryClient.invalidateQueries({ queryKey: ['orders'] });
+      queryClient.invalidateQueries({ queryKey: ['items'] });
+      queryClient.invalidateQueries({ queryKey: ['stockMovements'] });
+
       toast.success(`Order status updated to ${newStatus}`);
       setShowConfirmDialog(false);
       setPendingStatus(null);
+
     },
     onError: (error) => {
       // Revert to original status on error

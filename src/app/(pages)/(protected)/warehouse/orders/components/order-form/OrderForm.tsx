@@ -11,18 +11,15 @@ import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useCustomers, useItems } from "@/hooks/data-fetcher";
-import { startTransition, useActionState } from "react";
+import { startTransition, useActionState, useCallback } from "react";
 import { useQueryClient } from '@tanstack/react-query';
-import { Input } from "@/components/ui/input";
-import { Plus, Minus } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Plus, PackageOpen } from "lucide-react";
 import { ItemRow } from "./ItemRow";
 import { useMediaQuery } from "@/hooks/use-media-query";
-import { SelectionButton } from "@/components/ui/selectionButton";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
-
+import { Card } from "@/components/ui/card";
 
 async function submitOrderForm(formData: FormData) {
     try {
@@ -100,6 +97,8 @@ export default function OrderForm({ onClose }: { onClose: () => void }) {
         return result;
     }, null);
 
+    
+
 
 
     const form = useForm<CreateOrderInput>({
@@ -109,8 +108,8 @@ export default function OrderForm({ onClose }: { onClose: () => void }) {
             packingType: "NONE",
             deliveryMethod: "NONE",
             status: "PENDING",
-            movement:"IN", // Add this
-            items: []
+            movement: "IN",
+            items: [] // Empty array initially
         },
         mode: "onChange"
     });
@@ -118,8 +117,25 @@ export default function OrderForm({ onClose }: { onClose: () => void }) {
     const { fields, append, remove } = useFieldArray({
         control: form.control,
         name: "items",
-    })
+    });
 
+    // Create a function to handle cancellation
+    const handleCancel = useCallback(() => {
+        // Reset the form to its default values
+        form.reset({
+            orderType: "CUSTOMER_ORDER",
+            packingType: "NONE",
+            deliveryMethod: "NONE",
+            status: "PENDING",
+            movement: "IN",
+            items: [],
+            customerId: "",
+            notes: ""
+        });
+        
+        // Close the dialog
+        onClose();
+    }, [form, onClose]);
 
     if (isCustomersError) {
         return (
@@ -132,419 +148,398 @@ export default function OrderForm({ onClose }: { onClose: () => void }) {
     if (isCustomersLoading) {
         return (
             <div className="p-4 rounded-md border border-gray-200 bg-gray-50 text-gray-700 h-full">
-                <LoadingSpinner/>
-                </div>
+                <LoadingSpinner />
+            </div>
         )
     }
 
     // console.log(form.watch())
 
     return (
-
-
-        <Form {...form}>
-            <form
-                //   action={formAction} 
-                action={async (data) => { // Make formAction async
-                    console.log('shit')
-                    console.log(data.forEach((value, key) => {
-                        console.log(`${key}: ${value}`);
-                    }))
-                    if (!form.getValues("customerId")) { // Manual check for customerId
-                        form.setError("customerId", {
-                            type: "manual",
-                            message: "Please select a customer.",
-                        });
-                        return; // Early return to prevent submission
-                    }
-                    startTransition(() => {
-                        formAction(data) // Call server action if customerId is selected
-                    })
-                }}
-                // className="  ">
-                // className="flex flex-col h-full flex-grow"
-                className="flex flex-col h-full w-full  mx-auto flex-grow"
-
+        <div className="flex flex-col h-full">
+            <Form {...form}>
+                <form
+                    action={async (data) => {
+                        console.log('shit')
+                        console.log(data.forEach((value, key) => {
+                            console.log(`${key}: ${value}`);
+                        }))
+                        if (!form.getValues("customerId")) { // Manual check for customerId
+                            form.setError("customerId", {
+                                type: "manual",
+                                message: "Please select a customer.",
+                            });
+                            return; // Early return to prevent submission
+                        }
+                        startTransition(() => {
+                            formAction(data) // Call server action if customerId is selected
+                        })
+                    }}
+                    className="flex flex-col h-full w-full"
                 >
-
-
-                {/* <div className=" space-y-6 px-4 sm:px-6 py-2   "> */}
-                <div className="flex flex-col space-y-6 px-4 sm:px-6 py-2 flex-grow">
-
-                    <div className="grid grid-cols-1 lg:grid-cols-[2fr,3fr] gap-4 md:gap-6">
-                        {/* Left Column - Form Fields */}
-                        <div className="space-y-4 md:space-y-6">
-                            <div className="grid grid-cols-1 gap-4 md:gap-6">
-                                <div className="grid grid-cols-2 gap-4 md:gap-6">
-
+                    <div className="flex flex-col px-4 sm:px-6 py-4 flex-grow overflow-auto">
+                        {/* Main layout container */}
+                        <div className="grid grid-cols-1 lg:grid-cols-[1.2fr,2fr] gap-6">
+                            {/* Left Column - General Order Info */}
+                            <Card className="p-5 shadow-sm border-gray-200 h-fit lg:sticky lg:top-0 max-h-[calc(100vh-12rem)] overflow-auto">
+                                <h3 className="text-lg font-semibold mb-4 text-gray-800 flex items-center">
+                                    <div className="h-5 w-1.5 bg-blue-500 rounded-full mr-2"></div>
+                                    Order Information
+                                </h3>
+                                <div className="space-y-5">
+                                    {/* Customer Selection */}
                                     <FormField
                                         control={form.control}
-                                        name="movement"
-                                        render={({ field }) => (
-                                            <input
-                                                type="hidden"
-                                                {...field}
-                                            />
-                                        )}
-                                    />
-
-                                    <FormField
-                                        control={form.control}
-                                        name="movement"
+                                        name="customerId"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Movement Type</FormLabel>
+                                                <FormLabel className="font-medium text-gray-700">Customer</FormLabel>
                                                 <FormControl>
-
-                                                <div className="flex justify-center gap-4 ">
-
-
-                                                    <Badge
-                                                        variant="outline"
-                                                        className={cn(
-                                                            "px-4 py-1 cursor-pointer rounded-full transition-all bg-green-50  hover:shadow-md  text-base",
-                                                            field.value === "IN"
-                                                                ? "bg-green-500 hover:bg-green-600 text-white border-0"
-                                                                : "hover:bg-green-100",
-                                                        )}
-                                                        // onClick={() => form.setValue("movement", "IN")}
-                                                        onClick={() => form.setValue("movement", "IN", { 
-                                                            shouldValidate: true,
-                                                            shouldDirty: true,
-                                                            shouldTouch: true
-                                                        })}
-                                
-                                    
-                                                    >
-                                                        IN
-                                                    </Badge>
-
-
-
-                                                    {/* <SelectionButton
-                                                    value="OUT"
-                                                    selected={field.value === "OUT"}
-                                                    onClick={() => field.onChange("OUT")}
-                                                    color="red"
-                                                >
-                                                    OUT
-                                                </SelectionButton> */}
-                                                    <Badge
-                                                        variant="outline"
-                                                        className={cn(
-                                                            "px-4 py-1 cursor-pointer rounded-full transition-all bg-red-50  border-1 hover:shadow-md text-base",
-                                                            field.value === "OUT"
-                                                                ? "bg-red-500 hover:bg-red-600 text-white border-0"
-                                                                : "hover:bg-red-100",
-                                                        )}
-                                                        // onClick={() => field.onChange("OUT")}
-                                                        onClick={() => form.setValue("movement", "OUT", { 
-                                                            shouldValidate: true,
-                                                            shouldDirty: true,
-                                                            shouldTouch: true
-                                                        })}
-                                
-                                    
-                                                    >
-                                                        OUT
-                                                    </Badge>
-                                                </div>
+                                                    <CustomerSelector
+                                                        customersInput={customersWithItems}
+                                                        value={field.value}
+                                                        onChange={field.onChange}
+                                                        isRequired={true}
+                                                        // className="w-full"
+                                                    />
                                                 </FormControl>
-
                                                 <FormMessage />
                                             </FormItem>
                                         )}
                                     />
 
+                                    {/* Movement Type with better visual styling */}
+                                    <FormField
+                                        control={form.control}
+                                        name="movement"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel className="font-medium text-gray-700">Movement Type</FormLabel>
+                                                <FormControl>
+                                                    <div className="flex gap-3">
+                                                        <Badge
+                                                            variant="outline"
+                                                            className={cn(
+                                                                "px-4 py-2 flex-1 cursor-pointer rounded-md transition-all text-center",
+                                                                field.value === "IN"
+                                                                    ? "bg-green-500 hover:bg-green-600 text-white border-0"
+                                                                    : "bg-green-50 hover:bg-green-100",
+                                                            )}
+                                                            onClick={() => form.setValue("movement", "IN", {
+                                                                shouldValidate: true,
+                                                                shouldDirty: true,
+                                                                shouldTouch: true
+                                                            })}
+                                                        >
+                                                            IN
+                                                        </Badge>
+                                                        <Badge
+                                                            variant="outline"
+                                                            className={cn(
+                                                                "px-4 py-2 flex-1 cursor-pointer rounded-md transition-all text-center",
+                                                                field.value === "OUT"
+                                                                    ? "bg-red-500 hover:bg-red-600 text-white border-0"
+                                                                    : "bg-red-50 hover:bg-red-100",
+                                                            )}
+                                                            onClick={() => form.setValue("movement", "OUT", {
+                                                                shouldValidate: true,
+                                                                shouldDirty: true,
+                                                                shouldTouch: true
+                                                            })}
+                                                        >
+                                                            OUT
+                                                        </Badge>
+                                                    </div>
+                                                </FormControl>
+                                                <FormMessage />
+                                                
+                                                {/* Restored hidden input for movement */}
+                                                <input
+                                                    type="hidden"
+                                                    name="movement"
+                                                    value={field.value}
+                                                />
+                                            </FormItem>
+                                        )}
+                                    />
+
+                                    {/* Status with improved visuals */}
                                     <FormField
                                         control={form.control}
                                         name="status"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Status</FormLabel>
+                                                <FormLabel className="font-medium text-gray-700">Status</FormLabel>
                                                 <Select onValueChange={field.onChange} {...field}>
                                                     <FormControl>
-                                                        <SelectTrigger className={cn("rounded-md w-[150px] text-justify  transition-all",
+                                                        <SelectTrigger className={cn("w-full",
                                                             field.value === "DRAFT" && "bg-gray-100",
-                                                            field.value === "PENDING" && "bg-blue-200 font-semibold",
-                                                            field.value === "PROCESSING" && "bg-yellow-300/70",
-                                                            field.value === "READY" && "bg-green-400/50",
-                                                            field.value === "COMPLETED" && "bg-gray-200",
+                                                            field.value === "PENDING" && "bg-blue-100 text-blue-800",
+                                                            field.value === "PROCESSING" && "bg-yellow-100 text-yellow-800",
+                                                            field.value === "READY" && "bg-green-100 text-green-800",
+                                                            field.value === "COMPLETED" && "bg-gray-100 text-gray-800",
                                                         )} >
                                                             <SelectValue placeholder="Select status" />
                                                         </SelectTrigger>
                                                     </FormControl>
-                                                    <SelectContent className="w-[150px] flex ">
+                                                    <SelectContent>
                                                         <SelectItem value="DRAFT">DRAFT</SelectItem>
                                                         <SelectItem value="PENDING">PENDING</SelectItem>
                                                         <SelectItem value="PROCESSING">PROCESSING</SelectItem>
                                                         <SelectItem value="READY">READY</SelectItem>
                                                         <SelectItem value="COMPLETED">COMPLETED</SelectItem>
-                                                        {/* <SelectItem className="w-[150px] mt-2 text-white text-center items-center justify-center font-bold  bg-gray-100 rounded-full" value="DRAFT">DRAFT</SelectItem>
-                                                        <SelectItem className="w-[150px] mt-2 text-white text-center items-center justify-center font-bold rounded-full bg-yellow-300" value="PENDING">PENDING</SelectItem>
-                                                        <SelectItem className="w-[150px] mt-2 text-white text-center items-center justify-center font-bold rounded-full bg-blue-300" value="PROCESSING">PROCESSING</SelectItem>
-                                                        <SelectItem className="w-[150px] mt-2 text-white text-center items-center justify-center font-bold rounded-full bg-green-300" value="READY">READY</SelectItem>
-                                                        <SelectItem className="w-[150px] mt-2 text-white text-center items-center justify-center font-bold rounded-full bg-amber-300" value="COMPLETED">COMPLETED</SelectItem> */}
                                                     </SelectContent>
                                                 </Select>
                                                 <FormMessage />
+                                                
+                                                {/* Restored hidden input for status */}
+                                                <input
+                                                    type="hidden"
+                                                    name="status"
+                                                    value={field.value}
+                                                />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    
+                                    {/* Two-column layout for smaller fields */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                        <FormField
+                                            control={form.control}
+                                            name="packingType"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel className="font-medium text-gray-700">Packing Type</FormLabel>
+                                                    <Select onValueChange={field.onChange} {...field} >
+                                                        <FormControl>
+                                                            <SelectTrigger className="w-full">
+                                                                <SelectValue placeholder="Select packing type" />
+                                                            </SelectTrigger>
+                                                        </FormControl>
+                                                        <SelectContent>
+                                                            <SelectItem value="NONE">None</SelectItem>
+                                                            <SelectItem value="SACK">Sack</SelectItem>
+                                                            <SelectItem value="PALLET">Pallet</SelectItem>
+                                                            <SelectItem value="CARTON">Carton</SelectItem>
+                                                            <SelectItem value="OTHER">Other</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                    <FormMessage />
+                                                    
+                                                    {/* Restored hidden input for packingType */}
+                                                    <input
+                                                        type="hidden"
+                                                        name="packingType"
+                                                        value={field.value}
+                                                    />
+                                                </FormItem>
+                                            )}
+                                        />
+
+                                        <FormField
+                                            control={form.control}
+                                            name="deliveryMethod"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel className="font-medium text-gray-700">Delivery Method</FormLabel>
+                                                    <Select onValueChange={field.onChange} {...field}>
+                                                        <FormControl>
+                                                            <SelectTrigger className="w-full">
+                                                                <SelectValue placeholder="Select delivery method" />
+                                                            </SelectTrigger>
+                                                        </FormControl>
+                                                        <SelectContent>
+                                                            <SelectItem value="NONE">None</SelectItem>
+                                                            <SelectItem value="PICKUP">Pickup</SelectItem>
+                                                            <SelectItem value="DELIVERY">Delivery</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                    <FormMessage />
+                                                    
+                                                    {/* Restored hidden input for deliveryMethod */}
+                                                    <input
+                                                        type="hidden"
+                                                        name="deliveryMethod"
+                                                        value={field.value}
+                                                    />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
+
+                                    {/* Hidden field */}
+                                    <input type="hidden" name="orderType" value="CUSTOMER_ORDER" />
+
+                                    {/* Notes section */}
+                                    <FormField
+                                        control={form.control}
+                                        name="notes"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel className="font-medium text-gray-700">Notes</FormLabel>
+                                                <FormControl>
+                                                    <Textarea
+                                                        placeholder="Add any additional notes here"
+                                                        {...field}
+                                                        value={field.value ?? ''}
+                                                        className="min-h-[100px] resize-none"
+                                                    />
+                                                </FormControl>
+                                                <FormMessage />
+                                                
+                                                {/* Restored hidden input for notes */}
+                                                <input
+                                                    type="hidden"
+                                                    name="notes"
+                                                    value={field.value ?? ''}
+                                                />
                                             </FormItem>
                                         )}
                                     />
                                 </div>
+                            </Card>
 
-                                <FormField
-                                    control={form.control}
-                                    name="customerId"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Customer</FormLabel>
-                                            <FormControl>
-                                                <CustomerSelector
-                                                    customersInput={customersWithItems}
-                                                    value={field.value}
-                                                    onChange={field.onChange}
-                                                    isRequired={true}
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-
-                                {/* <FormField
-                                    control={form.control}
-                                    name="movement"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Movement Type</FormLabel>
-                                            <Select onValueChange={field.onChange} {...field}>
-                                                <FormControl>
-                                                    <SelectTrigger>
-                                                        <SelectValue placeholder="Select movement type" />
-                                                    </SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent>
-                                                    <SelectItem value="IN">IN</SelectItem>
-                                                    <SelectItem value="OUT">OUT</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                /> */}
-
-                                {/* <FormField
-                                    control={form.control}
-                                    name="movement"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Movement Type</FormLabel>
-                                            <div className="flex justify-center gap-4 ">
-                                                <SelectionButton
-                                                    value="IN"
-                                                    selected={field.value === "IN"}
-                                                    onClick={() => field.onChange("IN")}
-                                                    color="green"
-
-                                                >
-                                                    IN
-                                                </SelectionButton>
-                                                <SelectionButton
-                                                    value="OUT"
-                                                    selected={field.value === "OUT"}
-                                                    onClick={() => field.onChange("OUT")}
-                                                    color="red"
-                                                >
-                                                    OUT
-                                                </SelectionButton>
+                            {/* Right Column - Items Section */}
+                            <Card className="shadow-sm border-gray-200 overflow-hidden flex flex-col h-[calc(100vh-20rem)]">
+                                <div className="p-5 border-b bg-white">
+                                    <div className="flex justify-between items-center">
+                                        <h3 className="text-lg font-semibold text-gray-800 flex items-center">
+                                            <div className="h-5 w-1.5 bg-green-500 rounded-full mr-2"></div>
+                                            Order Items
+                                        </h3>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            className="flex items-center gap-1 border-green-500 text-green-600 hover:bg-green-50"
+                                            onClick={() => append({ itemId: "", quantity: 1, itemLocationId: "4e176e92-e833-44f5-aea9-0537f980fb4b" })}
+                                        >
+                                            <Plus className="h-4 w-4" />
+                                            <span>Add Item</span>
+                                        </Button>
+                                    </div>
+                                </div>
+                                
+                                <div className="flex-1 overflow-hidden flex flex-col">
+                                    {/* Fixed header for desktop */}
+                                    <div className="hidden md:block bg-gray-50 border-b sticky top-0 z-10">
+                                        <table className="w-full border-collapse">
+                                            <thead>
+                                                <tr>
+                                                    <th className="py-3 px-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-12">#</th>
+                                                    <th className="py-3 px-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Item</th>
+                                                    <th className="py-3 px-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider w-28">Quantity</th>
+                                                    <th className="py-3 px-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider w-16">Actions</th>
+                                                </tr>
+                                            </thead>
+                                        </table>
+                                    </div>
+                                    
+                                    <div className="flex-1 overflow-auto">
+                                        {fields.length === 0 ? (
+                                            <div className="text-center py-12 text-gray-500 bg-gray-50 h-full flex flex-col items-center justify-center">
+                                                <PackageOpen className="w-12 h-12 text-gray-300 mb-3" />
+                                                <p className="text-gray-500 mb-1">No items added</p>
+                                                <p className="text-sm text-gray-400">Click "Add Item" to begin</p>
                                             </div>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                /> */}
+                                        ) : (
+                                            <table className="w-full border-collapse">
+                                                <tbody>
+                                                    {fields.map((field, index) => (
+                                                        <ItemRow
+                                                            key={field.id}
+                                                            index={index}
+                                                            itemId={form.watch(`items.${index}.itemId`)}
+                                                            quantity={form.watch(`items.${index}.quantity`)}
+                                                            itemLocationId={form.watch(`items.${index}.itemLocationId`)}
+                                                            items={itemsList || []}
+                                                            onItemChange={(value: string) => form.setValue(`items.${index}.itemId`, value)}
+                                                            onQuantityChange={(value: string) => form.setValue(`items.${index}.quantity`, parseInt(value))}
+                                                            onRemove={() => remove(index)}
+                                                        />
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        )}
+                                    </div>
+                                </div>
 
-                                <FormField
-                                    control={form.control}
-                                    name="packingType"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Packing Type</FormLabel>
-                                            <Select onValueChange={field.onChange} {...field} >
-                                                <FormControl>
-                                                    <SelectTrigger>
-                                                        <SelectValue placeholder="Select packing type" />
-                                                    </SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent>
-                                                    <SelectItem value="NONE">None</SelectItem>
-                                                    <SelectItem value="SACK">Sack</SelectItem>
-                                                    <SelectItem value="PALLET">Pallet</SelectItem>
-                                                    <SelectItem value="CARTON">Carton</SelectItem>
-                                                    <SelectItem value="OTHER">Other</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-
-                                <input type="hidden" name="orderType" value="CUSTOMER_ORDER" />
-
-
-
-                                <FormField
-                                    control={form.control}
-                                    name="deliveryMethod"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Delivery Method</FormLabel>
-                                            <Select onValueChange={field.onChange} {...field}>
-                                                <FormControl>
-                                                    <SelectTrigger>
-                                                        <SelectValue placeholder="Select delivery method" />
-                                                    </SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent>
-                                                    <SelectItem value="NONE">None</SelectItem>
-                                                    <SelectItem value="PICKUP">Pickup</SelectItem>
-                                                    <SelectItem value="DELIVERY">Delivery</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-
-                                <FormField
-                                    control={form.control}
-                                    name="notes"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Notes</FormLabel>
-                                            <FormControl>
-                                                <Textarea
-                                                    placeholder="Add any additional notes here"
-                                                    {...field}
-                                                    value={field.value ?? ''}
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
+                                {/* "Add another item" button at the bottom */}
+                                <div className="p-4 border-t bg-gray-50">
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        className="w-full flex items-center justify-center gap-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                        onClick={() => append({ itemId: "", quantity: 1, itemLocationId: "4e176e92-e833-44f5-aea9-0537f980fb4b" })}
+                                    >
+                                        <Plus className="h-4 w-4" />
+                                        Add Another Item
+                                    </Button>
+                                </div>
+                            </Card>
                         </div>
+                    </div>
 
-                        {/* Right Column - Items Section */}
-                        {/* <div className="space-y-4  md:max-h-[calc(100vh-20rem)] flex  overflow-auto "> */}
-                        <div className="space-y-4 flex flex-col flex-grow overflow-auto md:max-h-[calc(100vh-20rem)]">
+                    {/* Form error message */}
+                    {state?.error && (
+                        <div className="mx-6 mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md">
+                            {state.error}
+                        </div>
+                    )}
 
-                        {/* <div className="space-y-4  overflow-hidden "> */}
-                            {/* <div className="  space-y-4  "> */}
-                            {/* Remove lg:max-h and overflow-scroll */}
-                            {/* <div className="space-y-4  "> Added max-height and overflow */}
-
-                            {/* <FormLabel className="hidden md:block sticky top-1 bg-white z-10">Items</FormLabel> */}
-                            {/* <div className="border rounded-lg p-2 sm:p-0 w-full overflow-hidden"> */}
-                            <div className="border rounded-lg p-2 sm:p-0 w-full overflow-scroll flex flex-col flex-grow">
-
-                                {/* <table className="w-full border-collapse "> */}
-                                <table className="w-full border-collapse flex-shrink">
-
-                                    <thead className="hidden md:table-header-group ">
-                                        <tr className="bg-gray-100">
-                                            <th className="py-2 px-4 border text-left w-12">#</th>
-                                            <th className="py-2 px-4 border text-left">Item</th>
-                                            <th className="py-2 px-4 border text-center w-24">Quantity</th>
-                                            <th className="py-2 px-4 border text-left w-1"></th>
-                                        </tr>
-                                    </thead>
-
-                                    <tbody className="">
-
-                                            {fields.map((field, index) => (
-                                                <ItemRow
-                                                    key={field.id}
-                                                    index={index}
-                                                    itemId={form.watch(`items.${index}.itemId`)}
-                                                    quantity={form.watch(`items.${index}.quantity`)}
-                                                    itemLocationId={form.watch(`items.${index}.itemLocationId`)}
-                                                    items={itemsList!}
-                                                    onItemChange={(value: string) => form.setValue(`items.${index}.itemId`, value)}
-                                                    onQuantityChange={(value: string) => form.setValue(`items.${index}.quantity`, parseInt(value))}
-                                                    onRemove={() => remove(index)}
-                                                />
-                                            ))}
-
-                                    </tbody>
-
-                                </table>
+                    {/* Form footer */}
+                    <div className="border-t px-4 sm:px-6 py-4 bg-white sticky bottom-0 shadow-inner z-10">
+                        <div className="flex justify-between items-center">
+                            <div className="text-sm text-gray-500">
+                                {fields.length} item(s) in order
+                            </div>
+                            <div className="flex gap-3">
                                 <Button
                                     type="button"
                                     variant="outline"
-                                    className="w-[calc(100%-2rem)] m-4"
-                                    onClick={() => append({ itemId: "", quantity: 1, itemLocationId: "4e176e92-e833-44f5-aea9-0537f980fb4b" })}
+                                    onClick={handleCancel}
+                                    disabled={isPending}
                                 >
-                                    <Plus className="h-4 w-4 mr-2" />
-                                    Add Item
+                                    Cancel
+                                </Button>
+                                <Button
+                                    type="submit"
+                                    disabled={isPending || fields.length === 0 || fields.some(field => !form.watch(`items.${fields.indexOf(field)}.itemId`))}
+                                    className="px-6 bg-blue-600 hover:bg-blue-700"
+                                >
+                                    {isPending ? (
+                                        <>
+                                            <svg
+                                                className="animate-spin -ml-1 mr-2 h-4 w-4"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <circle
+                                                    className="opacity-25"
+                                                    cx="12"
+                                                    cy="12"
+                                                    r="10"
+                                                    stroke="currentColor"
+                                                    strokeWidth="4"
+                                                />
+                                                <path
+                                                    className="opacity-75"
+                                                    fill="currentColor"
+                                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                                />
+                                            </svg>
+                                            Creating Order...
+                                        </>
+                                    ) : (
+                                        'Create Order'
+                                    )}
                                 </Button>
                             </div>
                         </div>
                     </div>
-                </div>
-
-                {state?.error && (
-                    <div className="text-red-500 text-sm">{state.error}</div>
-                )}
-
-
-                {/* <div className="border-t px-6 py-4 sticky bottom-0 bg-white"> */}
-                <div className="border-t px-4 sm:px-6 py-4  bottom-0 bg-slate-100">
-                    <div className="flex justify-end gap-2">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={onClose}
-                            disabled={isPending}
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            type="submit"
-                            disabled={isPending}
-                        >
-                            {isPending ? (
-                                <>
-                                    <svg
-                                        className="animate-spin -ml-1 mr-3 h-4 w-4"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <circle
-                                            className="opacity-25"
-                                            cx="12"
-                                            cy="12"
-                                            r="10"
-                                            stroke="currentColor"
-                                            strokeWidth="4"
-                                        />
-                                        <path
-                                            className="opacity-75"
-                                            fill="currentColor"
-                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                        />
-                                    </svg>
-                                    Creating...
-                                </>
-                            ) : (
-                                'Create Order'
-                            )}
-                        </Button>
-                    </div>
-                </div>
-            </form>
-        </Form>
+                </form>
+            </Form>
+        </div>
     );
 }

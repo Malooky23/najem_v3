@@ -295,9 +295,9 @@ export function useItems() {
       return res.json();
     },
     staleTime: 60 * 60 * 1000, // 5 minutes
-    gcTime: 60 * 60 * 1000, // 30 minutes
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
+    // gcTime: 60 * 60 * 1000, // 30 minutes
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
 
 
   });

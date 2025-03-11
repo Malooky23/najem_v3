@@ -12,9 +12,12 @@ import { DropDownMenuButton } from "@/components/drop-down-menu-button"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import Link from "next/link"
+import { is } from "drizzle-orm"
+import { CreateOrderDialog } from "./order-form/create-order-dialog"
 
 interface PageHeaderProps {
   isLoading: boolean;
+  isMobile: boolean;
 }
 
 const createOptions = [
@@ -23,23 +26,41 @@ const createOptions = [
   { id: "3", label: "Print" },
 ];
 
-function PageHeader({ isLoading }: PageHeaderProps) {
+// Original implementation
+// function PageHeader({ isLoading }: PageHeaderProps) {
+//   return (
+//     <div className="flex justify-between mt-2 gap-1 max-w-full">
+//       <h1 className="text-2xl font-bold text-gray-900 text-nowrap pr-2">
+//         Orders
+//       </h1>
+//       <div className="">
+//         <SearchPanel isLoading={isLoading} />
+//       </div>
+//       <div className="flex gap-2 pr-2">
+//         <Link href="/warehouse/orders/create">
+//           <Button>
+//             <Plus className="mr-1 h-4 w-4" /> New Order
+//           </Button>
+//         </Link>
+//         <DropDownMenuButton MENU_ITEMS={createOptions} />
+//       </div>
+//     </div>
+//   );
+// }
+
+function PageHeader({ isLoading, isMobile }: PageHeaderProps) {
+  const [isCreateOpen, setisCreateOpen] = useState(false)
   return (
-    <div className="flex justify-between mt-2 gap-1 max-w-full">
-      <h1 className="text-2xl font-bold text-gray-900 text-nowrap pr-2">
-        Orders
+    <div className="flex justify-between mt-2 pb-2 gap-1 max-w-full">
+      <h1 className="text-2xl font-bold text-gray-900 text-nowrap pb-0 pr-2 flex items-end">
+          Orders
       </h1>
       <div className="">
         <SearchPanel isLoading={isLoading} />
       </div>
-      <div className="flex gap-2 pr-2">
-        <Link href="/warehouse/orders/create">
-          <Button>
-            <Plus className="mr-1 h-4 w-4" /> New Order
-          </Button>
-        </Link>
-        <DropDownMenuButton MENU_ITEMS={createOptions} />
-      </div>
+
+        <CreateOrderDialog isMobile={isMobile} />
+
     </div>
   );
 }
@@ -96,7 +117,7 @@ export function OrdersPage() {
 
   return (
     <div className="px-4 h-[100vh] flex flex-col overflow-hidden">
-      <PageHeader isLoading={isPageLoading} />
+      <PageHeader isLoading={isPageLoading} isMobile={isMobile} />
 
       <div className="flex gap-2 flex-1 min-h-0 overflow-hidden mt-0">
         <ContentLayout
@@ -110,9 +131,9 @@ export function OrdersPage() {
         </ContentLayout>
 
         {store.isDetailsOpen && store.selectedOrderId && (
-          <OrderDetailsContainer 
-            orderId={store.selectedOrderId} 
-            isMobile={isMobile} 
+          <OrderDetailsContainer
+            orderId={store.selectedOrderId}
+            isMobile={isMobile}
           />
         )}
       </div>

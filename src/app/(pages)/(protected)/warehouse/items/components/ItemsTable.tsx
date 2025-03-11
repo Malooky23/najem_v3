@@ -29,7 +29,7 @@ export const ItemsTable = memo<ItemsTableProps>(function ItemsTable({
   }, [store.selectedItemId])
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col rounded-lg bg-slate-50 border-2 border-slate-200">
       <DataTable<ItemSchemaType, any>
         columns={itemColumns}
         data={items}
