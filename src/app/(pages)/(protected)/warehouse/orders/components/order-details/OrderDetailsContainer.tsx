@@ -120,11 +120,7 @@ export const OrderDetailsContainer = memo(function OrderDetailsContainer({
               createdAt={orderData.createdAt}
             /> */}
             <OrderHeader 
-              orderNumber={orderData.orderNumber} 
-              status={orderData.status}
-              createdAt={orderData.createdAt}
-              currentStatus={orderData.status} 
-              orderId={orderData.orderId}
+              order={orderData}
               handleClose={handleClose}
             />
             

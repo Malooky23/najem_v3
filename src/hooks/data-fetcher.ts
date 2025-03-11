@@ -2,7 +2,7 @@
 import { keepPreviousData, useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { type ItemSchemaType } from "@/types/items";
 import { CustomerList, EnrichedCustomer } from "@/types/customer";
-import { EnrichedOrders, type OrderFilters, type OrderSort, OrderStatus } from "@/types/orders";
+import { EnrichedOrders, type OrderFilters, type OrderSort, OrderStatus, UpdateOrderInput } from "@/types/orders";
 import { getSession } from 'next-auth/react';
 import { getOrders, getOrderById, updateOrder } from "@/server/actions/orders";
 import { EnrichedStockMovementView, StockMovementFilters, StockMovementSort } from "@/types/stockMovement";
@@ -227,6 +227,82 @@ export function useOrderStatusMutation() {
   });
 }
 
+// Add a new mutation for updating the entire order
+export function useOrderUpdateMutation() {
+  const queryClient = useQueryClient();
+  
+  return useMutation<
+    OrderUpdateResult,
+    Error,
+    UpdateOrderInput,
+    { previousData: EnrichedOrders | undefined }
+  >({
+    mutationFn: async (updatedOrder) => {
+      // Call the API to update the order
+      const result = await updateOrder(updatedOrder);
+      return result;
+    },
+    
+    // Optimistically update UI
+    onMutate: async (updatedOrder) => {
+      const orderId = updatedOrder.orderId;
+      if (!orderId) {
+        throw new Error('Order ID is required');
+      }
+      
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['order', orderId] });
+      
+      // Snapshot the previous value
+      const previousData = queryClient.getQueryData<EnrichedOrders>(['order', orderId]);
+      
+      // Optimistically update the cache with new values
+      if (previousData) {
+        queryClient.setQueryData<EnrichedOrders>(['order', orderId], {
+          ...previousData,
+          ...updatedOrder, 
+          // Preserve fields that are not updated
+          createdAt: previousData.createdAt,
+          customerName: previousData.customerName,
+          creator: previousData.creator,
+          // Items must be properly preserved because they're needed for rendering
+          items: updatedOrder.items 
+            ? updatedOrder.items.map(item => ({
+                itemId: item.itemId,
+                itemName: previousData.items.find(i => i.itemId === item.itemId)?.itemName || "Unknown Item",
+                quantity: item.quantity,
+                itemLocationId: item.itemLocationId
+              }))
+            : previousData.items
+        });
+      }
+      
+      return { previousData };
+    },
+    
+    // Handle errors and revert optimistic update
+    onError: (err, updatedOrder, context) => {
+      console.error('Error updating order:', err);
+      
+      if (context?.previousData && updatedOrder.orderId) {
+        // Revert the optimistic update
+        queryClient.setQueryData(['order', updatedOrder.orderId], context.previousData);
+      }
+    },
+    
+    // Refresh data after mutation
+    onSettled: (result, error, updatedOrder) => {
+      if (updatedOrder.orderId) {
+        queryClient.invalidateQueries({ queryKey: ['order', updatedOrder.orderId] });
+        queryClient.invalidateQueries({ queryKey: ['orders'] });
+        // Also invalidate items and stock movements as they may be affected
+        queryClient.invalidateQueries({ queryKey: ['items'] });
+        queryClient.invalidateQueries({ queryKey: ['stockMovements'] });
+      }
+    }
+  });
+}
+
 export function useCustomers() {
   return useQuery<EnrichedCustomer[]>({
     queryKey: ['customers'],
@@ -303,88 +379,3 @@ export function useItems() {
   });
 }
 
-
-// export interface StockMovementsQueryParams {
-//   page?: number;
-//   pageSize?: number;
-//   filters?: StockMovementFilters;
-//   sort?: StockMovementSort;
-// }
-// export interface StockMovementsQueryResult {
-//   data: EnrichedStockMovementView[];
-//   pagination: {
-//     total: number;
-//     pageSize: number;
-//     currentPage: number;
-//     totalPages: number;
-//   };
-// }
-
-// Fix the stock movements hook to properly handle fetch keys and deduplication
-// export function useStockMovements(params: StockMovementsQueryParams = {}) {
-//   return useQuery<StockMovementsQueryResult>({
-//     queryKey: ['stockMovements', params],
-//     queryFn: async () => {
-//       const session = await getSession();
-//       
-//       const queryParams = new URLSearchParams();
-//       if (params.page) queryParams.set('page', String(params.page));
-//       if (params.pageSize) queryParams.set('pageSize', String(params.pageSize));
-//       if (params.filters) queryParams.set('filters', JSON.stringify(params.filters));
-//       if (params.sort) queryParams.set('sort', JSON.stringify(params.sort));
-//       
-//       // Create an AbortController for timeout handling
-//       const controller = new AbortController();
-//       const timeoutId = setTimeout(() => controller.abort(), 15000); // 15-second timeout
-//       
-//       try {
-//         const res = await fetch(`/api/stock-movements?${queryParams.toString()}`, {
-//           headers: {
-//             'Authorization': `Bearer ${session}`
-//           },
-//           signal: controller.signal
-//         });
-//         
-//         clearTimeout(timeoutId);
-//         
-//         if (!res.ok) {
-//           let errorResponse;
-//           try {
-//             errorResponse = await res.json();
-//           } catch (jsonError) {
-//             errorResponse = { 
-//               message: 'Failed to parse error response as JSON', 
-//               rawResponse: await res.text() 
-//             };
-//             console.error("JSON parsing error:", jsonError);
-//           }
-//           console.error("API error response:", errorResponse);
-//           throw new Error(`Failed to fetch stock movements. API Response: ${JSON.stringify(errorResponse)}`);
-//         }
-//         
-//         const data = await res.json();
-//         
-//         return {
-//           data: data.stockMovements || [],
-//           pagination: data.pagination || {
-//             total: 0,
-//             pageSize: params.pageSize || 10,
-//             currentPage: params.page || 1,
-//             totalPages: 0
-//           }
-//         };
-//       } catch (error) {
-//         clearTimeout(timeoutId);
-//         if (error.name === 'AbortError') {
-//           throw new Error('Request timeout: The server took too long to respond');
-//         }
-//         throw error;
-//       }
-//     },
-//     staleTime: 30 * 1000, // 30 seconds instead of very long cache time
-//     gcTime: 5 * 60 * 1000, // 5 minutes
-//     refetchOnWindowFocus: false,
-//     retry: 1, // Limit retries to prevent infinite loading
-//     retryDelay: 1000, // 1 second between retries
-//   });
-// }

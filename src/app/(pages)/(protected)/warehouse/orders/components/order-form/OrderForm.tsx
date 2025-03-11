@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useFieldArray, useForm } from "react-hook-form";
-import { createOrderSchema, type CreateOrderInput } from "@/types/orders";
+import { createOrderSchema, DeliveryMethod, MovementType, OrderStatus, PackingType, type CreateOrderInput } from "@/types/orders";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import CustomerSelector from "@/components/ui/customer-dropdown";
@@ -10,7 +10,7 @@ import { createOrder } from "@/server/actions/orders";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useCustomers, useItems } from "@/hooks/data-fetcher";
+import { useCustomers, useItems, useOrderUpdateMutation } from "@/hooks/data-fetcher";
 import { startTransition, useActionState, useCallback } from "react";
 import { useQueryClient } from '@tanstack/react-query';
 import { Plus, PackageOpen } from "lucide-react";
@@ -71,7 +71,14 @@ async function submitOrderForm(formData: FormData) {
     }
 }
 
-export default function OrderForm({ onClose }: { onClose: () => void }) {
+// Update the props interface to accept optional initialData
+interface OrderFormProps {
+    onClose: () => void;
+    initialData?: CreateOrderInput & { orderId?: string };
+    isEditMode?: boolean;
+}
+
+export default function OrderForm({ onClose, initialData, isEditMode = false }: OrderFormProps) {
     const { data: customerList, isSuccess: isCustomersSuccess, isLoading: isCustomersLoading, isError: isCustomersError } = useCustomers();
     const { data: itemsList, isLoading: isItemsLoading, isError: isItemsError } = useItems();
     const queryClient = useQueryClient();
@@ -81,29 +88,83 @@ export default function OrderForm({ onClose }: { onClose: () => void }) {
         itemsList?.some(item => item.customerId === customer.customerId)
     ) ?? [];
 
-    const [state, formAction, isPending] = useActionState(async (prevState: any, formData: FormData) => {
-
-        formData.forEach((value, key) => {
-            console.log(`00000000000: ${key}: ${value}`);
-        });
-
-        console.log('Submitting form...', formData);
-        const result = await submitOrderForm(formData);
-        if (result.success) {
-            queryClient.invalidateQueries({ queryKey: ['orders'] });
-            onClose();
-            toast.success("Order created successfully");
-        }
-        return result;
-    }, null);
-
+    const { mutate: updateOrder, isPending: isUpdating } = useOrderUpdateMutation();
     
-
-
+    // Update the server action to use the mutation for edit mode
+    const [state, formAction, isPending] = useActionState(async (prevState: any, formData: FormData) => {
+        if (isEditMode && initialData?.orderId) {
+            // For edit mode, construct the update object from form data
+            const orderId = initialData.orderId;
+            const status = formData.get('status') as OrderStatus;
+            const movement = formData.get('movement') as MovementType;
+            const packingType = formData.get('packingType') as PackingType;
+            const deliveryMethod = formData.get('deliveryMethod') as DeliveryMethod;
+            const notes = formData.get('notes') as string;
+            const customerId = formData.get('customerId') as string;
+            
+            // Parse items from form data
+            const items: { itemId: string; quantity: number, itemLocationId: string }[] = [];
+            
+            formData.forEach((value, key) => {
+                if (key.startsWith('items.')) {
+                    const [_, index, field] = key.split('.');
+                    const idx = parseInt(index);
+                    if (!items[idx]) {
+                        items[idx] = { itemId: '', quantity: 0, itemLocationId: '' };
+                    }
+                    if (field === 'itemId') {
+                        items[idx].itemId = value as string;
+                    } else if (field === 'quantity') {
+                        items[idx].quantity = parseInt(value as string) || 0;
+                    } else if (field === 'itemLocationId') {
+                        items[idx].itemLocationId = value as string;
+                    }
+                }
+            });
+            
+            // Filter out incomplete items
+            const validItems = items.filter(item => item.itemId && item.quantity > 0);
+            
+            // Call the update mutation
+            updateOrder({
+                orderId,
+                status,
+                movement,
+                packingType,
+                deliveryMethod,
+                notes,
+                customerId,
+                items: validItems,
+            }, {
+                onSuccess: () => {
+                    queryClient.invalidateQueries({ queryKey: ['orders'] });
+                    queryClient.invalidateQueries({ queryKey: ['order', orderId] });
+                    onClose();
+                    toast.success("Order updated successfully");
+                },
+                onError: (error) => {
+                    toast.error(`Failed to update order: ${error.message}`);
+                    return { error: error.message };
+                }
+            });
+            
+            return null; // The mutation handles the success/error states
+        } else {
+            // For create mode, use the existing logic
+            console.log('Submitting form...', formData);
+            const result = await submitOrderForm(formData);
+            if (result.success) {
+                queryClient.invalidateQueries({ queryKey: ['orders'] });
+                onClose();
+                toast.success("Order created successfully");
+            }
+            return result;
+        }
+    }, null);
 
     const form = useForm<CreateOrderInput>({
         resolver: zodResolver(createOrderSchema),
-        defaultValues: {
+        defaultValues: initialData || {
             orderType: "CUSTOMER_ORDER",
             packingType: "NONE",
             deliveryMethod: "NONE",
@@ -529,10 +590,10 @@ export default function OrderForm({ onClose }: { onClose: () => void }) {
                                                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                                                 />
                                             </svg>
-                                            Creating Order...
+                                            {isEditMode ? 'Updating Order...' : 'Creating Order...'}
                                         </>
                                     ) : (
-                                        'Create Order'
+                                        isEditMode ? 'Update Order' : 'Create Order'
                                     )}
                                 </Button>
                             </div>
