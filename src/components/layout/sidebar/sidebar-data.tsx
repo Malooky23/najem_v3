@@ -51,19 +51,34 @@ const shipments = {
     items: [
         {
             title: "Orders",
-            url: "/shipments/Orders",
+            // url: "/shipments/orders",
             icon: MenuSquare
         },
         {
             title: "Payments",
-            url: "/shipments/payments",
+            // url: "/shipments/payments",
             icon: DollarSign
         },
         {
             title: "Settings",
-            url: "/shipments/Settings",
+            // url: "/shipments/settings",
             icon: Settings2,
         },
+        // {
+        //     title: "Orders",
+        //     url: "/shipments/orders",
+        //     icon: MenuSquare
+        // },
+        // {
+        //     title: "Payments",
+        //     url: "/shipments/payments",
+        //     icon: DollarSign
+        // },
+        // {
+        //     title: "Settings",
+        //     url: "/shipments/settings",
+        //     icon: Settings2,
+        // },
     ],
 }
 const customers = {

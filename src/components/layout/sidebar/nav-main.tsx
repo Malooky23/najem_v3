@@ -104,7 +104,7 @@ export function NavMain({
                   {item.items?.map((subItem) => (
                     <SidebarMenuSubItem key={subItem.title} >
                       <SidebarMenuSubButton asChild >
-                      <Link href={subItem.url}>
+                      <Link href={subItem.url ?? "/dashboard"}>
                         {subItem.icon && <subItem.icon />}
                           <span>{subItem.title}</span>
                         </Link>

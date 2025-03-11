@@ -19,9 +19,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EnrichedCustomer } from "@/types/customer";
 
 export default function CreateOrderPage() {
-  const { data: customerList, isSuccess: isCustomersSuccess, isLoading: isCustomersLoading, isError: isCustomersError } = useCustomers();
-  const { data: customerList1, } = useSelectCustomerList();
-  // const { data: customerList, isSuccess: isCustomersSuccess, isLoading: isCustomersLoading, isError: isCustomersError } = useSelectCustomerList();
+
+  const { data: customerList, isSuccess: isCustomersSuccess, isLoading: isCustomersLoading, isError: isCustomersError } = useSelectCustomerList();
 
   const router = useRouter();
   const form = useForm<CreateOrderInput>({
@@ -104,20 +103,12 @@ export default function CreateOrderPage() {
                     // {isCustomersLoading ? (
                       <Skeleton className="w-full h-10" />
                     ):(
-                      <>
                     <CustomerSelector
                       customersInput={customerList as EnrichedCustomer[]?? []}
                       value={form.watch('customerId')}
                       onChange={(value) => form.setValue('customerId', value ?? "")}
                       isRequired={true}
                       />
-                    <CustomerSelector
-                      customersInput={customerList1 as EnrichedCustomer[]?? []}
-                      value={form.watch('customerId')}
-                      onChange={(value) => form.setValue('customerId', value ?? "")}
-                      isRequired={true}
-                      />
-                      </>
                   )
                 }
                 </div>
