@@ -6,13 +6,13 @@ import { PaginationControls } from "@/components/ui/pagination-controls"
 import { EnrichedOrders, OrderSortField } from "@/types/orders"
 import { useOrders, usePrefetchOrders } from "@/hooks/useOrdersManager"
 
-import { 
+import {
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
-  TableRow 
+  TableRow
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { format } from "date-fns"
@@ -83,32 +83,53 @@ const TablePagination = memo<TablePaginationProps>(function TablePagination({
 });
 
 // Status badge component
-const StatusBadge = memo<{ status: string }>(function StatusBadge({ status }) {
-  let variant: "default" | "secondary" | "destructive" | "outline" = "default";
-  
-  switch (status) {
-    case "COMPLETED":
-      variant = "default";
-      break;
-    case "PENDING":
-      variant = "secondary";
-      break;
-    case "PROCESSING":
-      variant = "outline";
-      break;
-    case "CANCELED":
-      variant = "destructive";
-      break;
-    default:
-      variant = "outline";
+// const StatusBadge = memo<{ status: string }>(function StatusBadge({ status }) {
+//   let variant: "default" | "secondary" | "destructive" | "outline" = "default";
+
+//   switch (status) {
+//     case "COMPLETED":
+//       variant = "default";
+//       break;
+//     case "PENDING":
+//       variant = "secondary";
+//       break;
+//     case "PROCESSING":
+//       variant = "outline";
+//       break;
+//     case "CANCELED":
+//       variant = "destructive";
+//       break;
+//     default:
+//       variant = "outline";
+//   }
+
+//   return (
+//     <Badge variant={variant} className="capitalize">
+//       {status.toLowerCase().replace("_", " ")}
+//     </Badge>
+//   );
+// });
+
+const StatusBadge = ({ status }: { status: string }) => {
+  const getStatusStyles = (status: string) => {
+    const baseStyles = "px-2 py-1 rounded-full text-xs font-semibold w-24 text-center inline-block"
+    const statuses: { [key: string]: string } = {
+      "DRAFT": "bg-gray-500/20 text-gray-700",
+      "PENDING": "bg-yellow-500/20 text-yellow-700",
+      "PROCESSING": "bg-blue-500/20 text-blue-700",
+      "COMPLETED": "bg-green-500/20 text-green-700",
+      "READY": "bg-purple-500/20 text-purple-700",
+      "CANCELLED": "bg-red-500/20 text-red-700",
+    }
+    return `${baseStyles} ${statuses[status] || statuses["PENDING"]}`
   }
 
   return (
-    <Badge variant={variant} className="capitalize">
-      {status.toLowerCase().replace("_", " ")}
-    </Badge>
-  );
-});
+    <div className="flex items-center  w-full">
+      <span className={getStatusStyles(status)}>{status}</span>
+    </div>
+  )
+}
 
 // Table row loading skeleton
 const TableRowSkeleton = () => (
@@ -221,7 +242,7 @@ export const OrdersTable = memo<OrdersTableProps>(function OrdersTable({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead 
+              <TableHead
                 className="w-[100px] cursor-pointer"
                 onClick={() => handleSortChange('orderNumber')}
               >
@@ -234,7 +255,7 @@ export const OrdersTable = memo<OrdersTableProps>(function OrdersTable({
                   )}
                 </div>
               </TableHead>
-              <TableHead 
+              <TableHead
                 className="cursor-pointer"
                 onClick={() => handleSortChange('status')}
               >
@@ -249,7 +270,7 @@ export const OrdersTable = memo<OrdersTableProps>(function OrdersTable({
               </TableHead>
               <TableHead>Customer</TableHead>
               <TableHead>Items</TableHead>
-              <TableHead 
+              <TableHead
                 className="cursor-pointer"
                 onClick={() => handleSortChange('createdAt')}
               >
@@ -279,7 +300,7 @@ export const OrdersTable = memo<OrdersTableProps>(function OrdersTable({
             ) : (
               // Render orders
               orders.map((order: EnrichedOrders) => (
-                <TableRow 
+                <TableRow
                   key={order.orderId}
                   className={cn(
                     "cursor-pointer",

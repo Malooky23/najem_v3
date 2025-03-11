@@ -13,10 +13,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useCustomers } from "@/hooks/data-fetcher";
+import { useCustomers, useSelectCustomerList } from "@/hooks/data-fetcher";
+import { is } from "drizzle-orm";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EnrichedCustomer } from "@/types/customer";
 
 export default function CreateOrderPage() {
   const { data: customerList, isSuccess: isCustomersSuccess, isLoading: isCustomersLoading, isError: isCustomersError } = useCustomers();
+  const { data: customerList1, } = useSelectCustomerList();
+  // const { data: customerList, isSuccess: isCustomersSuccess, isLoading: isCustomersLoading, isError: isCustomersError } = useSelectCustomerList();
 
   const router = useRouter();
   const form = useForm<CreateOrderInput>({
@@ -58,13 +63,28 @@ export default function CreateOrderPage() {
       </div>
     )
   }
-  if (isCustomersLoading) {
-    return (
-      <div className="p-4 rounded-md border border-gray-200 bg-gray-50 text-gray-700">
-        Loading customers...
-      </div>
-    )
-  }
+  
+  // Add a loading state for the entire form
+  // if (isCustomersLoading) {
+  //   return (
+  //     <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10">
+  //       <Card className="w-full">
+  //         <CardHeader>
+  //           <CardTitle>Create New Order</CardTitle>
+  //           <CardDescription>Loading order form...</CardDescription>
+  //         </CardHeader>
+  //         <CardContent>
+  //           <div className="space-y-6">
+  //             <Skeleton className="w-full h-10" />
+  //             <Skeleton className="w-full h-10" />
+  //             <Skeleton className="w-full h-10" />
+  //             <Skeleton className="w-full h-[120px]" />
+  //           </div>
+  //         </CardContent>
+  //       </Card>
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10">
@@ -80,13 +100,27 @@ export default function CreateOrderPage() {
                 <div className="space-y-6">
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Customer <span className="text-red-500">*</span></label>
+                    {false ? (
+                    // {isCustomersLoading ? (
+                      <Skeleton className="w-full h-10" />
+                    ):(
+                      <>
                     <CustomerSelector
-                      customersInput={customerList ?? []}
+                      customersInput={customerList as EnrichedCustomer[]?? []}
                       value={form.watch('customerId')}
                       onChange={(value) => form.setValue('customerId', value ?? "")}
                       isRequired={true}
-                    />
-                  </div>
+                      />
+                    <CustomerSelector
+                      customersInput={customerList1 as EnrichedCustomer[]?? []}
+                      value={form.watch('customerId')}
+                      onChange={(value) => form.setValue('customerId', value ?? "")}
+                      isRequired={true}
+                      />
+                      </>
+                  )
+                }
+                </div>
 
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Movement Type</label>
@@ -153,17 +187,17 @@ export default function CreateOrderPage() {
               </div>
 
               {/* TODO: Add dynamic items section */}
-              
+
               <div className="flex flex-col-reverse sm:flex-row justify-end gap-4 sm:gap-3 pt-4">
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => router.back()}
+                  onClick={() => router.push('/warehouse/orders')}
                   className="w-full sm:w-auto"
                 >
                   Cancel
                 </Button>
-                <Button 
+                <Button
                   type="submit"
                   className="w-full sm:w-auto"
                 >

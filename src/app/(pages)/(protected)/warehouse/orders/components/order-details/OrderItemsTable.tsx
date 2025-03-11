@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import Link from "next/link";
 
 interface OrderItem {
   itemId: string;
@@ -17,9 +18,9 @@ interface OrderItemsTableProps {
 export function OrderItemsTable({ items }: OrderItemsTableProps) {
   if (!items || !items.length) {
     return (
-      <Card className="mt-4 bg-white/70 backdrop-blur-sm shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-lg font-bold">Order Items</CardTitle>
+      <Card className="mt-6 bg-white/70 shadow-md hover:shadow-lg transition-shadow">
+        <CardHeader className="p-4">
+          <CardTitle className="text-lg text-gray-700">Order Items</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-center text-gray-500 py-4">No items in this order</p>
@@ -29,33 +30,39 @@ export function OrderItemsTable({ items }: OrderItemsTableProps) {
   }
 
   return (
-    <Card className="mt-4 bg-white/70 backdrop-blur-sm shadow-sm">
-      <CardHeader>
-        <CardTitle className="text-lg font-bold">Order Items</CardTitle>
+    <Card className="mt-6 bg-white/70 shadow-md hover:shadow-lg transition-shadow">
+      <CardHeader className="p-4">
+        <CardTitle className="text-lg text-gray-700">Order Items</CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Item</TableHead>
-                <TableHead className="text-right">Qty</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {items.map((item, index) => (
-                <TableRow key={item.itemId || index}>
-                  <TableCell className="font-medium">
+      <CardContent className="p-0">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-gray-100/50">
+              <TableHead className="w-[70%]">Item</TableHead>
+              <TableHead className="w-[30%]">Quantity</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {items.map((item, index) => (
+              <TableRow key={item.itemId || index} className="hover:bg-gray-100/50 transition-colors">
+                <TableCell className="font-medium">
+                  <Link 
+                    href={{
+                      pathname: '/warehouse/items/tx',
+                      query: { itemName: item.itemName },
+                    }}
+                    className="text-blue-600 hover:text-blue-800 hover:underline"
+                  >
                     {item.itemName || "Unknown Item"}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {item.quantity}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+                  </Link>
+                </TableCell>
+                <TableCell>
+                  {item.quantity}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </CardContent>
     </Card>
   );

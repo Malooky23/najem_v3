@@ -2,8 +2,8 @@
 
 import { OrderType, MovementType, PackingType, DeliveryMethod } from "@/types/orders";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatInTimeZone, toDate } from "date-fns-tz";
-import { Calendar, User, Truck, Package } from "lucide-react";
+import { ArrowUpRight, Box, Calendar, Package, Truck, User } from "lucide-react";
+import { format } from "date-fns";
 
 interface OrderInfoCardProps {
   customerId: string;
@@ -22,45 +22,64 @@ export function OrderInfoCard({
   packingType,
   deliveryMethod
 }: OrderInfoCardProps) {
+  // Helper function to format enum-like strings
+  const formatLabel = (value: string) => {
+    return value.split('_').map(word => 
+      word.charAt(0) + word.slice(1).toLowerCase()
+    ).join(' ');
+  };
+
   return (
-    <Card className="mt-4 bg-white/70 backdrop-blur-sm shadow-sm">
-      <CardHeader>
-        <CardTitle className="text-lg font-bold">Order Information</CardTitle>
+    <Card className="bg-white/70 shadow-md hover:shadow-lg transition-shadow mt-2">
+      <CardHeader className="p-4">
+        <CardTitle className="text-lg text-gray-700">Order Information</CardTitle>
       </CardHeader>
-      <CardContent className="grid gap-4 md:grid-cols-2">
-        <div>
-          <p className="text-sm font-medium text-gray-500 flex items-center gap-1">
-            <User className="w-4 h-4 inline-block mr-1" /> Customer
-          </p>
-          <p>{customerName || "N/A"}</p>
-        </div>
-        
-        <div>
-          <p className="text-sm font-medium text-gray-500 flex items-center gap-1">
-            <Truck className="w-4 h-4 inline-block mr-1" /> Delivery Method
-          </p>
-          <p>{deliveryMethod || "N/A"}</p>
-        </div>
-        
-        <div>
-          <p className="text-sm font-medium text-gray-500 flex items-center gap-1">
-            <Package className="w-4 h-4 inline-block mr-1" /> Movement Type
-          </p>
-          <p>{movement || "N/A"}</p>
-        </div>
-        
-        <div>
-          <p className="text-sm font-medium text-gray-500 flex items-center gap-1">
-            Order Type
-          </p>
-          <p>{orderType || "N/A"}</p>
-        </div>
-        
-        <div>
-          <p className="text-sm font-medium text-gray-500 flex items-center gap-1">
-            Packing Type
-          </p>
-          <p>{packingType || "N/A"}</p>
+      <CardContent className="p-4 pt-0">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          {/* Movement Type */}
+          <div className="space-y-1">
+            <label className="text-xs text-gray-500">Movement Type</label>
+            <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+              <ArrowUpRight className="w-4 h-4 text-blue-500" />
+              <span>{movement}</span>
+            </div>
+          </div>
+
+          {/* Delivery Method */}
+          <div className="space-y-1">
+            <label className="text-xs text-gray-500">Delivery Method</label>
+            <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+              <Truck className="w-4 h-4 text-green-500" />
+              <span>{formatLabel(deliveryMethod)}</span>
+            </div>
+          </div>
+
+          {/* Order Type */}
+          <div className="space-y-1">
+            <label className="text-xs text-gray-500">Order Type</label>
+            <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+              <Package className="w-4 h-4 text-purple-500" />
+              <span>{formatLabel(orderType)}</span>
+            </div>
+          </div>
+
+          {/* Packing Type */}
+          <div className="space-y-1">
+            <label className="text-xs text-gray-500">Packing Type</label>
+            <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+              <Box className="w-4 h-4 text-orange-500" />
+              <span>{formatLabel(packingType)}</span>
+            </div>
+          </div>
+
+          {/* Customer */}
+          <div className="space-y-1">
+            <label className="text-xs text-gray-500">Customer</label>
+            <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+              <User className="w-4 h-4 text-indigo-500" />
+              <span>{customerName}</span>
+            </div>
+          </div>
         </div>
       </CardContent>
     </Card>
