@@ -36,7 +36,7 @@ const PageHeader = memo<PageHeaderProps>(function PageHeader({ isLoading }) {
 
 export default function ItemsPageWrapper() {
   // Media query for responsive design
-  const isMobile = useMediaQuery("(max-width: 768px)")
+  const isMobile = useMediaQuery("(max-width: 900px)")
   
   // Get store state
   const store = useItemsStore()
@@ -53,7 +53,7 @@ export default function ItemsPageWrapper() {
         <div 
           className={cn(
             "w-full transition-all duration-300 ease-in-out", 
-            !isMobile && store.isDetailsOpen && "pr-[30%]"
+            !isMobile && store.isDetailsOpen && "pr-[30%] bg-red-100"
           )}
         >
           <ItemsTable 

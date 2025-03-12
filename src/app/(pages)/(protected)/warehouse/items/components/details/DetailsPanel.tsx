@@ -71,11 +71,8 @@ export const DetailsPanel = memo<DetailsPanelProps>(function DetailsPanel({
   }
 
   if (!selectedItem) {
-    return (
-      <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-        No item selected
-      </div>
-    )
+    return 
+
   }
 
   // Get total current quantity across all locations
@@ -341,9 +338,9 @@ export const DetailsPanel = memo<DetailsPanelProps>(function DetailsPanel({
 
   if (isMobile) {
     return (
-      <Drawer 
-        modal={true} 
-        open={isDrawerOpen} 
+      <Drawer
+        modal={true}
+        open={isDrawerOpen}
         onOpenChange={handleDrawerOpenChange}
       >
         <DrawerContent className="max-h-[85vh]">
@@ -353,8 +350,8 @@ export const DetailsPanel = memo<DetailsPanelProps>(function DetailsPanel({
                 <Package2 className="h-5 w-5 text-primary" />
                 {selectedItem.itemName}
                 <DrawerDescription>
-              {selectedItem.itemNumber} • {selectedItem.itemType}
-            </DrawerDescription>
+                  {selectedItem.itemNumber} • {selectedItem.itemType}
+                </DrawerDescription>
               </DrawerTitle>
               <DrawerClose asChild>
                 <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
@@ -378,9 +375,9 @@ export const DetailsPanel = memo<DetailsPanelProps>(function DetailsPanel({
 
           <DrawerFooter className="border-t pt-2 px-4">
             <div className="flex justify-between">
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => handleDrawerOpenChange(false)}
               >
                 Close
@@ -395,18 +392,21 @@ export const DetailsPanel = memo<DetailsPanelProps>(function DetailsPanel({
     )
   }
 
-  return (
-    <div className="flex-1 p-4 bg-white rounded-lg border-2 border-slate-200">
-      <div className="flex justify-end mb-4">
-        <Button variant="outline" className="p-2" onClick={() => store.closeDetails()}>
-          <X className="h-4 w-4" />
-        </Button>
-      </div>
-      <ScrollArea className="h-[calc(100vh-8rem)]">
-        <div className="pr-4">
-          {detailsContent}
+  if (!isMobile) {
+    return (
+      <div className="flex-1 p-4 bg-white rounded-lg border-2 border-slate-200">
+        <div className="flex justify-end mb-4">
+          <Button variant="outline" className="p-2" onClick={() => store.closeDetails()}>
+            <X className="h-4 w-4" />
+          </Button>
         </div>
-      </ScrollArea>
-    </div>
-  )
+        <ScrollArea className="h-[calc(100vh-8rem)]">
+          <div className="pr-4">
+            {detailsContent}
+          </div>
+        </ScrollArea>
+      </div>
+    )
+
+  }
 })
