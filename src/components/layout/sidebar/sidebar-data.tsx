@@ -45,23 +45,23 @@ const warehouse = {
 }
 const shipments = {
     title: "Shipments",
-    url: "/shipments",
+    url: "/coming-soon",
     icon: Ship,
     isActive: false,
     items: [
         {
             title: "Orders",
-            // url: "/shipments/orders",
+            url: "/coming-soon",
             icon: MenuSquare
         },
         {
             title: "Payments",
-            // url: "/shipments/payments",
+            url: "/coming-soon",
             icon: DollarSign
         },
         {
             title: "Settings",
-            // url: "/shipments/settings",
+            url: "/coming-soon",
             icon: Settings2,
         },
         // {
@@ -89,7 +89,7 @@ const customers = {
     items: [
         {
             title: "Create Customer",
-            url: "/customers/new",
+            url: "/customers",
             icon: PlusCircle
         },
         {
