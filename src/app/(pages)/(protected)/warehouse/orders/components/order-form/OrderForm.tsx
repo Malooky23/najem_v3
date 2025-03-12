@@ -15,7 +15,7 @@ import { startTransition, useActionState, useCallback } from "react";
 import { useQueryClient } from '@tanstack/react-query';
 import { Plus, PackageOpen } from "lucide-react";
 import { ItemRow } from "./ItemRow";
-import { useMediaQuery } from "@/hooks/use-media-query";
+import { useIsMobileTEST, useMediaQuery } from "@/hooks/use-media-query";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
@@ -82,14 +82,14 @@ export default function OrderForm({ onClose, initialData, isEditMode = false }: 
     const { data: customerList, isSuccess: isCustomersSuccess, isLoading: isCustomersLoading, isError: isCustomersError } = useCustomers();
     const { data: itemsList, isLoading: isItemsLoading, isError: isItemsError } = useItems();
     const queryClient = useQueryClient();
-    const isDesktop = useMediaQuery("(min-width: 768px)");
+    const isMobile = useIsMobileTEST()
 
     const customersWithItems = customerList?.filter(customer =>
         itemsList?.some(item => item.customerId === customer.customerId)
     ) ?? [];
 
     const { mutate: updateOrder, isPending: isUpdating } = useOrderUpdateMutation();
-    
+
     // Update the server action to use the mutation for edit mode
     const [state, formAction, isPending] = useActionState(async (prevState: any, formData: FormData) => {
         if (isEditMode && initialData?.orderId) {
@@ -101,10 +101,10 @@ export default function OrderForm({ onClose, initialData, isEditMode = false }: 
             const deliveryMethod = formData.get('deliveryMethod') as DeliveryMethod;
             const notes = formData.get('notes') as string;
             const customerId = formData.get('customerId') as string;
-            
+
             // Parse items from form data
             const items: { itemId: string; quantity: number, itemLocationId: string }[] = [];
-            
+
             formData.forEach((value, key) => {
                 if (key.startsWith('items.')) {
                     const [_, index, field] = key.split('.');
@@ -121,10 +121,10 @@ export default function OrderForm({ onClose, initialData, isEditMode = false }: 
                     }
                 }
             });
-            
+
             // Filter out incomplete items
             const validItems = items.filter(item => item.itemId && item.quantity > 0);
-            
+
             // Call the update mutation
             updateOrder({
                 orderId,
@@ -147,7 +147,7 @@ export default function OrderForm({ onClose, initialData, isEditMode = false }: 
                     return { error: error.message };
                 }
             });
-            
+
             return null; // The mutation handles the success/error states
         } else {
             // For create mode, use the existing logic
@@ -193,7 +193,7 @@ export default function OrderForm({ onClose, initialData, isEditMode = false }: 
             customerId: "",
             notes: ""
         });
-        
+
         // Close the dialog
         onClose();
     }, [form, onClose]);
@@ -238,16 +238,22 @@ export default function OrderForm({ onClose, initialData, isEditMode = false }: 
                     }}
                     className="flex flex-col h-full w-full"
                 >
-                    <div className="flex flex-col px-4 sm:px-6 py-4 flex-grow overflow-auto">
+                    <div className="flex flex-col px-2 sm:px-6  flex-grow overflow-auto">
                         {/* Main layout container */}
                         <div className="grid grid-cols-1 lg:grid-cols-[1.2fr,2fr] gap-6">
                             {/* Left Column - General Order Info */}
-                            <Card className="p-5 shadow-sm border-gray-200 h-fit lg:sticky lg:top-0 max-h-[calc(100vh-12rem)] overflow-auto">
-                                <h3 className="text-lg font-semibold mb-4 text-gray-800 flex items-center">
-                                    <div className="h-5 w-1.5 bg-blue-500 rounded-full mr-2"></div>
-                                    Order Information
-                                </h3>
-                                <div className="space-y-5">
+                            {/* <Card className="flex flex-grow flex-col p-5 shadow-sm border-gray-200 h-full lg:sticky lg:top-0 lg:max-h-[calc(100vh-12rem)] overflow-hidden"> */}
+                            <Card className={cn("shadow-sm border-gray-200 flex flex-col ",
+                                isMobile ? "h-full" : "h-[calc(100vh-20rem)] overflow-hidden"
+                            )}>
+                                <div className="pt-5 px-5 pb-2 border-b  ">
+
+                                    <h3 className="text-lg font-semibold text-gray-800 flex items-center">
+                                        <div className="h-5 w-1.5 bg-blue-500 rounded-full mr-2"></div>
+                                        Order Information
+                                    </h3>
+                                </div>
+                                <div className="space-y-5 p-2">
                                     {/* Customer Selection */}
                                     <FormField
                                         control={form.control}
@@ -261,7 +267,8 @@ export default function OrderForm({ onClose, initialData, isEditMode = false }: 
                                                         value={field.value}
                                                         onChange={field.onChange}
                                                         isRequired={true}
-                                                        // className="w-full"
+                                                        isModal={true}
+                                                    // className="w-full"
                                                     />
                                                 </FormControl>
                                                 <FormMessage />
@@ -313,7 +320,7 @@ export default function OrderForm({ onClose, initialData, isEditMode = false }: 
                                                     </div>
                                                 </FormControl>
                                                 <FormMessage />
-                                                
+
                                                 {/* Restored hidden input for movement */}
                                                 <input
                                                     type="hidden"
@@ -352,7 +359,7 @@ export default function OrderForm({ onClose, initialData, isEditMode = false }: 
                                                     </SelectContent>
                                                 </Select>
                                                 <FormMessage />
-                                                
+
                                                 {/* Restored hidden input for status */}
                                                 <input
                                                     type="hidden"
@@ -362,7 +369,7 @@ export default function OrderForm({ onClose, initialData, isEditMode = false }: 
                                             </FormItem>
                                         )}
                                     />
-                                    
+
                                     {/* Two-column layout for smaller fields */}
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                         <FormField
@@ -386,7 +393,7 @@ export default function OrderForm({ onClose, initialData, isEditMode = false }: 
                                                         </SelectContent>
                                                     </Select>
                                                     <FormMessage />
-                                                    
+
                                                     {/* Restored hidden input for packingType */}
                                                     <input
                                                         type="hidden"
@@ -416,7 +423,7 @@ export default function OrderForm({ onClose, initialData, isEditMode = false }: 
                                                         </SelectContent>
                                                     </Select>
                                                     <FormMessage />
-                                                    
+
                                                     {/* Restored hidden input for deliveryMethod */}
                                                     <input
                                                         type="hidden"
@@ -447,7 +454,7 @@ export default function OrderForm({ onClose, initialData, isEditMode = false }: 
                                                     />
                                                 </FormControl>
                                                 <FormMessage />
-                                                
+
                                                 {/* Restored hidden input for notes */}
                                                 <input
                                                     type="hidden"
@@ -461,26 +468,28 @@ export default function OrderForm({ onClose, initialData, isEditMode = false }: 
                             </Card>
 
                             {/* Right Column - Items Section */}
-                            <Card className="shadow-sm border-gray-200 overflow-hidden flex flex-col h-[calc(100vh-20rem)]">
-                                <div className="p-5 border-b bg-white">
-                                    <div className="flex justify-between items-center">
+                            <Card className={cn("shadow-sm border-gray-200 flex flex-col",
+                                isMobile ? "h-full" : "h-[calc(100vh-20rem)] overflow-hidden"
+                            )}>
+                                <div className="pt-5 px-5 py-2 border-b bg ">
+                                    <div className="flex justify-between items-center ">
                                         <h3 className="text-lg font-semibold text-gray-800 flex items-center">
                                             <div className="h-5 w-1.5 bg-green-500 rounded-full mr-2"></div>
-                                            Order Items
+                                            Order Items 123
                                         </h3>
                                         <Button
                                             type="button"
                                             variant="outline"
                                             size="sm"
-                                            className="flex items-center gap-1 border-green-500 text-green-600 hover:bg-green-50"
-                                            onClick={() => append({ itemId: "", quantity: 1, itemLocationId: "4e176e92-e833-44f5-aea9-0537f980fb4b" })}
+                                            className="flex items-center  border-green-500 text-green-600 hover:bg-green-50"
+                                            onClick={() => append({ itemId: "", quantity: 0, itemLocationId: "4e176e92-e833-44f5-aea9-0537f980fb4b" })}
                                         >
                                             <Plus className="h-4 w-4" />
                                             <span>Add Item</span>
                                         </Button>
                                     </div>
                                 </div>
-                                
+
                                 <div className="flex-1 overflow-hidden flex flex-col">
                                     {/* Fixed header for desktop */}
                                     <div className="hidden md:block bg-gray-50 border-b sticky top-0 z-10">
@@ -495,7 +504,7 @@ export default function OrderForm({ onClose, initialData, isEditMode = false }: 
                                             </thead>
                                         </table>
                                     </div>
-                                    
+
                                     <div className="flex-1 overflow-auto">
                                         {fields.length === 0 ? (
                                             <div className="text-center py-12 text-gray-500 bg-gray-50 h-full flex flex-col items-center justify-center">

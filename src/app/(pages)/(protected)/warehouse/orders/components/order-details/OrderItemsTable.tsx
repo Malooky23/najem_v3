@@ -44,7 +44,7 @@ export function OrderItemsTable({ items }: OrderItemsTableProps) {
           </TableHeader>
           <TableBody>
             {items.map((item, index) => (
-              <TableRow key={item.itemId || index} className="hover:bg-gray-100/50 transition-colors">
+              <TableRow key={index} className="hover:bg-gray-100/50 transition-colors">
                 <TableCell className="font-medium">
                   <Link 
                     href={{

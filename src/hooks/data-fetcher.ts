@@ -303,7 +303,7 @@ export function useOrderUpdateMutation() {
   });
 }
 
-export function useCustomers() {
+export function useCustomers(enabled: boolean = true) {
   return useQuery<EnrichedCustomer[]>({
     queryKey: ['customers'],
     queryFn: async () => {
@@ -322,6 +322,7 @@ export function useCustomers() {
     refetchOnWindowFocus: false,
     staleTime: 100 * 100 * 100 * 100,
     placeholderData: keepPreviousData,
+    enabled: enabled
   });
 }
 export function useSelectCustomerList() {

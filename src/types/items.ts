@@ -5,7 +5,10 @@ import { stockMovement, stockReconciliation, stockMovementsView } from "./stockM
 
 export const emptyStringToNull = z.string().optional().nullable().nullish().transform((val) => val === '' ? null : val);
 
-export const itemTypes = z.enum(["SACK", "PALLET", "CARTON", "OTHER", "BOX", "EQUIPMENT", "CAR"])
+
+export const ITEM_TYPES = ["SACK", "PALLET", "CARTON", "OTHER", "BOX", "EQUIPMENT", "CAR"] as const;
+// export const itemTypes = z.enum(["SACK", "PALLET", "CARTON", "OTHER", "BOX", "EQUIPMENT", "CAR"]);
+export const itemTypes = z.enum(ITEM_TYPES);
 
 export const itemStock = z.object({
   itemId: z.string(),

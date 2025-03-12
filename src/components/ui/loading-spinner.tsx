@@ -1,12 +1,18 @@
 import { cn } from "@/lib/utils";
 
+interface LoadingSpinnerProps {
+  className?: string;
+  fullScreen?: boolean;
+  color?: string; // Add a color prop
+}
+
 export function LoadingSpinner({
   className,
   fullScreen = false,
-}: {
-  className?: string;
-  fullScreen?: boolean;
-}) {
+  color = "primary", // Default to 'primary' if no color is provided
+}: LoadingSpinnerProps) {
+  const borderColorClass = color ? `border-${color}` : "border-primary"; // Construct the border color class
+
   return (
     <div
       className={cn(
@@ -15,7 +21,13 @@ export function LoadingSpinner({
         className
       )}
     >
-      <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      <div
+        className={cn(
+          "h-8 w-8 animate-spin rounded-full border-4",
+          borderColorClass, // Apply the dynamic border color class
+          "border-t-transparent"
+        )}
+      />
     </div>
   );
 }

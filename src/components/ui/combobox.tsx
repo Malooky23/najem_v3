@@ -52,6 +52,7 @@ export interface ComboboxProps {
   disabled?: boolean
   required?: boolean
   isModal?: boolean
+  enableFormMessage?: boolean
 }
 
 function ComboboxContent({ field, form, options, label, placeholder, disabled, onChange }: {
@@ -111,6 +112,7 @@ export function ComboboxForm({
   isModal,
   disabled = false,
   required = false,
+  enableFormMessage = true,
 }: ComboboxProps) {
   const form = useFormContext()
 
@@ -211,7 +213,7 @@ export function ComboboxForm({
             </Drawer>
           )}
           {description && <FormDescription>{description}</FormDescription>}
-          <FormMessage />
+          {enableFormMessage && <FormMessage />}
         </FormItem>
       )}
     />

@@ -7,6 +7,8 @@ import { createItemsSchema, CreateItemsSchemaType, ItemSchema, ItemSchemaType, i
 import { items } from '../db/schema'
 import { boolean } from 'drizzle-orm/mysql-core'
 import { auth } from '@/lib/auth/auth'
+import useDelay from '@/hooks/useDelay'
+import { error } from 'console'
 
 // export type CreateItemResponse =
 //     | { success: true, item: z.infer<typeof ItemSchema> }
@@ -18,9 +20,15 @@ export type CreateItemResponse =
         error?: any
     }; // Include undefined in error type
 
-export async function createItemAction(prevData: any, formData: FormData) {
+    // export async function createItemAction(prevData: any, formData: FormData) {
+export async function createItemAction(inputData: CreateItemsSchemaType): Promise<CreateItemResponse> {
+// export async function createItemAction(formData: FormData) {
     // export const createItemAction = async (formData: any): Promise<CreateItemResponse> => {
-
+   
+   
+    // await new Promise((resolve) => setTimeout(resolve, 2000))
+   
+    console.log("createItemAction inputData:", inputData);
     const session = await auth();
     if (!session?.user?.id) {
         return { success: false, error: "Unauthorized: Must be logged in to create items." };
@@ -33,29 +41,31 @@ export async function createItemAction(prevData: any, formData: FormData) {
 
     // For CUSTOMER users, ensure they can only create items for themselves
     if (session.user.userType === 'CUSTOMER') {
-        const requestedCustomerId = formData.get('customerId');
+        const requestedCustomerId = inputData.customerId;
         if (requestedCustomerId !== session.user.customerId) {
-            return { success: false, error: "Unauthorized: Customers can only create items for themselves." };
+            throw new Error(JSON.stringify({ success: false, error: "Unauthorized: Customers can only create items for themselves." }));
         }
     }
+    
+    const validatedFields = createItemsSchema.safeParse(inputData)
 
-    const validatedFields = createItemsSchema.safeParse({
-        itemName: formData.get('itemName'),
-        itemType: (formData.get('itemType')),
-        itemBrand: formData.get('itemBrand'),
-        itemModel: formData.get('itemModel'),
-        itemBarcode: formData.get('itemBarcode'),
-        itemCountryOfOrigin: formData.get('itemCountryOfOrigin'),
-        dimensions: {
-            width: formData.get('dimensions.width'),
-            height: formData.get('dimensions.height'),
-            length: formData.get('dimensions.length')
-        },
-        weightGrams: formData.get('weightGrams'),
-        customerId: formData.get('customerId'),
-        notes: formData.get('notes'),
-        createdBy: session.user.id // Set createdBy from session here on server-side
-    });
+    // const validatedFields = createItemsSchema.safeParse({
+    //     itemName: formData.get('itemName'),
+    //     itemType: (formData.get('itemType')),
+    //     itemBrand: formData.get('itemBrand'),
+    //     itemModel: formData.get('itemModel'),
+    //     itemBarcode: formData.get('itemBarcode'),
+    //     itemCountryOfOrigin: formData.get('itemCountryOfOrigin'),
+    //     dimensions: {
+    //         width: formData.get('dimensions.width'),
+    //         height: formData.get('dimensions.height'),
+    //         length: formData.get('dimensions.length')
+    //     },
+    //     weightGrams: formData.get('weightGrams'),
+    //     customerId: formData.get('customerId'),
+    //     notes: formData.get('notes'),
+    //     createdBy: session.user.id // Set createdBy from session here on server-side
+    // });
 
     try {
         if (!validatedFields.success) {
@@ -110,6 +120,6 @@ export async function createItemAction(prevData: any, formData: FormData) {
         if (e instanceof Error) {
             errorMessage += ` Details: ${e.message}`;
         }
-        return { success: false, error: errorMessage };
+        throw new Error(JSON.stringify({ success: false, error: { message: errorMessage } }));
     }
 };

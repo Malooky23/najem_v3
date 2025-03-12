@@ -3,11 +3,12 @@ import { Badge } from "@/components/ui/badge"
 import { ItemSchemaType } from "@/types/items"
 import { format } from "date-fns"
 import { ItemStock } from "@/server/db/schema"
+import { cn } from "@/lib/utils"
 
 export const itemColumns: ColumnDef<ItemSchemaType>[] = [
   {
-    accessorKey: "itemName",
-    header: "Name",
+    accessorKey: "itemNumber",
+    header: "Item Number",
   },
   {
     accessorKey: "itemType",
@@ -15,25 +16,22 @@ export const itemColumns: ColumnDef<ItemSchemaType>[] = [
     cell: ({ row }) => {
       const type = row.getValue("itemType") as string | null
       return type ? (
-        <Badge variant="outline" className="w-full">
-          {/* {type.toLowerCase().replace('_', ' ')} */}
-          {type}
-        </Badge>
+        <TypeCell type={type} />
       ) : null
     },
   },
   {
-    accessorKey: "itemBrand",
-    header: "Brand",
+    accessorKey: "itemName",
+    header: "Name",
   },
-  {
-    accessorKey: "itemModel",
-    header: "Model",
-  },
-  {
-    accessorKey: "itemNumber",
-    header: "Item Number",
-  },
+  // {
+  //   accessorKey: "itemBrand",
+  //   header: "Brand",
+  // },
+  // {
+  //   accessorKey: "itemModel",
+  //   header: "Model",
+  // },
   {
     accessorKey: "itemStock",
     // header: "Item Stock",
@@ -67,3 +65,26 @@ export const itemColumns: ColumnDef<ItemSchemaType>[] = [
   //   },
   // },
 ]
+
+
+const TypeCell = ({ type }: { type: string }) => {
+  const getTypeStyles = (type: string) => {
+    const baseStyles = "px-2 py-1 rounded-full text-xs font-semibold w-24 text-center inline-block"; // changed from w-20 to w-24
+    const types: { [key: string]: string } = {
+      "CARTON": "bg-blue-500/20 text-blue-700",
+      "BOX": "bg-green-500/20 text-green-700",
+      "SACK": "bg-purple-500/20 text-purple-700",
+      "EQUIPMENT": "bg-orange-500/20 text-orange-700",
+      "PALLET": "bg-yellow-100 text-yellow-800",
+      "CAR": "bg-amber-900/30 text-gray-700",
+      "OTHER": "bg-pink-500/20 text-gray-700",
+    };
+    return cn(baseStyles, types[type] || types["OTHER"]);
+  };
+
+  return (
+    <div className="flex-shrink-0 items-center justify-start ">
+      <span className={getTypeStyles(type)}>{type}</span>
+    </div>
+  );
+};

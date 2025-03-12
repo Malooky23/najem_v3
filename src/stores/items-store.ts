@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 import { StateCreator } from 'zustand';
+import { is } from 'drizzle-orm';
 
 interface ItemsState {
   // UI State
@@ -9,6 +10,8 @@ interface ItemsState {
   
   // Actions
   selectItem: (id: string | null) => void;
+  closeDetails: () => void;
+
 }
 
 type StoreWithSubscribe = StateCreator<
@@ -27,6 +30,11 @@ const createItemsStore: StoreWithSubscribe = (set) => ({
   selectItem: (id) => set({ 
     selectedItemId: id,
     isDetailsOpen: !!id 
+  }),
+  
+  closeDetails: () => set({ 
+    selectedItemId: null,
+    isDetailsOpen: false 
   }),
 });
 
