@@ -17,26 +17,22 @@ interface PageHeaderProps {
 
 // Memoized header component
 const PageHeader = memo<PageHeaderProps>(function PageHeader({ isLoading }) {
-    const { data: customerList, isSuccess: isCustomersSuccess, isLoading: isCustomersLoading, isError: isCustomersError } = useCustomers();
+  const { data: customerList, isSuccess: isCustomersSuccess, isLoading: isCustomersLoading } = useCustomers();
   
   return (
-    <div className="flex justify-between mt-2">
+    <div className="flex items-center justify-between mt-2 mb-4">
       <h1 className="text-2xl font-bold text-gray-900 text-nowrap pr-2">
         Items
       </h1>
+      
       {isCustomersLoading || !isCustomersSuccess ? (
         <Skeleton className="w-40 h-8" />
       ) : (
-      <>
-
         <CreateItemForm />
-      </>
       )}
     </div>
   );
 });
-
-
 
 export default function ItemsPageWrapper() {
   // Media query for responsive design
@@ -52,14 +48,12 @@ export default function ItemsPageWrapper() {
     <div className="px-4 h-[calc(100vh-3rem)] flex flex-col">
       <PageHeader isLoading={isLoading} />
       
-      <div className="flex flex-1 min-h-0 overflow-hidden mt-0 relative  ">
-        {/* Main table content with fixed width */}
+      <div className="flex flex-1 min-h-0 overflow-hidden relative">
+        {/* Main table content - Always takes full space with padding */}
         <div 
           className={cn(
-            "transition-all duration-300 ease-in-out", 
-            isMobile
-              ? (store.isDetailsOpen ? "w-0 opacity-0 overflow-hidden" : "w-full flex-1 ")
-              : (store.isDetailsOpen ? "w-[70%] mr-2" : "w-full")
+            "w-full transition-all duration-300 ease-in-out", 
+            !isMobile && store.isDetailsOpen && "pr-[30%]"
           )}
         >
           <ItemsTable 
@@ -69,51 +63,31 @@ export default function ItemsPageWrapper() {
           />
         </div>
         
-        {/* Fixed position details panel */}
-        <div 
-          className={cn(
-            "transition-all duration-300 ease-in-out",
-            isMobile ? "w-full absolute inset-0" : "w-[30%] absolute inset-y-0 right-0 ",
-            store.isDetailsOpen 
-              ? "opacity-100 translate-x-0" 
-              : isMobile 
-                  ? "opacity-0 translate-x-full pointer-events-none" 
-                  : "opacity-0 translate-x-20 pointer-events-none"
-          )}
-        >
+        {/* Details panel - Fixed positioning for desktop to prevent layout shift */}
+        {!isMobile && (
+          <div 
+            className={cn(
+              "absolute top-0 right-0 h-full w-[30%] transition-transform duration-300 ease-in-out bg-white rounded-lg border-2 border-slate-200",
+              store.isDetailsOpen 
+                ? "translate-x-0" 
+                : "translate-x-full pointer-events-none"
+            )}
+          >
+            <DetailsPanel 
+              isMobile={isMobile}
+              items={items}
+            />
+          </div>
+        )}
+        
+        {/* Mobile details are handled by the Drawer component in DetailsPanel */}
+        {isMobile && (
           <DetailsPanel 
             isMobile={isMobile}
             items={items}
           />
-        </div>
+        )}
       </div>
     </div>
   )
 }
-
-//   return (
-//     <div className="px-4 h-[calc(100vh-3rem)] flex flex-col">
-//       <PageHeader isLoading={isLoading} />
-      
-//       <div className="flex gap-4 flex-1 min-h-0 overflow-scroll mt-0">
-//         <ContentLayout 
-//           isMobile={isMobile} 
-//           isDetailsOpen={store.isDetailsOpen}
-//         >
-//           <ItemsTable 
-//             isMobile={isMobile}
-//             isLoading={isLoading}
-//             items={items}
-//           />
-//         </ContentLayout>
-
-//         {store.isDetailsOpen && (
-//           <DetailsPanel 
-//             isMobile={isMobile}
-//             items={items}
-//           />
-//         )}
-//       </div>
-//     </div>
-//   )
-// }
