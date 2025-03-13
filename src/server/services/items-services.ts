@@ -1,7 +1,7 @@
 // src/server/services/item-service.ts
 import { db } from '@/server/db'; // Assuming you have db initialized in '@/server/db/index.ts'
 import { ItemSchema, ItemSchemaType } from '@/types/items';
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, desc, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { items, itemStock } from '@/server/db/schema';
 
@@ -9,7 +9,7 @@ export const itemService = {
     async getAllItems(): Promise<ItemSchemaType[]> {
         try {
             const rawItems = await db.query.items.findMany({
-                orderBy: [asc(items.itemNumber)],
+                orderBy: [desc(items.itemNumber)],
                 with: {
                     itemStock: true
                 },
@@ -34,7 +34,7 @@ export const itemService = {
                 with: {
                     itemStock: true
                 },
-                orderBy: [asc(items.itemNumber)],
+                orderBy: [desc(items.itemNumber)],
             });
             const parsedItems = z.array(ItemSchema).parse(rawCustomerItems);
             // console.log(parsedItems)
