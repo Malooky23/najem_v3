@@ -14,12 +14,15 @@ import {
   SidebarHeader,
   SidebarHoverToggle,
   SidebarRail,
+  useSidebar,
 } from "@/components/ui/sidebar"
 import { UserMenu } from "../header/user-menu/user-menu"
 import { Separator } from "@/components/ui/separator";
 import { Session } from "next-auth";
-import {data} from "./sidebar-data"
+import { data } from "./sidebar-data"
 import BackButton from "@/components/redirectBack";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
 // This is sample data.
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
@@ -33,26 +36,66 @@ export function AppSidebar({ session, ...props }: AppSidebarProps) {
     avatar: session?.user?.image ?? "Error",
     id: session?.user?.id ?? "Error",
   }
+  const { isMobile, closeMobileSidebar, state } = useSidebar();
+  const handleLinkClick = () => {
+    if (isMobile) {
+      closeMobileSidebar();
+    }
+  }
+
   return (
-    <Sidebar   collapsible="icon" {...props}>
-      <SidebarHeader className="flex-row items-center">
-        <Image src="/favicon.ico" alt="Najem Aleen Sidebar Logo" width={30} height={30} />
-        <span className="truncate text-2xl font-bold  text-black">Najem Aleen </span>
+    <Sidebar collapsible="icon" {...props}>
+      <SidebarHeader className="flex-row items-center justify-center relative h-16">
+        <Link href="/" onClick={handleLinkClick} className="flex items-center justify-center w-full h-full">
+          <div className="relative w-full h-full flex items-center justify-center">
+            <div
+              className={cn("absolute transition-all duration-300 ease-in-out",
+                state === "expanded"
+                  ? "opacity-100 scale-100"
+                  : "opacity-0 scale-95"
+              )}
+            >
+              <Image
+                src="/name_banner.png"
+                alt="Najem Aleen Sidebar Banner"
+                className="object-contain"
+                width={200}
+                height={70}
+                priority
+              />
+            </div>
+            <div
+              className={cn("absolute transition-all duration-300 ease-in-out", 
+                state === "expanded"
+                ? "opacity-0 scale-105"
+                : "opacity-100 scale-100"
+              )}
+            >
+              <Image
+                src="/favicon.ico"
+                alt="Najem Aleen Sidebar Logo"
+                width={30}
+                height={30}
+              />
+            </div>
+          </div>
+        </Link>
       </SidebarHeader>
 
-            <BackButton />
+      <BackButton />
 
-        <Separator />
+      <Separator />
       <SidebarContent>
         <NavMain items={data.navMain} />
         {/* <NavProjects projects={data.projects} /> */}
       </SidebarContent>
       <SidebarFooter>
         {/* <UserMenu session={session}/> */}
-      <SidebarHoverToggle />
+        <SidebarHoverToggle />
         <NavUser user={user} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   )
 }
+
