@@ -11,7 +11,6 @@ import { getStockMovements } from "@/server/actions/getStockMovements";
 import { useMemo, useCallback, useEffect, useState, useRef } from "react";
 import { useOrdersStore } from "@/stores/orders-store";
 
-
 export interface OrdersQueryParams {
   page?: number;
   pageSize?: number;
@@ -45,11 +44,49 @@ type MutationContext = {
   previousSingleOrder?: EnrichedOrders;
 } | undefined;
 
+// Add utility functions for localStorage management
+export const LOCAL_STORAGE_PREFIX = 'najem_cache_';
+
+// Safe localStorage helpers with error handling
+export const getFromStorage = <T>(key: string): T | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const item = localStorage.getItem(`${LOCAL_STORAGE_PREFIX}${key}`);
+    return item ? JSON.parse(item) : null;
+  } catch (error) {
+    console.error(`Error getting ${key} from localStorage:`, error);
+    return null;
+  }
+};
+
+const saveToStorage = <T>(key: string, data: T): void => {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(`${LOCAL_STORAGE_PREFIX}${key}`, JSON.stringify(data));
+  } catch (error) {
+    console.error(`Error saving ${key} to localStorage:`, error);
+    // Clear item if saving failed (e.g. due to size limits)
+    try { localStorage.removeItem(`${LOCAL_STORAGE_PREFIX}${key}`); } catch {}
+  }
+};
+
 // Simplify the order details hook to work better with the store
 export function useOrderDetails(orderId: string | null) {
   const queryClient = useQueryClient();
   const selectOrder = useOrdersStore(state => state.selectOrder);
   const { selectedOrderData } = useOrdersStore();
+  const storageKey = `order_${orderId}`;
+  
+  // Get cached data from localStorage on component mount
+  const cachedData = useMemo(() => {
+    return getFromStorage<EnrichedOrders>(storageKey);
+  }, [storageKey]);
+  
+  // Use the best available initial data
+  const initialData = useMemo(() => {
+    return selectedOrderData || cachedData || undefined;
+  }, [selectedOrderData, cachedData]);
+  
   return useQuery({
     queryKey: ['order', orderId],
     queryFn: async () => {
@@ -60,12 +97,14 @@ export function useOrderDetails(orderId: string | null) {
         throw new Error(result.error || 'Failed to fetch order');
       }
       
-      // Use selectOrder instead of setSelectedOrderData to ensure consistent state
-      // This updates the store with fresh data while maintaining proper state transitions
+      // Save successful result to localStorage
+      saveToStorage(storageKey, result.data);
+      
+      // Update store with fresh data
       selectOrder(orderId, result.data);
       return result.data;
     },
-    initialData: selectedOrderData,
+    initialData: initialData,
     enabled: !!orderId,
     staleTime: 30 * 1000, // 30 seconds
     gcTime: 5 * 60 * 1000, // 5 minutes
@@ -89,6 +128,16 @@ export function useOrdersQuery(params: OrdersQueryParams = {}) {
     ];
   }, [params.page, params.pageSize, params.filters, params.sort]);
 
+  // Create a stable storage key
+  const storageKey = useMemo(() => {
+    return `orders_list_${params.page || 1}_${params.pageSize || 10}_${JSON.stringify(params.filters || {})}_${params.sort?.field || 'createdAt'}-${params.sort?.direction || 'desc'}`;
+  }, [params.page, params.pageSize, params.filters, params.sort]);
+  
+  // Get cached data on component mount
+  const cachedData = useMemo(() => {
+    return getFromStorage<OrdersQueryResult>(storageKey);
+  }, [storageKey]);
+
   const query = useQuery({
     queryKey: stableQueryKey,
     queryFn: async () => {
@@ -103,16 +152,22 @@ export function useOrdersQuery(params: OrdersQueryParams = {}) {
         throw new Error(result.error || 'Failed to fetch orders');
       }
       
-      return {
+      const data = {
         orders: result.data!.orders,
         pagination: result.data!.pagination
       };
+      
+      // Save successful result to localStorage
+      saveToStorage(storageKey, data);
+      
+      return data;
     },
     refetchOnMount: false,
     refetchOnWindowFocus: false,
     staleTime: 3 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
-    placeholderData: keepPreviousData,
+    // placeholderData: cachedData || keepPreviousData,
+    initialData: cachedData || undefined,
   });
 
   // Use a cleaner return pattern with more informative loading states
@@ -304,24 +359,31 @@ export function useOrderUpdateMutation() {
 }
 
 export function useCustomers(enabled: boolean = true) {
+  const storageKey = 'customers_list';
+  const cachedData = useMemo(() => getFromStorage<EnrichedCustomer[]>(storageKey), []);
+  
   return useQuery<EnrichedCustomer[]>({
     queryKey: ['customers'],
     queryFn: async () => {
-      const session = await getSession()
+      const session = await getSession();
       const res = await fetch('/api/customers', {
         headers: {
-          'Authorization': `Bearer ${session}` // Include token in header
+          'Authorization': `Bearer ${session}`
         }
-      }); // Call API route
+      });
+      
       if (!res.ok) {
         throw new Error('Failed to fetch customers');
       }
-      return res.json();
+      
+      const data = await res.json();
+      saveToStorage(storageKey, data);
+      return data;
     },
     refetchOnMount: false,
     refetchOnWindowFocus: false,
     staleTime: 100 * 100 * 100 * 100,
-    placeholderData: keepPreviousData,
+    placeholderData: cachedData || keepPreviousData,
     enabled: enabled
   });
 }
@@ -348,6 +410,9 @@ export function useSelectCustomerList() {
 }
 
 export function useItems() {
+  const storageKey = 'items_list';
+  const cachedData = useMemo(() => getFromStorage<ItemSchemaType[]>(storageKey), []);
+  
   return useQuery<ItemSchemaType[]>({
     queryKey: ['items'],
     queryFn: async () => {
@@ -369,14 +434,16 @@ export function useItems() {
         console.error("API error response:", errorResponse);
         throw new Error(`Failed to fetch items. API Response: ${JSON.stringify(errorResponse)}`);
       }
-      return res.json();
+      
+      const data = await res.json();
+      saveToStorage(storageKey, data);
+      return data;
     },
+    initialData: cachedData || undefined,
     staleTime: 60 * 60 * 1000, // 5 minutes
     // gcTime: 60 * 60 * 1000, // 30 minutes
     refetchOnMount: true,
     refetchOnWindowFocus: true,
-
-
   });
 }
 

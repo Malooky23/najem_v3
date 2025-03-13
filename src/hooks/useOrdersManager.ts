@@ -4,6 +4,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getOrders } from '@/server/actions/orders';
 import { OrderFilters, OrderSort, EnrichedOrders } from '@/types/orders';
 import { keepPreviousData } from '@tanstack/react-query';
+import { useMemo } from 'react';
+import { getFromStorage } from './data-fetcher';
 
 export { getOrders };
 
@@ -45,6 +47,15 @@ export function useOrders(
   // Calculate a reasonable stale time based on filters
   const hasFilters = Object.keys(filters).length > 0;
   const defaultStaleTime = hasFilters ? 0 : 24 * 60 * 60 * 1000; // No cache when filtering
+
+  const storageKey = useMemo(() => {
+      return `orders_list_${params.page || 1}_${params.pageSize || 10}_${JSON.stringify(params.filters || {})}_${params.sort?.field || 'createdAt'}-${params.sort?.direction || 'desc'}`;
+    }, [params.page, params.pageSize, params.filters, params.sort]);
+    
+    // Get cached data on component mount
+    const cachedData = useMemo(() => {
+      return getFromStorage(storageKey);
+    }, [storageKey]);
 
   const query = useQuery({
     queryKey,
