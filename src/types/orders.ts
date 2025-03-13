@@ -37,7 +37,7 @@ export const OrderTable = z.object({
     addressId: z.string().uuid().nullable(),
     fulfilledAt: z.date().nullable().nullish().optional(),
     notes: z.string().nullable(),
-
+    orderMark: z.string().max(20,"Mark too long, Max 20 characters.").nullable().optional(),
     createdBy: z.string(),
     createdAt: z.date(),
     updatedAt: z.date().nullable().nullish().optional(),
@@ -73,6 +73,7 @@ export const createOrderSchema = z.object({
     status: orderStatus.default('PENDING'),
     addressId: z.string().uuid().optional().nullable(),
     notes: z.string().optional().nullable(),
+    orderMark: z.string().max(20,"Mark too long, Max 20 characters.").optional().nullable(),
     items: z.array(
              z.object({
                 itemId: z.string().uuid(),
