@@ -9,6 +9,7 @@ import { EnrichedStockMovementView, StockMovementFilters, StockMovementSort } fr
 import { StockMovement } from "@/server/db/schema";
 import { getStockMovements } from "@/server/actions/getStockMovements";
 import { useMemo, useCallback, useEffect, useState, useRef } from "react";
+import { useOrdersStore } from "@/stores/orders-store";
 
 
 export interface OrdersQueryParams {
@@ -44,33 +45,31 @@ type MutationContext = {
   previousSingleOrder?: EnrichedOrders;
 } | undefined;
 
-// Optimize the order details fetch to minimize unnecessary requests
-export function useOrderDetails(
-  orderId: string | null,
-  selectedOrder: EnrichedOrders | null = null
-) {
+// Simplify the order details hook to work better with the store
+export function useOrderDetails(orderId: string | null) {
   const queryClient = useQueryClient();
-
+  const selectOrder = useOrdersStore(state => state.selectOrder);
+  
   return useQuery({
     queryKey: ['order', orderId],
     queryFn: async () => {
       if (!orderId) return null;
       
-      // Use cached order if possible to avoid network request
-      if (selectedOrder && selectedOrder.orderId === orderId) {
-        return selectedOrder;
-      }
-      
       const result = await getOrderById(orderId);
       if (!result.success) {
         throw new Error(result.error || 'Failed to fetch order');
       }
+      
+      // Use selectOrder instead of setSelectedOrderData to ensure consistent state
+      // This updates the store with fresh data while maintaining proper state transitions
+      selectOrder(orderId, result.data);
       return result.data;
     },
     enabled: !!orderId,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
+    staleTime: 30 * 1000, // 30 seconds
+    gcTime: 5 * 60 * 1000, // 5 minutes
     retry: 1,
+    refetchOnWindowFocus: false
   });
 }
 

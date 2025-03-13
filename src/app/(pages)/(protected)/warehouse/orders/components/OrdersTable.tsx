@@ -214,7 +214,7 @@ export const OrdersTable = memo<OrdersTableProps>(function OrdersTable({
 
   // Memoized callbacks
   const handleRowClick = useCallback((order: EnrichedOrders) => {
-    selectOrder(selectedOrderId === order.orderId ? null : order.orderId);
+    selectOrder(selectedOrderId === order.orderId ? null : order.orderId, order);
   }, [selectedOrderId, selectOrder]);
 
   const handlePageChange = useCallback((newPage: number) => {

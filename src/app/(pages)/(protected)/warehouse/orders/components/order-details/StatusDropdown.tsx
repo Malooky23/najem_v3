@@ -9,14 +9,7 @@ import { cn } from "@/lib/utils"
 import { OrderStatus } from "@/types/orders"
 import { updateOrder } from "@/server/actions/orders"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { useItems } from "@/hooks/data-fetcher"
-
-interface StatusDropdownProps {
-  /** The current status of the order. */
-  currentStatus: OrderStatus;
-  /** The order ID */
-  orderId: string;
-}
+import { useSelectedOrderId, useSelectedOrderData, useOrdersStore } from "@/stores/orders-store"
 
 const statusOptions = [
   { value: 'DRAFT', label: 'Draft' },
@@ -36,18 +29,24 @@ const statusColors: Record<OrderStatus, string> = {
   CANCELLED: "bg-red-500",
 };
 
-export const StatusDropdown = memo(function StatusDropdown({
-  currentStatus,
-  orderId
-}: StatusDropdownProps) {
-  const [status, setStatus] = useState<OrderStatus>(currentStatus);
+export const StatusDropdown = memo(function StatusDropdown() {
+  // Use separate selectors to prevent unnecessary renders
+  const orderId = useSelectedOrderId();
+  const orderData = useSelectedOrderData();
+  const updateSelectedOrderStatus = useOrdersStore(state => state.updateSelectedOrderStatus);
+  
+  // Get current status safely
+  const currentStatus = orderData?.status || "DRAFT" as OrderStatus;
+  
   const [isOpen, setIsOpen] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<OrderStatus | null>(null);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const queryClient = useQueryClient();
 
-  const { mutate: updateStatus, isPending } = useMutation({
+  const { mutate: updateOrderStatus, isPending } = useMutation({
     mutationFn: async (newStatus: OrderStatus) => {
+      if (!orderId) throw new Error("No order selected");
+      
       const result = await updateOrder({
         orderId,
         status: newStatus
@@ -56,28 +55,22 @@ export const StatusDropdown = memo(function StatusDropdown({
       if (!result.success) {
         throw new Error(result.error?.message || 'Failed to update status');
       }
-
       return { data: result.data, newStatus };
     },
     onSuccess: (result) => {
       const { newStatus } = result;
-      // Set the local state to match the updated status
-      setStatus(newStatus);
       
-      // Invalidate and refetch queries
-      queryClient.invalidateQueries({ queryKey: ['order', orderId] });
+      // Update store state
+      updateSelectedOrderStatus(newStatus);
+      
+      // Update React Query cache
       queryClient.invalidateQueries({ queryKey: ['orders'] });
-      queryClient.invalidateQueries({ queryKey: ['items'] });
-      queryClient.invalidateQueries({ queryKey: ['stockMovements'] });
-
+      
       toast.success(`Order status updated to ${newStatus}`);
       setShowConfirmDialog(false);
       setPendingStatus(null);
-
     },
     onError: (error) => {
-      // Revert to original status on error
-      setStatus(currentStatus);
       toast.error(`Failed to update status: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setShowConfirmDialog(false);
       setPendingStatus(null);
@@ -86,16 +79,16 @@ export const StatusDropdown = memo(function StatusDropdown({
 
   const handleConfirm = useCallback(() => {
     if (!pendingStatus) return;
-    updateStatus(pendingStatus);
-  }, [pendingStatus, updateStatus]);
+    updateOrderStatus(pendingStatus);
+  }, [pendingStatus, updateOrderStatus]);
 
   const handleStatusSelect = useCallback((newStatus: OrderStatus) => {
-    if (newStatus !== status) {
+    if (newStatus !== currentStatus) {
       setPendingStatus(newStatus);
       setShowConfirmDialog(true);
     }
     setIsOpen(false);
-  }, [status]);
+  }, [currentStatus]);
 
   return (
     <>
@@ -104,12 +97,12 @@ export const StatusDropdown = memo(function StatusDropdown({
           variant="secondary"
           className={cn(
             "h-7 px-3 cursor-pointer transition-all duration-300 ease-in-out hover:shadow-md text-white",
-            statusColors[status],
+            statusColors[currentStatus],
             isPending && "opacity-50 cursor-not-allowed"
           )}
           onClick={() => !isPending && setIsOpen(!isOpen)}
         >
-          {status}
+          {currentStatus}
           <ChevronDown className="w-4 h-4 ml-1" />
         </Badge>
         {isOpen && (
@@ -122,7 +115,7 @@ export const StatusDropdown = memo(function StatusDropdown({
                   statusColors[option.value as OrderStatus],
                   "hover:opacity-80 hover:translate-x-1",
                   isPending && "opacity-50 cursor-not-allowed pointer-events-none",
-                  option.value === status && "font-semibold"
+                  option.value === currentStatus && "font-semibold"
                 )}
                 onClick={() => !isPending && handleStatusSelect(option.value as OrderStatus)}
               >

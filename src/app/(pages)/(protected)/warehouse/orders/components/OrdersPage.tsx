@@ -132,7 +132,7 @@ export function OrdersPage() {
 
         {store.isDetailsOpen && store.selectedOrderId && (
           <OrderDetailsContainer
-            orderId={store.selectedOrderId}
+            // orderId={store.selectedOrderId}
             isMobile={isMobile}
           />
         )}

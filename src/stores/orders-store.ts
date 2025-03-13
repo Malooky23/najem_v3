@@ -1,8 +1,9 @@
 import { create } from 'zustand';
-import { OrderFilters, OrderSort, OrderStatus, OrderSortField, MovementType } from '@/types/orders';
+import { OrderFilters, OrderSort, OrderStatus, OrderSortField, MovementType, EnrichedOrders } from '@/types/orders';
 import { subscribeWithSelector } from 'zustand/middleware';
 import { StateCreator } from 'zustand';
 
+// Simpler state interface with focused responsibilities
 interface OrdersState {
   // Pagination
   page: number;
@@ -19,12 +20,13 @@ interface OrdersState {
   dateFrom: string | null;
   dateTo: string | null;
 
-  // UI State
+  // UI State - simplified
   selectedOrderId: string | null;
+  selectedOrderData: EnrichedOrders | null;
   isDetailsOpen: boolean;
   isLoading: boolean;
 
-  // Actions
+  // Core actions only
   setPage: (page: number) => void;
   setPageSize: (size: number) => void;
   setSort: (field: OrderSortField, direction: 'asc' | 'desc') => void;
@@ -32,7 +34,8 @@ interface OrdersState {
   setCustomerId: (id: string | null) => void;
   setMovement: (movement: MovementType | null) => void;
   setDateRange: (from: string | null, to: string | null) => void;
-  selectOrder: (id: string | null) => void;
+  selectOrder: (id: string | null, data?: EnrichedOrders | null) => void;
+  updateSelectedOrderStatus: (status: OrderStatus) => void;
   clearFilters: () => void;
   setLoading: (isLoading: boolean) => void;
 
@@ -42,7 +45,6 @@ interface OrdersState {
   syncWithUrl: (searchParams: URLSearchParams) => void;
 }
 
-// Correctly define the middleware type
 type StoreWithSubscribe = StateCreator<
   OrdersState,
   [['zustand/subscribeWithSelector', never]],
@@ -50,7 +52,6 @@ type StoreWithSubscribe = StateCreator<
   OrdersState
 >;
 
-// Create the store implementation with correct typing
 const createOrdersStore: StoreWithSubscribe = (set, get) => ({
   // Default state
   page: 1,
@@ -63,65 +64,67 @@ const createOrdersStore: StoreWithSubscribe = (set, get) => ({
   dateFrom: null,
   dateTo: null,
   selectedOrderId: null,
+  selectedOrderData: null,
   isDetailsOpen: false,
   isLoading: false,
 
   // Actions
   setPage: (page) => {
-    const prevPage = get().page;
-    if (prevPage !== page) {
-      set({ page });
-    }
+    if (get().page !== page) set({ page });
   },
 
   setPageSize: (pageSize) => {
-    const prevPageSize = get().pageSize;
-    if (prevPageSize !== pageSize) {
-      set({ pageSize, page: 1 });
-    }
+    if (get().pageSize !== pageSize) set({ pageSize, page: 1 });
   },
 
   setSort: (sortField, sortDirection) => {
-    const prevSortField = get().sortField;
-    const prevSortDirection = get().sortDirection;
-    if (prevSortField !== sortField || prevSortDirection !== sortDirection) {
+    if (get().sortField !== sortField || get().sortDirection !== sortDirection) {
       set({ sortField, sortDirection, page: 1 });
     }
   },
 
   setStatus: (status) => {
-    const prevStatus = get().status;
-    if (prevStatus !== status) {
-      set({ status, page: 1 });
-    }
+    if (get().status !== status) set({ status, page: 1 });
   },
 
   setCustomerId: (customerId) => {
-    const prevCustomerId = get().customerId;
-    if (prevCustomerId !== customerId) {
-      set({ customerId, page: 1 });
-    }
+    if (get().customerId !== customerId) set({ customerId, page: 1 });
   },
 
   setMovement: (movement) => {
-    const prevMovement = get().movement;
-    if (prevMovement !== movement) {
-      set({ movement, page: 1 });
-    }
+    if (get().movement !== movement) set({ movement, page: 1 });
   },
 
   setDateRange: (dateFrom, dateTo) => {
-    const prevDateFrom = get().dateFrom;
-    const prevDateTo = get().dateTo;
-    if (prevDateFrom !== dateFrom || prevDateTo !== dateTo) {
+    if (get().dateFrom !== dateFrom || get().dateTo !== dateTo) {
       set({ dateFrom, dateTo, page: 1 });
     }
   },
 
-  selectOrder: (id) => {
+  // Simplified order selection
+  selectOrder: (id, data = null) => {
     const prevId = get().selectedOrderId;
     if (prevId !== id) {
-      set({ selectedOrderId: id, isDetailsOpen: !!id });
+      set({ 
+        selectedOrderId: id,
+        isDetailsOpen: !!id,
+        selectedOrderData: id ? data : null
+      });
+    } else if (data && id) {
+      // Update data if same ID but new data
+      set({ selectedOrderData: data });
+    }
+  },
+
+  updateSelectedOrderStatus: (status) => {
+    const currentData = get().selectedOrderData;
+    if (currentData) {
+      set({ 
+        selectedOrderData: {
+          ...currentData,
+          status
+        }
+      });
     }
   },
 
@@ -137,10 +140,7 @@ const createOrdersStore: StoreWithSubscribe = (set, get) => ({
   },
 
   setLoading: (isLoading) => {
-    const currentIsLoading = get().isLoading;
-    if (currentIsLoading !== isLoading) {
-      set({ isLoading });
-    }
+    if (get().isLoading !== isLoading) set({ isLoading });
   },
 
   // Derived state getters
@@ -151,7 +151,6 @@ const createOrdersStore: StoreWithSubscribe = (set, get) => ({
     if (status) filters.status = status;
     if (customerId) filters.customerId = customerId;
     if (movement) filters.movement = movement;
-
     if (dateFrom && dateTo) {
       filters.dateRange = {
         from: new Date(dateFrom),
@@ -167,7 +166,6 @@ const createOrdersStore: StoreWithSubscribe = (set, get) => ({
     direction: get().sortDirection
   }),
 
-  // URL synchronization
   syncWithUrl: (searchParams) => {
     try {
       const page = Number(searchParams.get('page')) || 1;
@@ -187,7 +185,7 @@ const createOrdersStore: StoreWithSubscribe = (set, get) => ({
         sortField,
         sortDirection,
         status,
-        customerId,
+        customerId, 
         movement,
         dateFrom,
         dateTo,
@@ -200,8 +198,13 @@ const createOrdersStore: StoreWithSubscribe = (set, get) => ({
   }
 });
 
-// Create the store with proper typing for the middleware
+// Create the store
 export const useOrdersStore = create<
   OrdersState,
   [['zustand/subscribeWithSelector', never]]
 >(subscribeWithSelector(createOrdersStore));
+
+// Simple individual selectors to avoid object recreation and infinite loops
+export const useSelectedOrderId = () => useOrdersStore(state => state.selectedOrderId);
+export const useSelectedOrderData = () => useOrdersStore(state => state.selectedOrderData);
+export const useOrdersLoading = () => useOrdersStore(state => state.isLoading);

@@ -1,28 +1,32 @@
 'use client';
 
-import { EnrichedOrders, OrderStatus } from "@/types/orders";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Edit, Printer, X } from "lucide-react";
 import { format } from "date-fns";
 import { StatusDropdown } from "./StatusDropdown";
-import { useState } from "react";
 import { CreateOrderDialog } from "../order-form/create-order-dialog";
-import { useOrderDetails } from "@/hooks/data-fetcher";
+import { useSelectedOrderData } from "@/stores/orders-store";
 import { cn } from "@/lib/utils";
 
 interface OrderHeaderProps {
-  order: EnrichedOrders
   handleClose: () => void;
   isMobile: boolean;
 }
 
 export function OrderHeader({
-  order,
   handleClose,
   isMobile
 }: OrderHeaderProps) {
-  const { createdAt, orderNumber, status, orderId } = order;
+  // Access order data directly from store
+  const order = useSelectedOrderData();
+  
+  // Safety check
+  if (!order) {
+    return null;
+  }
+  
+  const { createdAt, orderNumber } = order;
   const formattedDate = format(new Date(createdAt), 'MMM d, yyyy');
   
   return (
@@ -37,13 +41,8 @@ export function OrderHeader({
         >
           <p className="whitespace-nowrap">Order #{orderNumber}</p>
         </Badge>
-
-        <StatusDropdown
-          currentStatus={status}
-          orderId={orderId}
-        />
+        <StatusDropdown />
       </div>
-
       <div className="flex flex-wrap gap-2">
         <Button
           className="gap-2 bg-blue-500 hover:bg-blue-600 transition-colors"
@@ -52,7 +51,6 @@ export function OrderHeader({
           <Printer className="w-4 h-4" />
         </Button>
         
-        {/* Edit order button with dialog */}
         <CreateOrderDialog
           isEditMode={true}
           initialData={order}
