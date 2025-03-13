@@ -152,6 +152,7 @@ export const OrdersTable = memo<OrdersTableProps>(function OrdersTable({
     sortField,
     sortDirection,
     selectedOrderId,
+    selectedOrderData,
     isDetailsOpen,
     setPage,
     setPageSize,
@@ -329,7 +330,6 @@ export const OrdersTable = memo<OrdersTableProps>(function OrdersTable({
           </TableBody>
         </Table>
       </div>
-
       {pagination && (
         <TablePagination
           pagination={pagination}

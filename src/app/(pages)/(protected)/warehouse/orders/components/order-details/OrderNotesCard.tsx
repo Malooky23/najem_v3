@@ -14,7 +14,7 @@ export function OrderNotesCard({ notes, orderId }: OrderNotesCardProps) {
         <CardTitle className="text-lg text-gray-700">Notes</CardTitle>
       </CardHeader>
       <CardContent className="p-4 pt-0">
-        <p className="text-sm text-gray-600 whitespace-pre-wrap">
+        <p className="text-sm text-gray-600 text-wrap break-words">
           {notes || "No notes available."}
         </p>
       </CardContent>
