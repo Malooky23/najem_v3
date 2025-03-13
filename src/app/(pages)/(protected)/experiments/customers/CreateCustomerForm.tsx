@@ -46,6 +46,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
+import testAction from "../action"
 
 // Schema definitions
 const CreateContactSchema = z.object({
@@ -186,27 +187,37 @@ export function CreateCustomerDialog() {
   }
 
   const onSubmitIndividual = (data: z.infer<typeof IndividualDataSchema>) => {
+    if (currentStep !== "review") {
+      // Don't submit if not on review step
+      return
+    }
     console.log("Individual customer data:", data)
+    testAction(data)
     setOpen(false)
     setCustomerType(null)
     setCurrentStep("personal")
-    individualForm.reset()
+    // individualForm.reset()
   }
 
   const onSubmitBusiness = (data: z.infer<typeof BusinessDataSchema>) => {
+    if (currentStep !== "review") {
+      // Don't submit if not on review step
+      return;
+    }
     console.log("Business customer data:", data)
+    testAction(data)
     setOpen(false)
     setCustomerType(null)
     setCurrentStep("personal")
-    businessForm.reset()
+    // businessForm.reset()
   }
 
   const handleClose = () => {
     setOpen(false)
     setCustomerType(null)
     setCurrentStep("personal")
-    individualForm.reset()
-    businessForm.reset()
+    // individualForm.reset()
+    // businessForm.reset()
   }
 
   const nextStep = async () => {
@@ -215,19 +226,40 @@ export function CreateCustomerDialog() {
     // Validate current step fields before proceeding
     let isValid = false
 
+    // if (currentStep === "personal") {
+    //   if (activeTab === "individual") {
+    //     isValid = await currentForm.trigger(["firstName", "lastName", "displayName", "country", "personalId"])
+    //   } else {
+    //     isValid = await currentForm.trigger(["businessName", "displayName", "country", "isTaxRegistered", "taxNumber"])
+    //   }
+    //   if (isValid) setCurrentStep("address")
+    // } else if (currentStep === "address") {
+    //   // Address is optional, so we can proceed without validation
+    //   setCurrentStep("contact")
+    // } else if (currentStep === "contact") {
+    //   isValid = await currentForm.trigger("contacts")
+    //   if (isValid) setCurrentStep("additional")
+    // } else if (currentStep === "additional") {
+    //   // Notes are optional, so we can proceed without validation
+    //   setCurrentStep("review")
+    // }
     if (currentStep === "personal") {
       if (activeTab === "individual") {
         isValid = await currentForm.trigger(["firstName", "lastName", "displayName", "country", "personalId"])
       } else {
         isValid = await currentForm.trigger(["businessName", "displayName", "country", "isTaxRegistered", "taxNumber"])
       }
-      if (isValid) setCurrentStep("address")
+      if (isValid) { // Added braces
+        setCurrentStep("address")
+      }
     } else if (currentStep === "address") {
       // Address is optional, so we can proceed without validation
       setCurrentStep("contact")
     } else if (currentStep === "contact") {
       isValid = await currentForm.trigger("contacts")
-      if (isValid) setCurrentStep("additional")
+      if (isValid) { // Added braces
+        setCurrentStep("additional")
+      }
     } else if (currentStep === "additional") {
       // Notes are optional, so we can proceed without validation
       setCurrentStep("review")
@@ -625,8 +657,8 @@ export function CreateCustomerDialog() {
                                     {(contactType === "phone" ||
                                       contactType === "mobile" ||
                                       contactType === "landline") && (
-                                      <Phone className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                                    )}
+                                        <Phone className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                                      )}
                                     {contactType === "other" && (
                                       <Contact className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                                     )}
@@ -1160,8 +1192,8 @@ export function CreateCustomerDialog() {
                                     {(contactType === "phone" ||
                                       contactType === "mobile" ||
                                       contactType === "landline") && (
-                                      <Phone className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                                    )}
+                                        <Phone className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                                      )}
                                     {contactType === "other" && (
                                       <Contact className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                                     )}
@@ -1495,7 +1527,11 @@ export function CreateCustomerDialog() {
                         <ArrowRight className="h-4 w-4" />
                       </Button>
                     ) : (
-                      <Button type="submit" className="gap-2 ml-auto">
+                      // <Button type="submit" className="gap-2 ml-auto">
+                      //   <User className="h-4 w-4" />
+                      //   Create Individual Customer
+                      // </Button>
+                      <Button type="button" onClick={() => individualForm.handleSubmit(onSubmitIndividual)()} className="gap-2 ml-auto">
                         <User className="h-4 w-4" />
                         Create Individual Customer
                       </Button>

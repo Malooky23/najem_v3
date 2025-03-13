@@ -1,41 +1,3 @@
-// "use client"
-
-
-// import { ComboboxForm } from "@/components/ui/combobox"
-// import { Form } from "@/components/ui/form"
-// import { useForm } from "react-hook-form"
-// import { useSession } from "next-auth/react"
-// export default function TestPage() {
-//   const { data: session } = useSession()
-//   const form = useForm({
-//     defaultValues: {
-//       test: ""
-//     }
-//   })
-
-//   // Generate a large number of test options
-//   const testOptions = Array.from({ length: 50 }, (_, i) => ({
-//     label: `Test Option ${i + 1}`,
-//     value: `value-${i + 1}`
-//   }))
-
-//   return (
-//     <div className="container mx-auto p-8">
-//       <h1 className="text-2xl font-bold mb-4">Combobox Test Page</h1>
-//       <p>{session ? `Welcome, ${session.user.name}` : "Please sign in."}</p>
-//       <div className="max-w-md">
-//         <Form {...form}>
-//           <ComboboxForm
-//             name="test"
-//             label="Test Combobox"
-//             options={testOptions}
-//             placeholder="Select a test option..."
-//           />
-//         </Form>
-//       </div>
-//     </div>
-//   )
-// }
 
 "use client"
 
@@ -188,8 +150,9 @@ import { ComboboxForm as ComboboxFormComponent } from "@/components/ui/combobox"
 import { set } from "date-fns"
 import testAction from "./action"
 import CreateItemFormGemini from "./test-item/upgades"
-import CreateItemForm from "./new-item-1"
-import OgFormMaybe from "./create-item"
+import { CreateCustomerDialog } from "./customers/CreateCustomerForm"
+
+
 export function ComboboxForm() {
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -255,15 +218,15 @@ export function ComboboxForm() {
   );
 }
 
-export default function ComboboxPage() {
+export default function ExperimentsPage() {
   return (
     <div className=" bg-red-50/50  gap-4 flex flex-col justify-center h-full items-center ">
       <h1 className="text-2xl font-bold mb-4"> Test Page</h1>
       {/* <ComboboxForm /> */}
-      <CreateItemForm />
+
       <CreateItemFormGemini />
-      <OgFormMaybe />
-      <Link href="/test/customers">Test Customers</Link>
+
+      <CreateCustomerDialog/>
     </div>
   );
 }

@@ -22,6 +22,7 @@ export const CreateAddressSchema = z.object({
     postalCode: z.string().optional().nullish(),
 });
 
+export const CONTACT_TYPES = ['email', 'phone', 'mobile', 'landline', 'other'] 
 // Contact Schemas
 export const ContactDetailsSchema = z.object({
     contactDetailsId: z.string().uuid(),

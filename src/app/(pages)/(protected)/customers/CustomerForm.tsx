@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { createBusinessCustomer, createIndividualCustomer } from "./actions"
-// import { CONTACT_TYPE_OPTIONS } from "@/lib/constants/contact_details";
 import { COUNTRIES } from "@/lib/constants/countries";
 import { useToast } from "@/hooks/use-toast"
 import { useQueryClient } from '@tanstack/react-query'
@@ -20,6 +19,7 @@ import { z } from 'zod'
 import LocationSelector from "@/components/ui/location-input"
 import { cn } from "@/lib/utils"
 import { Textarea } from "@/components/ui/textarea"
+import AddressSection from "./AddressSection"
 
 const businessCustomerSchema = z.object({
   businessName: z.string().min(1, "Business name is required"),
@@ -27,7 +27,6 @@ const businessCustomerSchema = z.object({
   country: z.string().min(1, "Country is required"),
   contacts: contactsArraySchema,
   notes: z.string().nullable().default(null)
-
 })
 
 const individualCustomerSchema = z.object({
@@ -51,25 +50,9 @@ async function submitCustomerForm(prevState: any, formData: FormData, options: {
 }) {
   const { type, form, isTaxRegistered, queryClient, toast, onClose } = options;
 
-
-
-  console.log('=== Form Submission Started ===');
-  console.log('Form Type:', type);
-  console.log('Form Valid State:', form.formState.isValid);
-  console.log('Form Errors:', form.formState.errors);
-  console.log('Tax Registered:', isTaxRegistered);
-
-
-
-
   try {
     const formObject: Record<string, any> = {};
     const addressFields: Record<string, string> = {};
-
-    console.log('=== Raw Form Data ===');
-    formData.forEach((value, key) => {
-      console.log(`${key}:`, value);
-    });
 
     // Handle regular form data
     formData.forEach((value, key) => {
@@ -83,13 +66,9 @@ async function submitCustomerForm(prevState: any, formData: FormData, options: {
       }
     });
 
-    console.log('=== Processed Address Fields ===', addressFields);
-
     // Check if all address fields are empty
     const hasAddressData = Object.values(addressFields).some(value => value.trim() !== '');
-    formObject.address = hasAddressData ? addressFields : {};
-
-    console.log('Address Data Present:', hasAddressData);
+    formObject.address = hasAddressData ? addressFields : null;
 
     // Handle taxNumber for business type
     if (type === 'business') {
@@ -97,63 +76,33 @@ async function submitCustomerForm(prevState: any, formData: FormData, options: {
       if (!isTaxRegistered) {
         formObject.taxNumber = null;
       }
-      console.log('Business Tax Info:', {
-        isTaxRegistered,
-        taxNumber: formObject.taxNumber
-      });
     }
 
     // Add contacts from react-hook-form state
     const contacts = form.getValues('contacts');
-    console.log('=== Contact Data ===', contacts);
-
     formObject.contacts = contacts.map((contact: { data: any; type: any; isPrimary: any }) => ({
       contact_data: contact.data,
       contact_type: contact.type,
       is_primary: contact.isPrimary
     }));
 
-    console.log('=== Final Form Object ===', formObject);
-
-    if (formObject.country == '') {
+    if (formObject.country === '') {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Select Country.",
+        description: "Please select a country.",
       });
       return { error: "Select Country" };
-
     }
-
-    // if (!form.formState.isValid) {
-    //   console.log(form)
-    //   console.log('Form Validation Failed:', {
-    //     errors: form.formState.errors,
-    //     dirtyFields: form.formState.dirtyFields,
-    //     touchedFields: form.formState.touchedFields
-    //   });
-    //   toast({
-    //     variant: "destructive",
-    //     title: "Error",
-    //     description: "Please fix the form errors before submitting.",
-    //   });
-    //   return { error: "Form validation failed" };
-    // }
 
     let result;
     if (type === 'business') {
-      console.log('Submitting Business Customer...');
       result = await createBusinessCustomer(formObject);
     } else {
-      console.log('Submitting Individual Customer...');
       result = await createIndividualCustomer(formObject);
-      console.log(result)
     }
 
-    console.log('Submission Result:', result);
-
     if (result?.success === true) {
-      console.log('Customer created successfully, invalidating queries...');
       queryClient.invalidateQueries({ queryKey: ['customers'] })
       onClose();
       toast({
@@ -164,17 +113,15 @@ async function submitCustomerForm(prevState: any, formData: FormData, options: {
       return { success: true, message: "Customer created successfully" };
     }
 
-    console.log('Submission failed:', result);
     return { error: "Failed to create customer" };
   } catch (error) {
-    console.error('=== Submission Error ===', error);
     return {
       error: error instanceof Error ? error.message : "An unexpected error occurred."
     };
   }
 }
 
-export default function CustomerForm({ type, onClose }: { type: "individual" | "business"; onClose: () => void }) {
+export default function CustomerForm({ type, onClose }: { type: "individual" | "business" ; onClose: () => void }) {
   const [isTaxRegistered, setIsTaxRegistered] = useState(false)
   const { toast } = useToast()
   const queryClient = useQueryClient()
@@ -208,19 +155,6 @@ export default function CustomerForm({ type, onClose }: { type: "individual" | "
     )
   });
 
-  // // Add form state logging
-  // console.log('=== Form State ===', {
-  //   isDirty: form.formState.isDirty,
-  //   isValid: form.formState.isValid,
-  //   errors: form.formState.errors,
-  //   dirtyFields: form.formState.dirtyFields
-  // });
-
-  // // Log whenever form values change
-  // form.watch((data) => {
-  //   console.log('=== Form Values Updated ===', data);
-  // });
-
   const { fields, append, remove } = useFieldArray<ContactFormData>({
     control: form.control,
     name: "contacts",
@@ -238,14 +172,11 @@ export default function CustomerForm({ type, onClose }: { type: "individual" | "
 
   const handleCountryChange = (country: any) => {
     setSelectedCountry(country)
-    // Clear any existing error states if needed
-    // Note: the hidden input will automatically get included in the form submission
   }
 
   const [focusCountry, setFocusCountry] = useState(false)
 
   const handleSubmit = (e: React.FormEvent) => {
-
     const formErrors = form.formState.errors;
 
     const hasContactData = form.watch('contacts').some(contact =>
@@ -283,7 +214,6 @@ export default function CustomerForm({ type, onClose }: { type: "individual" | "
 
     if (Object.keys(formErrors).length > 0) {
       e.preventDefault();
-      // Create an error message from all validation errors
       const errorMessages = Object.entries(formErrors)
         .map(([field, error]) => `${field}: ${error.message}`)
         .join('\n');
@@ -300,11 +230,12 @@ export default function CustomerForm({ type, onClose }: { type: "individual" | "
   return (
     <form
       action={formAction}
-      className="space-y-6"
+      className="space-y-4"
       onSubmit={handleSubmit}
     >
-      <div className="max-h-[80vh] flex-1 overflow-y-auto px-6 ">
-        <div className="space-y-6 pb-6 relative"> {/* Add relative positioning */}
+      {/* <div className="max-h-[80vh] flex-1 overflow-y-auto px-2 sm:px-4"> */}
+      <div className="max-h-[65vh] flex-1 overflow-y-auto px-2 sm:px-4">
+        <div className="space-y-4 pb-4 relative">
           {/* Add hidden input for country */}
           <input
             type="hidden"
@@ -312,9 +243,9 @@ export default function CustomerForm({ type, onClose }: { type: "individual" | "
             value={selectedCountry?.name || ''}
           />
 
-          <div>
+          <div className="mb-4"></div>
             <Label htmlFor="displayName">Display Name <span className="text-red-500">*</span></Label>
-            <Input id="displayName" name="displayName" placeholder="sorta like a username" required />
+            <Input id="displayName" name="displayName" placeholder="How the customer will appear in lists" required />
           </div>
 
           {/* Basic Information */}
@@ -322,64 +253,40 @@ export default function CustomerForm({ type, onClose }: { type: "individual" | "
             {type === "business" ? (
               <div>
                 <Label htmlFor="businessName">Business Name <span className="text-red-500">*</span></Label>
-                <Input id="businessName" name="businessName" placeholder="Acme Corp" required />
+                <Input id="businessName" name="businessName" placeholder="Company name" required />
               </div>
             ) : (
-
-              <>
-                {/* <div className="flex w-full items-stretch">
-                  <div className="flex-col items-stretch">
-                  <div><Label className="text-nowrap min-w-[150px]" htmlFor="firstName">First Name <span className="text-red-500">*</span></Label></div>
-                  <div><Label className="text-nowrap" htmlFor="middleName">Middle Name </Label></div>
-                  <div><Label className="w-[150px] text-nowrap" htmlFor="lastName">Last Name <span className="text-red-500">*</span></Label></div>
-                  <div><Label className="w-[150px] text-nowrap" htmlFor="personalId">Personal ID</Label></div>
-                    <div><Label className="" >Location <span className="text-red-500">*</span></Label></div>
-                  </div>
-                  <div className="flex-col">
-                    <Input id="firstName" name="firstName" placeholder="John" required />
-                    <Input id="middleName" name="middleName" placeholder="Doe" />
-                    <Input id="lastName" name="lastName" placeholder="Smith" required />
-                    <Input id="personalId" name="personalId" placeholder="1234567890" />
-                  </div>
-
-                </div> */}
-
-
-
-                <div className="flex space-x-2 items-center">
-
-                  <Label className="text-nowrap min-w-[150px]" htmlFor="firstName">First Name <span className="text-red-500">*</span></Label>
-                  <Input id="firstName" name="firstName" placeholder="John" required />
-                  <Label className="text-nowrap" htmlFor="middleName">Middle Name </Label>
-                  <Input id="middleName" name="middleName" placeholder="Doe" />
+              <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2">
+                <div>
+                  <Label htmlFor="firstName">First Name <span className="text-red-500">*</span></Label>
+                  <Input id="firstName" name="firstName" placeholder="First name" required />
                 </div>
-                {/* <div className="flex space-x-2 items-center">
-
-                </div> */}
-                <div className="flex space-x-2 items-center">
-                  <Label className="w-[150px] text-nowrap" htmlFor="lastName">Last Name <span className="text-red-500">*</span></Label>
-                  <Input id="lastName" name="lastName" placeholder="Smith" required />
-                  <Label className="w-[150px] text-nowrap" htmlFor="personalId">Personal ID</Label>
-                  <Input id="personalId" name="personalId" placeholder="1234567890" />
+                <div>
+                  <Label htmlFor="middleName">Middle Name</Label>
+                  <Input id="middleName" name="middleName" placeholder="Middle name" />
                 </div>
-                {/* <div className="flex space-x-2 items-center">
-                  <Label className="w-[150px]" htmlFor="personalId">Personal ID</Label>
-                  <Input id="personalId" name="personalId" placeholder="1234567890" />
-                </div> */}
-              </>
-            )}
-            <div className={cn("flex items-center space-x-2 z-10 ", focusCountry ? "animate-flash-red  border-4 border-red-500" : "")}>
-              <Label className="w-[150px]" >Location <span className="text-red-500">*</span></Label>
-              <div className="flex-1">
-                <LocationSelector
-                  isStateNeeded={false}
-                  onCountryChange={handleCountryChange}
-                  onStateChange={() => { }}
-                />
+                <div>
+                  <Label htmlFor="lastName">Last Name <span className="text-red-500">*</span></Label>
+                  <Input id="lastName" name="lastName" placeholder="Last name" required />
+                </div>
+                <div>
+                  <Label htmlFor="personalId">Personal ID</Label>
+                  <Input id="personalId" name="personalId" placeholder="ID number" />
+                </div>
               </div>
+            )}
+            
+            <div className={cn("space-y-1", focusCountry ? "animate-flash-red border-2 border-red-500 p-2 rounded-md" : "")}>
+              <Label>Location <span className="text-red-500">*</span></Label>
+              <LocationSelector
+                isStateNeeded={false}
+                onCountryChange={handleCountryChange}
+                onStateChange={() => { }}
+              />
             </div>
+            
             {type === "business" && (
-              <>
+              <div className="space-y-2 pt-2">
                 <div className="flex items-center space-x-2">
                   <Switch
                     id="isTaxRegistered"
@@ -390,10 +297,10 @@ export default function CustomerForm({ type, onClose }: { type: "individual" | "
                   />
                   <Label htmlFor="isTaxRegistered">Tax Registered</Label>
                 </div>
-                {isTaxRegistered &&
-                  <div>
+                {isTaxRegistered && (
+                  <div className="ml-6 pt-2">
                     <Label htmlFor="taxNumber">
-                      Tax Registration Number {isTaxRegistered && <span className="text-red-500">*</span>}
+                      Tax Registration Number <span className="text-red-500">*</span>
                     </Label>
                     <Input
                       id="taxNumber"
@@ -401,65 +308,61 @@ export default function CustomerForm({ type, onClose }: { type: "individual" | "
                       placeholder="Tax ID"
                       required={isTaxRegistered}
                     />
-                  </div>}
-              </>
+                  </div>
+                )}
+              </div>
             )}
-
           </div>
 
-          {/* Address Section */}
-
-          {/* New Contacts Section */}
-          <ContactsSection
-            fields={fields}
-            append={append}
-            remove={remove}
-            setValue={form.setValue}
-            watch={form.watch}
-            formState={form.formState}
-            control={form.control}
-          />
-
-          <Accordion type="single" collapsible>
-            <AccordionItem value="address">
-              <AccordionTrigger>Add Address</AccordionTrigger>
-              <AccordionContent>
-                <AddressSection />
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
-
-          <Accordion type="single" collapsible>
-            <AccordionItem value="notes">
-              <AccordionTrigger>Add Notes?</AccordionTrigger>
-              <AccordionContent>
-                <Textarea id="notes" name="notes"
-                />
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
-
-          {/* <div className="flex items-center space-x-2">
-            <Switch
-              id="addAddress"
-              name="addAddress"
-              checked={showAddress}
-              onCheckedChange={setShowAddress}
+          {/* Contacts Section */}
+          <div className="py-2">
+            {/* <h3 className="text-md font-medium mb-2">Contact Information <span className="text-red-500">*</span></h3> */}
+            <ContactsSection
+              fields={fields}
+              append={append}
+              remove={remove}
+              setValue={form.setValue}
+              watch={form.watch}
+              formState={form.formState}
+              control={form.control}
             />
-            <Label htmlFor="addAddress">Add Address</Label>
           </div>
-          {showAddress && <AddressSection />} */}
+
+          {/* Additional Sections in Accordions */}
+          <div className="pt-2">
+            <Accordion type="single" collapsible>
+              <AccordionItem value="address">
+                <AccordionTrigger>Add Address</AccordionTrigger>
+                <AccordionContent>
+                  <AddressSection />
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+
+            <Accordion type="single" collapsible className="mt-2">
+              <AccordionItem value="notes">
+                <AccordionTrigger>Add Notes</AccordionTrigger>
+                <AccordionContent>
+                  <Textarea 
+                    id="notes" 
+                    name="notes"
+                    placeholder="Additional information about this customer"
+                    rows={4}
+                  />
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          </div>
         </div>
-        {/* </Card> */}
-      </div>
+      
 
       {/* Show error message if exists */}
       {state?.error && (
-        <div className="text-red-500 text-sm">{state.error}</div>
+        <div className="text-red-500 text-sm px-4">{state.error}</div>
       )}
 
       {/* Fixed Footer */}
-      <div className="border-t p-6 mt-auto">
+      <div className="border-t p-4 mt-auto">
         <div className="flex justify-end gap-2">
           <Button
             type="button"
@@ -506,49 +409,3 @@ export default function CustomerForm({ type, onClose }: { type: "individual" | "
     </form>
   )
 }
-
-function AddressSection() {
-  return (
-    <Card className="w-full max-w-2xl">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-xl font-bold">Address Information</CardTitle>
-      </CardHeader>
-      <CardContent>
-
-        <div>
-          <Label htmlFor="address.address1">Address 1</Label>
-          <Input id="address.address1" name="address.address1" required />
-        </div>
-        <div>
-          <Label htmlFor="address.address2">Address 2</Label>
-          <Input id="address.address2" name="address.address2" />
-        </div>
-        <div>
-          <Label htmlFor="address.city">City</Label>
-          <Input id="address.city" name="address.city" required />
-        </div>
-        <div>
-          <Label htmlFor="address.postalCode">Postal Code</Label>
-          <Input id="address.postalCode" name="address.postalCode" required />
-        </div>
-        <div>
-          <Label htmlFor="address.country">Country</Label>
-          <Select name="address.country">
-            <SelectTrigger>
-              <SelectValue placeholder="Select a country" />
-            </SelectTrigger>
-            <SelectContent>
-              {COUNTRIES.map((country) => (
-                <SelectItem key={country.value} value={country.value}>
-                  {country.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </CardContent>
-
-    </Card>
-  )
-}
-
