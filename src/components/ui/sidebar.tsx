@@ -49,6 +49,7 @@ type SidebarContext = {
   initialState: "expanded" | "collapsed" | null
   setInitialState: (state: "expanded" | "collapsed" | null) => void
   setOpenWithoutCookie: (open: boolean) => void // New function for hover state changes
+  closeMobileSidebar: () => void // Add new function to close mobile sidebar
 }
 
 const SidebarContext = React.createContext<SidebarContext | null>(null)
@@ -209,6 +210,7 @@ const SidebarProvider = React.forwardRef<
         initialState,
         setInitialState,
         setOpenWithoutCookie,
+        closeMobileSidebar: () => setOpenMobile(false), // Add new function
       }),
       [
         state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar,

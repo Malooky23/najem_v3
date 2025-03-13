@@ -34,7 +34,13 @@ export function NavProjects({
     icon: LucideIcon
   }[]
 }) {
-  const { isMobile } = useSidebar()
+  const { isMobile, closeMobileSidebar } = useSidebar()
+  
+  const handleLinkClick = () => {
+    if (isMobile) {
+      closeMobileSidebar()
+    }
+  }
 
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
@@ -43,7 +49,7 @@ export function NavProjects({
         {projects.map((item) => (
           <SidebarMenuItem key={item.name}>
             <SidebarMenuButton asChild>
-              <a href={item.url}>
+              <a href={item.url} onClick={handleLinkClick}>
                 <item.icon />
                 <span>{item.name}</span>
               </a>

@@ -18,10 +18,10 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
+  useSidebar,
 } from "@/components/ui/sidebar"
 import Link from "next/link"
 import { Separator } from "@/components/ui/separator"
-import { Router } from "next/router"
 
 export function NavMain({
   items,
@@ -41,6 +41,8 @@ export function NavMain({
   const pathname = usePathname();
   // State to track which items are open
   const [openItems, setOpenItems] = useState<Record<string, boolean>>({});
+  const { isMobile, closeMobileSidebar } = useSidebar();
+  const router = useRouter();
   
   // Check if the item should be expanded based on the current path
   const shouldBeExpanded = (item: { url: string, items?: { url: string }[] }) => {
@@ -73,11 +75,24 @@ export function NavMain({
       [itemTitle]: isOpen
     }));
   };
-  const router = useRouter()
+
+  // Handle main item click - close mobile sidebar and navigate if needed
+  const handleMainItemClick = (url: string) => {
+    if (isMobile) {
+      closeMobileSidebar();
+    }
+    router.push(url);
+  };
+
+  // Handle sub-item click - close mobile sidebar
+  const handleLinkClick = () => {
+    if (isMobile) {
+      closeMobileSidebar();
+    }
+  };
 
   return (
     <SidebarGroup>
-      {/* <SidebarGroupLabel>Platform</SidebarGroupLabel> */}
       <SidebarMenu>
         {items.map((item) => (
           <Collapsible
@@ -90,7 +105,7 @@ export function NavMain({
             <SidebarMenuItem className="py-4">
               <CollapsibleTrigger asChild>
                 <SidebarMenuButton tooltip={item.title}>
-                  {item.icon && <item.icon onClick={()=>router.push(item.url)}/>}
+                  {item.icon && <item.icon onClick={() => handleMainItemClick(item.url)}/>}
                   <span>{item.title}</span>
                   <ChevronRight className="ml-auto transition-transform duration-300 ease-in-out group-data-[state=open]/collapsible:rotate-90" />
                 </SidebarMenuButton>
@@ -104,7 +119,7 @@ export function NavMain({
                   {item.items?.map((subItem) => (
                     <SidebarMenuSubItem key={subItem.title} >
                       <SidebarMenuSubButton asChild >
-                      <Link href={subItem.url ?? "/dashboard"}>
+                      <Link href={subItem.url ?? "/dashboard"} onClick={handleLinkClick}>
                         {subItem.icon && <subItem.icon />}
                           <span>{subItem.title}</span>
                         </Link>

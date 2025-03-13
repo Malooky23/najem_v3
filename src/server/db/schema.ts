@@ -339,11 +339,11 @@ export const orders = pgTable("orders", {
   addressId: uuid("address_id"),
   fulfilledAt: timestamp("fulfilled_at", { withTimezone: true }),
   notes: text(),
-
+  orderMark: varchar("order_mark", { length: 30 }),
   createdBy: uuid("created_by").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }),
-  isDeleted: boolean().default(false),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(() => sql`CURRENT_TIMESTAMP`),
+  isDeleted: boolean("is_deleted").default(false),
 
 },
   (table) => [
