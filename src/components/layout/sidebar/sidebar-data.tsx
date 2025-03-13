@@ -1,6 +1,7 @@
 import {
     ArrowRightLeft,
     AudioWaveform,
+    Beaker,
     BookOpen,
     Bot,
     Box,
@@ -18,6 +19,7 @@ import {
     UsersRound,
     Warehouse,
 } from "lucide-react"
+import test from "node:test"
 
 
 const warehouse = {
@@ -100,12 +102,25 @@ const customers = {
     ],
 }
 
+            
+
 export const data = {
     navMain: [
         warehouse,
-        shipments,        
-        customers,
+        shipments,
     ],
+    projects: [
+        {
+            name: "Customers",
+            url: "/customers",
+            icon: UsersRound
+        },
+        {
+            name: "Experiments",
+            url: "/experiments",
+            icon: Beaker
+        }
+    ]
 
 }
 

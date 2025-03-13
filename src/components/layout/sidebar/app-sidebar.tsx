@@ -87,7 +87,7 @@ export function AppSidebar({ session, ...props }: AppSidebarProps) {
       <Separator />
       <SidebarContent>
         <NavMain items={data.navMain} />
-        {/* <NavProjects projects={data.projects} /> */}
+        <NavProjects projects={data.projects} />
       </SidebarContent>
       <SidebarFooter>
         {/* <UserMenu session={session}/> */}
