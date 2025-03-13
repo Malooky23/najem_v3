@@ -8,13 +8,7 @@ export default function CustomersPage() {
     <div className="h-[calc(100vh-4rem)] flex flex-col gap-4 p-2 mx-6">
       <div className='flex flex-row justify-between'>
         <h1 className="text-2xl font-bold text-gray-900">Customers</h1>
-        <Link href={'/customers/test'} >
-          <Button>TEST</Button>
-        </Link>
-        {/* <div className="flex gap-2">
-          <CreateCustomerButton type="individual" />
-          <CreateCustomerButton type="business" />
-        </div> */}
+
       <CustomerModalWrapper/>
       {/* </CustomerModalWrapper> */}
       </div>

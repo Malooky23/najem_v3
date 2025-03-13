@@ -9,24 +9,28 @@ import { StatusDropdown } from "./StatusDropdown";
 import { useState } from "react";
 import { CreateOrderDialog } from "../order-form/create-order-dialog";
 import { useOrderDetails } from "@/hooks/data-fetcher";
+import { cn } from "@/lib/utils";
 
 interface OrderHeaderProps {
   order: EnrichedOrders
   handleClose: () => void;
+  isMobile: boolean;
 }
 
 export function OrderHeader({
   order,
-  handleClose
+  handleClose,
+  isMobile
 }: OrderHeaderProps) {
   const { createdAt, orderNumber, status, orderId } = order;
   const formattedDate = format(new Date(createdAt), 'MMM d, yyyy');
   
-  // Fetch order details for editing
-
   return (
-    <div className="flex justify-between items-center gap-4 w-full">
-      <div className="flex gap-2">
+    <div className={cn(
+      "flex flex-col md:flex-row justify-between items-start md:items-center gap-4 w-full",
+      isMobile && "space-y-2"
+    )}>
+      <div className={cn("flex gap-2 flex-wrap", isMobile ? 'flex-col' : '')}>
         <Badge
           variant="outline"
           className="h-7 px-3 text-lg font-bold border-2 border-black bg-white rounded-full"
@@ -40,7 +44,7 @@ export function OrderHeader({
         />
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <Button
           className="gap-2 bg-blue-500 hover:bg-blue-600 transition-colors"
           size="sm"

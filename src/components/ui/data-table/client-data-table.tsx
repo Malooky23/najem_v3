@@ -45,7 +45,7 @@ export function ClientDataTable<TData, TValue>({
     <div className="flex flex-col h-full">
       <div className="w-full overflow-x-auto overflow-y-auto">
         <Table style={{ tableLayout: 'auto', minWidth: '100%' }}>
-          <TableHeader className="sticky top-0 rounded-t-lg bg-inherit backdrop-blur-md">
+          <TableHeader className="sticky top-0 rounded-t-lg bg-white backdrop-blur-md">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}
                 style={{ position: 'relative' }}

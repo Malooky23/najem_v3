@@ -125,7 +125,7 @@ export default function ItemsPageWrapper() {
             />
           </div>
           {/* Pagination controls */}
-          <div className={cn("mt-auto py-2 px-4 flex justify-center", isMobile && "mb-6")}>
+          <div className={cn("mt-auto py-2 px-4 flex justify-center ", isMobile && "mb-6")}>
             <PaginationControls
               currentPage={currentPage}
               totalPages={totalPages}

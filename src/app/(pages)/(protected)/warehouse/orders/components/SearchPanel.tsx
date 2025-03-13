@@ -38,14 +38,13 @@ const OrderStatusOptions = [
   { value: "PROCESSING", label: "Processing" },
   { value: "COMPLETED", label: "Completed" },
   { value: "CANCELLED", label: "Cancelled" }, // Fixed spelling to match the type
-  { value: "ON_HOLD", label: "On Hold" },
   { value: "DRAFT", label: "Draft" },
   { value: "READY", label: "Ready" },
 ];
 
 const MovementOptions = [
-  { value: "IN", label: "Incoming" },
-  { value: "OUT", label: "Outgoing" },
+  { value: "IN", label: "IN" },
+  { value: "OUT", label: "OUT" },
 ];
 
 // Memoized search panel component

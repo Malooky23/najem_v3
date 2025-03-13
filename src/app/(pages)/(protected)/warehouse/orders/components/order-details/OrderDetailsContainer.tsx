@@ -37,9 +37,10 @@ export const OrderDetailsContainer = memo(function OrderDetailsContainer({
   }, [selectOrder]);
 
   // Styling classes based on mobile state
-  const containerClass = isMobile
-    ? "p-4 h-screen overflow-scroll fixed inset-0 z-50 bg-white"
-    : "p-6 bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 min-h-full overflow-hidden";
+  const containerClass = cn(
+    isMobile
+    ? " h-screen w-screen overflow-y-scroll overflow-x-hidden fixed inset-0 z-50 g-gradient-to-br from-blue-100 via-purple-100 to-pink-100"
+    : "mb-12 p-4 bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 rounded-lg border border-2 border-slate-200  overflow-hidden");
 
   const cardClass = isMobile
     ? "bg-white h-full"
@@ -87,7 +88,7 @@ export const OrderDetailsContainer = memo(function OrderDetailsContainer({
   return (
     <div className={cn(
       containerClass,
-      !isMobile && "w-[40%]"
+      !isMobile && "w-[40%] "
     )}>
       <div className={`max-w-4xl mx-auto mt-0 ${cardClass}`}>
         <div className={isMobile ? "p-4" : "p-6"}>
@@ -120,6 +121,7 @@ export const OrderDetailsContainer = memo(function OrderDetailsContainer({
               createdAt={orderData.createdAt}
             /> */}
             <OrderHeader 
+              isMobile={isMobile}
               order={orderData}
               handleClose={handleClose}
             />

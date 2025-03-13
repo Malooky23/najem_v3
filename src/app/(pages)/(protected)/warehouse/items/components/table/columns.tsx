@@ -8,7 +8,11 @@ import { cn } from "@/lib/utils"
 export const itemColumns: ColumnDef<ItemSchemaType>[] = [
   {
     accessorKey: "itemNumber",
-    header: "Item Number",
+    header: "Item ID",
+    cell: ({ row }) => {
+      const itemNumber = row.getValue("itemNumber") as string
+      return  <span className="text-gray-500 font-semibold">#{itemNumber}</span>
+    },
   },
   {
     accessorKey: "itemType",
