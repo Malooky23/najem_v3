@@ -1,6 +1,6 @@
 "use client"
 import { Spinner } from "@heroui/spinner";
-import { useState, useEffect, useRef, use } from "react"
+import { useState, useEffect, useRef } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
@@ -88,12 +88,42 @@ export default function CreateItemForm() {
   const formRef = useRef<HTMLFormElement>(null)
   const isTouchScrolling = useRef<boolean>(false)
 
-  // Touch event handlers
+  // Track scroll state for touch devices
+  useEffect(() => {
+    const formContainer = document.getElementById("form-container");
+    
+    if (formContainer && isMobile) {
+      const handleTouchStart = () => {
+        isTouchScrolling.current = false;
+      };
+      
+      const handleTouchMove = () => {
+        isTouchScrolling.current = true;
+      };
+      
+      const handleTouchEnd = () => {
+        // Reset after a short delay to allow click/focus events to process
+        setTimeout(() => {
+          isTouchScrolling.current = false;
+        }, 100);
+      };
+      
+      formContainer.addEventListener("touchstart", handleTouchStart);
+      formContainer.addEventListener("touchmove", handleTouchMove);
+      formContainer.addEventListener("touchend", handleTouchEnd);
+      
+      return () => {
+        formContainer.removeEventListener("touchstart", handleTouchStart);
+        formContainer.removeEventListener("touchmove", handleTouchMove);
+        formContainer.removeEventListener("touchend", handleTouchEnd);
+      };
+    }
+  }, [isMobile]);
 
-
+  // Modified touch handler to not interfere with keyboard focus
   const handleInputTouchStart = (e: React.TouchEvent) => {
     if (isTouchScrolling.current) {
-      console.log("Blurring input on touch start");
+      // Only blur for touch events, not for keyboard focus
       (e.target as HTMLElement).blur();
     }
   }
@@ -158,7 +188,7 @@ export default function CreateItemForm() {
       <form
         ref={formRef}
         onSubmit={form.handleSubmit(onSubmit)}
-        className={cn("space-y-6", createItemMutation.isPending && 'opacity-20 bg-blend-overlay cursor-progress  pointer-events-none animate-pulse')}>
+        className={cn("space-y-6", createItemMutation.isPending && 'opacity-20 bg-blend-overlay cursor-progress')}>
         {/* Row 1 */}
         {createItemMutation.isPending && (
           <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center z-50">
@@ -508,7 +538,7 @@ export default function CreateItemForm() {
             </div>
           </div>
           <style jsx global>{`
-    /* Remove the pointer-events: none rule that's blocking input interactions */
+    /* Improve keyboard navigation */
     .form-scroll-container {
       -webkit-overflow-scrolling: touch;
       outline: none;
@@ -517,7 +547,15 @@ export default function CreateItemForm() {
       touch-action: pan-y;
       -webkit-overflow-scrolling: touch;
     }
-    /* Improve touch responsiveness */
+    /* Ensure inputs are focusable with keyboard */
+    .mobile-form-container input:focus,
+    .mobile-form-container textarea:focus,
+    .mobile-form-container select:focus,
+    .mobile-form-container button:focus {
+      outline: 2px solid var(--primary);
+      outline-offset: 1px;
+    }
+    /* Improve touch responsiveness while maintaining keyboard accessibility */
     .mobile-form-container input,
     .mobile-form-container textarea,
     .mobile-form-container select,
@@ -526,11 +564,19 @@ export default function CreateItemForm() {
     }
   `}</style>
           <DrawerFooter className="flex flex-row justify-between border-t border-primary/20 pt-2 bg-primary/5">
-            <Button onClick={form.handleSubmit(onSubmit)} className="bg-primary hover:bg-primary/90">
+            <Button 
+              onClick={form.handleSubmit(onSubmit)} 
+              className="bg-primary hover:bg-primary/90"
+              tabIndex={0} // Ensure the button is keyboard accessible
+            >
               {createItemMutation.isPending ? 'Creating...' : 'Create Item'}
             </Button>
             <DrawerClose asChild>
-              <Button variant="outline" className="border-primary/20 hover:bg-primary/10">
+              <Button 
+                variant="outline" 
+                className="border-primary/20 hover:bg-primary/10"
+                tabIndex={0} // Ensure the button is keyboard accessible
+              >
                 Cancel
               </Button>
             </DrawerClose>
@@ -539,13 +585,12 @@ export default function CreateItemForm() {
       </Drawer>
     )
   }
-  // ...existing code...
 
-  // Desktop view - Dialog
+  // Desktop dialog logic remains the same with added tabIndex attributes
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="default" className="bg-primary hover:bg-primary/90">
+        <Button variant="default" className="bg-primary hover:bg-primary/90" tabIndex={0}>
           <Package className="mr-2 h-4 w-4" />
           Create New Item
         </Button>
@@ -570,6 +615,7 @@ export default function CreateItemForm() {
             onClick={() => setOpen(false)}
             className="border-primary/20 hover:bg-primary/10"
             disabled={createItemMutation.isPending}
+            tabIndex={0}
           >
             Cancel
           </Button>
@@ -578,12 +624,10 @@ export default function CreateItemForm() {
             onClick={form.handleSubmit(onSubmit)}
             className="bg-primary hover:bg-primary/90"
             disabled={createItemMutation.isPending}
+            tabIndex={0}
           >
             {createItemMutation.isPending ? (
-              <>
-                
-                <p className="">Creating...</p>
-              </>
+              <p className="">Creating...</p>
             ) : (
               <>Create Item</>
             )}

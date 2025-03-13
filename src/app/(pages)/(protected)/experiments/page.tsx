@@ -40,7 +40,7 @@
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Check, ChevronsUpDown } from "lucide-react"
+import { Check, ChevronsUpDown, Link } from "lucide-react"
 import { useForm, UseFormSetValue } from "react-hook-form"
 import { z } from "zod"
 
@@ -263,6 +263,7 @@ export default function ComboboxPage() {
       <CreateItemForm />
       <CreateItemFormGemini />
       <OgFormMaybe />
+      <Link href="/test/customers">Test Customers</Link>
     </div>
   );
 }
