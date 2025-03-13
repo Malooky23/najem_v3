@@ -59,6 +59,8 @@ export function NavMain({
     return false;
   };
 
+  
+
   // Update open state when pathname changes
   useEffect(() => {
     const newOpenState: Record<string, boolean> = {};
@@ -98,7 +100,8 @@ export function NavMain({
           <Collapsible
             key={item.title}
             asChild
-            open={openItems[item.title]}
+            // open={openItems[item.title]}
+            open={true}
             onOpenChange={(isOpen) => handleToggle(item.title, isOpen)}
             className="group/collapsible"
           >

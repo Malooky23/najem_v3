@@ -99,7 +99,7 @@ export default function ItemsPageWrapper() {
   }, [filteredItems.length]);
 
   return (
-    <div className="lg:px-4 max-h-[100vh]   flex flex-col overflow-hidden ">
+    <div className="lg:px-4 h-screen flex flex-col overflow-hidden">
       <div className={cn(isMobile && "p-2")}>
         <PageHeader
           isLoading={isLoading}
@@ -107,26 +107,25 @@ export default function ItemsPageWrapper() {
           onSearchChange={setSearchValue}
         />
       </div>
-      <div className=" min-h-0  relative">
+      <div className="flex-1 min-h-0 relative">
         {/* Main table content */}
         <div
           className={cn(
-            "w-full transition-all duration-300 ease-in-out",
+            "w-full h-full flex flex-col transition-all duration-300 ease-in-out",
             !isMobile && store.isDetailsOpen && "pr-[30%] "
           )}
         >
-          <div className="w-full h-[87vh] overflow-auto flex flex-1 justify-center">
-          <ItemsTable
-            isMobile={isMobile}
-            isLoading={isLoading}
-            items={paginatedItems}
-            searchValue={searchValue}
-            totalItems={filteredItems.length}
-
-          />
+          <div className="flex-1 min-h-0 overflow-hidden flex justify-center">
+            <ItemsTable
+              isMobile={isMobile}
+              isLoading={isLoading}
+              items={paginatedItems}
+              searchValue={searchValue}
+              totalItems={filteredItems.length}
+            />
           </div>
           {/* Pagination controls */}
-          <div className="mt-2 px-4 py-2 bottom-0 flex justify-center">
+          <div className={cn("mt-auto py-2 px-4 flex justify-center", isMobile && "mb-6")}>
             <PaginationControls
               currentPage={currentPage}
               totalPages={totalPages}
@@ -143,7 +142,7 @@ export default function ItemsPageWrapper() {
         {!isMobile && (
           <div
             className={cn(
-              "px-2 absolute top-0 right-0 h-full flex w-[30%] transition-transform duration-300 ease-in-out   ",
+              "px-2 absolute top-0 right-0 h-full flex w-[30%] transition-transform duration-300 ease-in-out",
               store.isDetailsOpen
                 ? "translate-x-0"
                 : "translate-x-full pointer-events-none"

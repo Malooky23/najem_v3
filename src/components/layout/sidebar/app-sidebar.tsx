@@ -23,6 +23,7 @@ import { data } from "./sidebar-data"
 import BackButton from "@/components/redirectBack";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { is } from "drizzle-orm";
 // This is sample data.
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
@@ -46,13 +47,14 @@ export function AppSidebar({ session, ...props }: AppSidebarProps) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader className="flex-row items-center justify-center relative h-16">
-        <Link href="/" onClick={handleLinkClick} className="flex items-center justify-center w-full h-full">
+        <Link href="/dashboard" onClick={handleLinkClick} className="flex items-center justify-center w-full h-full">
           <div className="relative w-full h-full flex items-center justify-center">
             <div
               className={cn("absolute transition-all duration-300 ease-in-out",
                 state === "expanded"
                   ? "opacity-100 scale-100"
-                  : "opacity-0 scale-95"
+                  : "opacity-0 scale-95",
+                  isMobile ? "opacity-100 scale-150" : ""
               )}
             >
               <Image
@@ -68,7 +70,9 @@ export function AppSidebar({ session, ...props }: AppSidebarProps) {
               className={cn("absolute transition-all duration-300 ease-in-out", 
                 state === "expanded"
                 ? "opacity-0 scale-105"
-                : "opacity-100 scale-100"
+                : "opacity-100 scale-100",
+                isMobile ? "hidden" : ""
+
               )}
             >
               <Image

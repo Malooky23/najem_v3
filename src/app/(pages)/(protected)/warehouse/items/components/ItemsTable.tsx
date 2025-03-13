@@ -76,7 +76,7 @@ export const ItemsTable = memo<ItemsTableProps>(function ItemsTable({
   }, [searchValue, table])
 
   return (
-    <div className=" flex-grow flex-1  w-full rounded-lg bg-slate-50 border-2 border-slate-200">
+    <div className="flex-1 w-full h-full overflow-hidden rounded-lg bg-slate-50 border-2 border-slate-200">
         <ClientDataTable<ItemSchemaType, any>
           table={table}
           columns={itemColumns}
