@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react"
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react"
+
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import React from "react"
@@ -15,11 +16,10 @@ interface PaginationControlsProps {
   onPageChange: (page: number) => void
   onPageSizeChange: (pageSize: number) => void
   onNextPageHover?: () => void
-  isLoading?: boolean
+  isLoading?: boolean; // New prop
 }
 
-// Wrap component in memo to prevent unnecessary re-renders
-const PaginationControls = React.memo(function PaginationControlsInner({
+export function PaginationControls({
   currentPage,
   totalPages,
   pageSize,
@@ -36,11 +36,20 @@ const PaginationControls = React.memo(function PaginationControlsInner({
 
   // Calculate the range of items being displayed
   const { startItem, endItem } = useMemo(() => ({
-    startItem: total === 0 ? 0 : (currentPage - 1) * pageSize + 1,
+    startItem: (currentPage - 1) * pageSize + 1,
     endItem: Math.min(currentPage * pageSize, total)
   }), [currentPage, pageSize, total]);
 
-  // Handle selected rows display
+  // Memoize event handlers to prevent unnecessary re-renders
+  const handlePageChange = useCallback((page: number) => {
+    onPageChange(page);
+  }, [onPageChange]);
+
+  const handlePageSizeChange = useCallback((size: number) => {
+    onPageSizeChange(size);
+  }, [onPageSizeChange]);
+
+  // Manage selected rows display with optimized effect
   useEffect(() => {
     if (selectedRows > 0) {
       setShowSelectedRows(true);
@@ -86,7 +95,7 @@ const PaginationControls = React.memo(function PaginationControlsInner({
           className="h-8 min-w-[2rem] p-0 flex justify-center items-center text-center transition-colors duration-200 hover:border hover:border-gray-300 rounded-md"
           onClick={(e) => {
             e.preventDefault();
-            onPageChange(pageNum);
+            handlePageChange(pageNum);
           }}
         >
           {i}
@@ -94,8 +103,22 @@ const PaginationControls = React.memo(function PaginationControlsInner({
       )
     }
 
+    // if (endPage < totalPages) {
+    //   buttons.push(
+    //     <Button
+    //       key="ellipsis-end"
+    //       variant="ghost"
+    //       size="sm"
+    //       className="h-8 w-8 p-0 transition-opacity duration-200"
+    //       disabled
+    //     >
+    //       ...
+    //     </Button>,
+    //   )
+    // }
+
     return buttons
-  }, [currentPage, totalPages, onPageChange]);
+  }, [currentPage, totalPages, handlePageChange]);
 
   return (
     <div className="flex items-center gap-2 relative">
@@ -106,7 +129,7 @@ const PaginationControls = React.memo(function PaginationControlsInner({
       
       <div className="text-sm text-muted-foreground hidden sm:block relative overflow-hidden">
         <div className={`transition-transform duration-300 ${showSelectedRows ? "-translate-y-full" : ""}`}>
-          {total > 0 ? `${startItem}-${endItem} of ${total}` : "No items"}
+          {startItem}-{endItem} of {total}
         </div>
         <div
           className={`absolute top-0 left-0 transition-transform duration-300 ${showSelectedRows ? "" : "translate-y-full"}`}
@@ -122,7 +145,7 @@ const PaginationControls = React.memo(function PaginationControlsInner({
           className="h-8 w-8 p-0 transition-opacity duration-200 hover:border hover:border-gray-300 rounded-md"
           onClick={(e) => {
             e.preventDefault();
-            if (canPreviousPage) onPageChange(1);
+            handlePageChange(1);
           }}
           disabled={!canPreviousPage}
         >
@@ -136,7 +159,7 @@ const PaginationControls = React.memo(function PaginationControlsInner({
           className="h-8 w-8 p-0 transition-opacity duration-200 hover:border hover:border-gray-300 rounded-md"
           onClick={(e) => {
             e.preventDefault();
-            if (canPreviousPage) onPageChange(currentPage - 1);
+            handlePageChange(currentPage - 1);
           }}
           disabled={!canPreviousPage}
         >
@@ -158,10 +181,11 @@ const PaginationControls = React.memo(function PaginationControlsInner({
           className="h-8 w-8 p-0 transition-opacity duration-200 hover:border hover:border-gray-300 rounded-md"
           onClick={(e) => {
             e.preventDefault();
-            if (canNextPage) onPageChange(currentPage + 1);
+            handlePageChange(currentPage + 1);
           }}
           disabled={!canNextPage}
           onMouseEnter={() => {
+            console.log('HOVER');
             if (canNextPage && onNextPageHover) {
               onNextPageHover();
             }
@@ -177,7 +201,7 @@ const PaginationControls = React.memo(function PaginationControlsInner({
           className="h-8 w-8 p-0 transition-opacity duration-200 hover:border hover:border-gray-300 rounded-md"
           onClick={(e) => {
             e.preventDefault();
-            if (canNextPage) onPageChange(totalPages);
+            handlePageChange(totalPages);
           }}
           disabled={!canNextPage}
         >
@@ -190,10 +214,7 @@ const PaginationControls = React.memo(function PaginationControlsInner({
         <Select
           value={`${pageSize}`}
           onValueChange={(value) => {
-            const newSize = Number(value);
-            if (!isNaN(newSize) && newSize > 0) {
-              onPageSizeChange(newSize);
-            }
+            handlePageSizeChange(Number(value))
           }}
         >
           <SelectTrigger className="h-8 w-[70px] transition-colors duration-200 hover:border hover:border-gray-300 focus:border-gray-400">
@@ -211,8 +232,8 @@ const PaginationControls = React.memo(function PaginationControlsInner({
       </div>
     </div>
   )
-});
+}
 
-export { PaginationControls };
-export default PaginationControls;
+// To further optimize this component, consider wrapping it with React.memo
+export default React.memo(PaginationControls);
 
