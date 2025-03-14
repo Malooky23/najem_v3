@@ -1,11 +1,22 @@
 "use client"
 
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, QueryObserverResult } from '@tanstack/react-query';
 import { getOrders } from '@/server/actions/orders';
 import { OrderFilters, OrderSort, EnrichedOrders } from '@/types/orders';
 import { keepPreviousData } from '@tanstack/react-query';
-import { useMemo } from 'react';
-import { getFromStorage } from './data-fetcher';
+import { useMemo, useState } from 'react';
+import { getSavedData, saveToStorage } from './data-fetcher';
+
+// Define proper response interface
+interface OrdersResponse {
+  data: EnrichedOrders[];
+  pagination: {
+    total: number;
+    pageSize: number;
+    currentPage: number;
+    totalPages: number;
+  };
+}
 
 export { getOrders };
 
@@ -44,20 +55,21 @@ export function useOrders(
     JSON.stringify(sort)
   ];
 
+  // Create a consistent storage key
+  const storageKey = useMemo(() => {
+    return `orders_list_${page}_${pageSize}_${JSON.stringify(filters)}_${sort.field}-${sort.direction}`;
+  }, [page, pageSize, filters, sort]);
+  
+  // Initialize with localStorage data properly using useState initializer
+  const [initialData] = useState<OrdersResponse | undefined>(() => {
+    return getSavedData<OrdersResponse>(storageKey);
+  });
+
   // Calculate a reasonable stale time based on filters
   const hasFilters = Object.keys(filters).length > 0;
   const defaultStaleTime = hasFilters ? 0 : 24 * 60 * 60 * 1000; // No cache when filtering
 
-  const storageKey = useMemo(() => {
-      return `orders_list_${params.page || 1}_${params.pageSize || 10}_${JSON.stringify(params.filters || {})}_${params.sort?.field || 'createdAt'}-${params.sort?.direction || 'desc'}`;
-    }, [params.page, params.pageSize, params.filters, params.sort]);
-    
-    // Get cached data on component mount
-    const cachedData = useMemo(() => {
-      return getFromStorage(storageKey);
-    }, [storageKey]);
-
-  const query = useQuery({
+  const query = useQuery<OrdersResponse>({
     queryKey,
     queryFn: async () => {
       try {
@@ -68,7 +80,7 @@ export function useOrders(
           throw new Error(result.error || 'Failed to fetch orders');
         }
         
-        return {
+        const data: OrdersResponse = {
           data: result.data?.orders || [],
           pagination: result.data?.pagination || {
             total: 0,
@@ -77,6 +89,11 @@ export function useOrders(
             totalPages: 0
           }
         };
+        
+        // Save successful result to localStorage
+        saveToStorage(storageKey, data);
+        
+        return data;
       } catch (error) {
         console.error("Orders fetch error:", error);
         throw error;
@@ -89,6 +106,7 @@ export function useOrders(
     refetchOnReconnect: options.refetchOnReconnect ?? false,
     retry: 2,
     retryDelay: 1000,
+    initialData, // Use localStorage data as initialData
     placeholderData: keepPreviousData
   });
   
@@ -125,9 +143,12 @@ export function usePrefetchOrders(
     JSON.stringify(sort)
   ];
 
+  // Create storage key for saving prefetched data
+  const storageKey = `orders_list_${page}_${pageSize}_${JSON.stringify(filters)}_${sort.field}-${sort.direction}`;
+
   // Use the simplified prefetch function
   return () => {
-    return queryClient.prefetchQuery({
+    return queryClient.prefetchQuery<OrdersResponse>({
       queryKey,
       queryFn: async () => {
         const result = await getOrders(page, pageSize, filters, sort);
@@ -136,7 +157,7 @@ export function usePrefetchOrders(
           throw new Error(result.error || 'Failed to fetch orders');
         }
         
-        return {
+        const data: OrdersResponse = {
           data: result.data?.orders || [],
           pagination: result.data?.pagination || {
             total: 0,
@@ -145,6 +166,11 @@ export function usePrefetchOrders(
             totalPages: 0
           }
         };
+        
+        // Save successful prefetched result to localStorage
+        saveToStorage(storageKey, data);
+        
+        return data;
       },
       staleTime: 90 * 1000,
     });

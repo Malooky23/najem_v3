@@ -54,16 +54,22 @@ import { ComboboxForm } from "@/components/ui/combobox"
 import { useCreateItem } from "@/hooks/useItems"
 
 export default function CreateItemForm() {
+  // 1. All state hooks
   const [open, setOpen] = useState(false)
   const [useMeters, setUseMeters] = useState(false)
   const [useKilograms, setUseKilograms] = useState(false)
+  
+  // 2. All ref hooks
+  const formRef = useRef<HTMLFormElement>(null)
+  const isTouchScrolling = useRef<boolean>(false)
+  const formContainerRef = useRef<HTMLDivElement>(null)
+  
+  // 3. All context/external hooks
   const isMobile = useIsMobileTEST()
   const { data: session } = useSession()
-  if (!session) return null
-
-  // Get the createItem mutation
   const createItemMutation = useCreateItem()
-
+  
+  // 4. All form hooks
   const form = useForm<z.infer<typeof createItemsSchema>>({
     resolver: zodResolver(createItemsSchema),
     defaultValues: {
@@ -79,61 +85,60 @@ export default function CreateItemForm() {
         length: undefined,
       },
       notes: "",
-      createdBy: session.user.id,
+      createdBy: "",
     },
   })
-
-
-  // Add these variables to track touch events
-  const formRef = useRef<HTMLFormElement>(null)
-  const isTouchScrolling = useRef<boolean>(false)
-
-  // Track scroll state for touch devices
+  
+  // 5. All effect hooks - Define them all unconditionally
+  // Effect to update form values when session changes
   useEffect(() => {
-    const formContainer = document.getElementById("form-container");
-    
-    if (formContainer && isMobile) {
-      const handleTouchStart = () => {
-        isTouchScrolling.current = false;
-      };
-      
-      const handleTouchMove = () => {
-        isTouchScrolling.current = true;
-      };
-      
-      const handleTouchEnd = () => {
-        // Reset after a short delay to allow click/focus events to process
-        setTimeout(() => {
-          isTouchScrolling.current = false;
-        }, 100);
-      };
-      
-      formContainer.addEventListener("touchstart", handleTouchStart);
-      formContainer.addEventListener("touchmove", handleTouchMove);
-      formContainer.addEventListener("touchend", handleTouchEnd);
-      
-      return () => {
-        formContainer.removeEventListener("touchstart", handleTouchStart);
-        formContainer.removeEventListener("touchmove", handleTouchMove);
-        formContainer.removeEventListener("touchend", handleTouchEnd);
-      };
+    if (session?.user?.id) {
+      form.setValue('createdBy', session.user.id);
     }
+  }, [session, form]);
+  
+  // Touch scrolling effect
+  useEffect(() => {
+    // Safe access to DOM elements
+    const formContainer = formContainerRef.current || document.getElementById("form-container");
+    
+    if (!formContainer || !isMobile) return;
+    
+    const handleTouchStart = () => {
+      isTouchScrolling.current = false;
+    };
+    
+    const handleTouchMove = () => {
+      isTouchScrolling.current = true;
+    };
+    
+    const handleTouchEnd = () => {
+      setTimeout(() => {
+        isTouchScrolling.current = false;
+      }, 100);
+    };
+    
+    formContainer.addEventListener("touchstart", handleTouchStart);
+    formContainer.addEventListener("touchmove", handleTouchMove);
+    formContainer.addEventListener("touchend", handleTouchEnd);
+    
+    return () => {
+      formContainer.removeEventListener("touchstart", handleTouchStart);
+      formContainer.removeEventListener("touchmove", handleTouchMove);
+      formContainer.removeEventListener("touchend", handleTouchEnd);
+    };
   }, [isMobile]);
 
-  // Modified touch handler to not interfere with keyboard focus
+  // 6. Event handlers
   const handleInputTouchStart = (e: React.TouchEvent) => {
     if (isTouchScrolling.current) {
-      // Only blur for touch events, not for keyboard focus
       (e.target as HTMLElement).blur();
     }
   }
 
-  // Handle unit conversion for dimensions
   const handleDimensionChange = (field: any, value: string, dimension: "width" | "height" | "length") => {
     const numValue = value === "" ? undefined : Number.parseFloat(value)
-
     if (numValue !== undefined) {
-      // If using meters, convert to cm for storage
       const convertedValue = useMeters ? Math.round(numValue * 100) : Math.round(numValue)
       field.onChange(convertedValue)
     } else {
@@ -141,12 +146,9 @@ export default function CreateItemForm() {
     }
   }
 
-  // Handle unit conversion for weight
   const handleWeightChange = (field: any, value: string) => {
     const numValue = value === "" ? null : (Number.parseFloat(value))
-
     if (numValue !== null) {
-      // If using kg, convert to grams for storage
       const convertedValue = useKilograms ? Math.round(numValue * 1000) : numValue
       field.onChange(convertedValue)
     } else {
@@ -154,23 +156,15 @@ export default function CreateItemForm() {
     }
   }
 
-  // Format dimension value for display
   const formatDimensionValue = (value: number | undefined) => {
     if (value === undefined) return ""
     return useMeters ? (value / 100).toString() : value.toString()
   }
 
-  // Format weight value for display
   const formatWeightValue = (value: number | null) => {
     if (value === null) return ""
     return useKilograms ? (value / 1000).toString() : value.toString()
   }
-
-  // const formWatch = form.watch()
-  // useEffect(() => {
-  //   // console.log("Form watch:", formWatch)
-  //   console.log("Form state:", form.formState.errors)
-  // }, [formWatch, form])
 
   async function onSubmit(values: z.infer<typeof createItemsSchema>) {
     try {
@@ -178,24 +172,29 @@ export default function CreateItemForm() {
       setOpen(false);
       form.reset();
     } catch (error) {
-      // Error handling is done in the mutation's onError
       console.error("Error in form submission:", error);
     }
   }
 
+  // 7. Early return - after ALL hooks have been called
+  if (!session) {
+    return null;
+  }
+
+  // 8. Render logic - now we can use conditional rendering based on props/state
   const FormContent = (
     <Form {...form}>
       <form
         ref={formRef}
         onSubmit={form.handleSubmit(onSubmit)}
         className={cn("space-y-6", createItemMutation.isPending && 'opacity-20 bg-blend-overlay cursor-progress')}>
-        {/* Row 1 */}
         {createItemMutation.isPending && (
           <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center z-50">
             <Spinner size="lg" color="primary" className="h-10 w-10" />
             <p className="text-primary font-medium mt-4">Creating item...</p>
           </div>
         )}
+        {/* Row 1 */}
         <div className="grid md:grid-cols-2 gap-6">
           {/* Item Type */}
           <FormField
@@ -530,10 +529,8 @@ export default function CreateItemForm() {
             </DrawerTitle>
             <DrawerDescription>Fill in the details to create a new inventory item.</DrawerDescription>
           </DrawerHeader>
-          <div className="flex-1 overflow-hidden form-scroll-container" id="form-container">
-            <div
-              className="h-full overflow-y-auto p-4 pb-0 mobile-form-container"
-            >
+          <div className="flex-1 overflow-hidden form-scroll-container" id="form-container" ref={formContainerRef}>
+            <div className="h-full overflow-y-auto p-4 pb-0 mobile-form-container">
               {FormContent}
             </div>
           </div>

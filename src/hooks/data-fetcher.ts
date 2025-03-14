@@ -59,7 +59,7 @@ export const getFromStorage = <T>(key: string): T | null => {
   }
 };
 
-const saveToStorage = <T>(key: string, data: T): void => {
+export const saveToStorage = <T>(key: string, data: T): void => {
   if (typeof window === 'undefined') return;
   try {
     localStorage.setItem(`${LOCAL_STORAGE_PREFIX}${key}`, JSON.stringify(data));
@@ -70,6 +70,19 @@ const saveToStorage = <T>(key: string, data: T): void => {
   }
 };
 
+// Improved localStorage helper to be used safely during initialization
+export const getSavedData = <T>(key: string): T | undefined => {
+  if (typeof window === 'undefined') return undefined;
+  
+  try {
+    const item = localStorage.getItem(`${LOCAL_STORAGE_PREFIX}${key}`);
+    return item ? JSON.parse(item) : undefined;
+  } catch (error) {
+    console.error(`Error reading ${key} from localStorage:`, error);
+    return undefined;
+  }
+};
+
 // Simplify the order details hook to work better with the store
 export function useOrderDetails(orderId: string | null) {
   const queryClient = useQueryClient();
@@ -77,10 +90,11 @@ export function useOrderDetails(orderId: string | null) {
   const { selectedOrderData } = useOrdersStore();
   const storageKey = `order_${orderId}`;
   
-  // Get cached data from localStorage on component mount
-  const cachedData = useMemo(() => {
-    return getFromStorage<EnrichedOrders>(storageKey);
-  }, [storageKey]);
+  // Initialize with localStorage data immediately
+  const [cachedData] = useState<EnrichedOrders | undefined>(() => {
+    if (!orderId) return undefined;
+    return getSavedData<EnrichedOrders>(storageKey);
+  });
   
   // Use the best available initial data
   const initialData = useMemo(() => {
@@ -133,10 +147,10 @@ export function useOrdersQuery(params: OrdersQueryParams = {}) {
     return `orders_list_${params.page || 1}_${params.pageSize || 10}_${JSON.stringify(params.filters || {})}_${params.sort?.field || 'createdAt'}-${params.sort?.direction || 'desc'}`;
   }, [params.page, params.pageSize, params.filters, params.sort]);
   
-  // Get cached data on component mount
-  const cachedData = useMemo(() => {
-    return getFromStorage<OrdersQueryResult>(storageKey);
-  }, [storageKey]);
+  // Initialize with localStorage data immediately
+  const [cachedData] = useState<OrdersQueryResult | undefined>(() => {
+    return getSavedData<OrdersQueryResult>(storageKey);
+  });
 
   const query = useQuery({
     queryKey: stableQueryKey,
@@ -360,16 +374,23 @@ export function useOrderUpdateMutation() {
 
 export function useCustomers(enabled: boolean = true) {
   const storageKey = 'customers_list';
-  const cachedData = useMemo(() => getFromStorage<EnrichedCustomer[]>(storageKey), []);
   
-  return useQuery<EnrichedCustomer[]>({
-    queryKey: ['customers'],
-    queryFn: async () => {
-      const session = await getSession();
+  // Initialize with localStorage data immediately
+  const [initialData] = useState<EnrichedCustomer[] | undefined>(() => {
+    return getSavedData<EnrichedCustomer[]>(storageKey);
+  });
+  
+  const queryFn = useCallback(async () => {
+    const session = await getSession();
+    const controller = new AbortController();
+    const signal = controller.signal;
+    
+    try {
       const res = await fetch('/api/customers', {
         headers: {
           'Authorization': `Bearer ${session}`
-        }
+        },
+        signal
       });
       
       if (!res.ok) {
@@ -377,73 +398,137 @@ export function useCustomers(enabled: boolean = true) {
       }
       
       const data = await res.json();
-      saveToStorage(storageKey, data);
+      
+      if (!signal.aborted) {
+        saveToStorage(storageKey, data);
+      }
       return data;
-    },
+    } catch (error) {
+      if (signal.aborted) {
+        return initialData || [];
+      }
+      throw error;
+    }
+  }, [initialData]);
+  
+  return useQuery<EnrichedCustomer[]>({
+    queryKey: ['customers'],
+    queryFn,
+    initialData,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 30 * 60 * 1000, // 30 minutes
     refetchOnMount: false,
     refetchOnWindowFocus: false,
-    staleTime: 100 * 100 * 100 * 100,
-    placeholderData: cachedData || keepPreviousData,
     enabled: enabled
   });
 }
+
 export function useSelectCustomerList() {
-  return useQuery<CustomerList[]>({
-    queryKey: ['customersList'],
-    queryFn: async () => {
-      const session = await getSession()
+  const storageKey = 'customers_select_list';
+  
+  // Initialize with localStorage data immediately
+  const [initialData] = useState<CustomerList[] | undefined>(() => {
+    return getSavedData<CustomerList[]>(storageKey);
+  });
+  
+  const queryFn = useCallback(async () => {
+    const session = await getSession();
+    const controller = new AbortController();
+    const signal = controller.signal;
+    
+    try {
       const res = await fetch('/api/customers/list', {
         headers: {
-          'Authorization': `Bearer ${session}` // Include token in header
-        }
-      }); // Call API route
+          'Authorization': `Bearer ${session}`
+        },
+        signal
+      });
+      
       if (!res.ok) {
-        throw new Error('Failed to fetch customers');
+        throw new Error('Failed to fetch customers list');
       }
-      return res.json();
-    },
-    refetchOnMount: false,
+      
+      const data = await res.json();
+      
+      if (!signal.aborted) {
+        saveToStorage(storageKey, data);
+      }
+      return data;
+    } catch (error) {
+      if (signal.aborted) {
+        return initialData || [];
+      }
+      throw error;
+    }
+  }, [initialData]);
+  
+  return useQuery<CustomerList[]>({
+    queryKey: ['customersList'],
+    queryFn,
+    initialData,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,
-    staleTime: 100 * 100 * 100 * 100,
-    placeholderData: keepPreviousData,
+    refetchOnMount: false
   });
 }
 
 export function useItems() {
   const storageKey = 'items_list';
-  const cachedData = useMemo(() => getFromStorage<ItemSchemaType[]>(storageKey), []);
   
-  return useQuery<ItemSchemaType[]>({
-    queryKey: ['items'],
-    queryFn: async () => {
-      const session = await getSession();
-
+  // Initialize with localStorage data right away (but only on client)
+  // This ensures we have data for the first render if available
+  const [initialData] = useState<ItemSchemaType[] | undefined>(() => {
+    // This runs once during component initialization
+    return getSavedData<ItemSchemaType[]>(storageKey);
+  });
+  
+  const queryFn = useCallback(async () => {
+    const session = await getSession();
+    const controller = new AbortController();
+    const signal = controller.signal;
+    
+    try {
       const res = await fetch('/api/items', {
         headers: {
           'Authorization': `Bearer ${session}`
-        }
+        },
+        signal
       });
+      
       if (!res.ok) {
         let errorResponse;
         try {
           errorResponse = await res.json();
         } catch (jsonError) {
-          errorResponse = { message: 'Failed to parse error response as JSON', rawResponse: await res.text() };
-          console.error("JSON parsing error:", jsonError);
+          errorResponse = { message: 'Failed to parse error response', rawResponse: await res.text() };
         }
-        console.error("API error response:", errorResponse);
-        throw new Error(`Failed to fetch items. API Response: ${JSON.stringify(errorResponse)}`);
+        throw new Error(`Failed to fetch items: ${JSON.stringify(errorResponse)}`);
       }
       
       const data = await res.json();
-      saveToStorage(storageKey, data);
+      
+      // Only save to storage if the component is still mounted
+      if (!signal.aborted) {
+        saveToStorage(storageKey, data);
+      }
       return data;
-    },
-    initialData: cachedData || undefined,
-    staleTime: 60 * 60 * 1000, // 5 minutes
-    // gcTime: 60 * 60 * 1000, // 30 minutes
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
+    } catch (error) {
+      if (signal.aborted) {
+        return initialData || [];
+      }
+      throw error;
+    }
+  }, [initialData]);
+
+  return useQuery<ItemSchemaType[]>({
+    queryKey: ['items'],
+    queryFn,
+    initialData,
+    staleTime: 60 * 60 * 1000, // 1 hour
+    gcTime: 2 * 60 * 60 * 1000, // 2 hours
+    refetchOnWindowFocus: false,
+    refetchOnMount: true
   });
 }
 

@@ -1,7 +1,20 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getStockMovements } from '@/server/actions/getStockMovements';
-import { StockMovementFilters, StockMovementSort } from '@/types/stockMovement';
+import { StockMovementFilters, StockMovementSort, EnrichedStockMovementView } from '@/types/stockMovement';
 import { keepPreviousData } from '@tanstack/react-query';
+import { useState, useMemo } from 'react';
+import { getSavedData, saveToStorage } from './data-fetcher';
+
+// Define interface for stock movements response
+interface StockMovementsResponse {
+  data: EnrichedStockMovementView[];
+  pagination: {
+    total: number;
+    pageSize: number;
+    currentPage: number;
+    totalPages: number;
+  };
+}
 
 export { getStockMovements };
 
@@ -40,11 +53,21 @@ export function useStockMovements(
     JSON.stringify(sort)
   ];
 
+  // Create a stable storage key for localStorage
+  const storageKey = useMemo(() => {
+    return `stock_movements_${page}_${pageSize}_${JSON.stringify(filters)}_${sort.field}-${sort.direction}`;
+  }, [page, pageSize, filters, sort]);
+  
+  // Initialize with localStorage data immediately
+  const [initialData] = useState<StockMovementsResponse | undefined>(() => {
+    return getSavedData<StockMovementsResponse>(storageKey);
+  });
+
   // Calculate a reasonable stale time based on search
   const hasSearch = filters.search && filters.search.trim().length > 0;
   const defaultStaleTime = hasSearch ? 0 : 24 * 60 * 60 * 1000; // No cache when searching
 
-  const query = useQuery({
+  const query = useQuery<StockMovementsResponse>({
     queryKey,
     queryFn: async () => {
       try {
@@ -55,7 +78,7 @@ export function useStockMovements(
           throw new Error(result.error || 'Failed to fetch stock movements');
         }
         
-        return {
+        const data: StockMovementsResponse = {
           data: result.data?.data || [],
           pagination: result.data?.pagination || {
             total: 0,
@@ -64,6 +87,11 @@ export function useStockMovements(
             totalPages: 0
           }
         };
+        
+        // Save successful result to localStorage
+        saveToStorage(storageKey, data);
+        
+        return data;
       } catch (error) {
         console.error("Stock movements fetch error:", error);
         throw error;
@@ -76,12 +104,13 @@ export function useStockMovements(
     refetchOnReconnect: options.refetchOnReconnect ?? false,
     retry: 2,
     retryDelay: 1000,
+    initialData, // Use localStorage data as initialData
     placeholderData: keepPreviousData
   });
   
   // Ensure we always return a valid data and pagination object
   return {
-    ...query,
+    ...query,    
     data: query.data?.data || [],
     pagination: query.data?.pagination || {
       total: 0,
@@ -112,10 +141,13 @@ export function usePrefetchStockMovements(
     JSON.stringify(filters), 
     JSON.stringify(sort)
   ];
+  
+  // Create storage key for saving fetched data
+  const storageKey = `stock_movements_${page}_${pageSize}_${JSON.stringify(filters)}_${sort.field}-${sort.direction}`;
 
   // Use the simplified prefetch function
   return () => {
-    return queryClient.prefetchQuery({
+    return queryClient.prefetchQuery<StockMovementsResponse>({
       queryKey,
       queryFn: async () => {
         const result = await getStockMovements(page, pageSize, filters, sort);
@@ -124,7 +156,7 @@ export function usePrefetchStockMovements(
           throw new Error(result.error || 'Failed to fetch stock movements');
         }
         
-        return {
+        const data: StockMovementsResponse = {
           data: result.data?.data || [],
           pagination: result.data?.pagination || {
             total: 0,
@@ -133,6 +165,11 @@ export function usePrefetchStockMovements(
             totalPages: 0
           }
         };
+        
+        // Save successful prefetched result to localStorage
+        saveToStorage(storageKey, data);
+        
+        return data;
       },
       staleTime: 90 * 1000,
     });
