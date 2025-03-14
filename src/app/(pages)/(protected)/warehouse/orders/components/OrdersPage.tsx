@@ -60,7 +60,6 @@ function PageHeader({ isLoading, isMobile }: PageHeaderProps) {
       </div>
 
         <CreateOrderDialog isMobile={isMobile} />
-
     </div>
   );
 }

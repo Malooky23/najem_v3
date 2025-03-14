@@ -59,11 +59,14 @@ export const StatusDropdown = memo(function StatusDropdown() {
     },
     onSuccess: (result) => {
       const { newStatus } = result;
-      
+
       // Update store state
       updateSelectedOrderStatus(newStatus);
       
       // Update React Query cache
+      queryClient.invalidateQueries({ queryKey: ['stockMovements'] });
+      queryClient.invalidateQueries({ queryKey: ['items'] });
+
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       
       toast.success(`Order status updated to ${newStatus}`);

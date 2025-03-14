@@ -361,12 +361,16 @@ export function useOrderUpdateMutation() {
     
     // Refresh data after mutation
     onSettled: (result, error, updatedOrder) => {
+      console.log("settled")
+      console.log("Updated Order", updatedOrder)
+      queryClient.invalidateQueries({ queryKey: ['order', updatedOrder.orderId] });
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+      // Also invalidate items and stock movements as they may be affected
+      queryClient.invalidateQueries({ queryKey: ['items'] });
+      queryClient.invalidateQueries({ queryKey: ['stockMovements'] });
+
       if (updatedOrder.orderId) {
-        queryClient.invalidateQueries({ queryKey: ['order', updatedOrder.orderId] });
-        queryClient.invalidateQueries({ queryKey: ['orders'] });
-        // Also invalidate items and stock movements as they may be affected
-        queryClient.invalidateQueries({ queryKey: ['items'] });
-        queryClient.invalidateQueries({ queryKey: ['stockMovements'] });
+        console.log("settled")
       }
     }
   });

@@ -24,6 +24,7 @@ import BackButton from "@/components/redirectBack";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { is } from "drizzle-orm";
+import TestRefreshButton from "@/components/test-refresh-button";
 // This is sample data.
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
@@ -86,7 +87,10 @@ export function AppSidebar({ session, ...props }: AppSidebarProps) {
         </Link>
       </SidebarHeader>
 
-      <BackButton />
+      <div className="flex items-center justify-center ">
+        <BackButton />
+        <TestRefreshButton/>
+      </div>
 
       <Separator />
       <SidebarContent>
