@@ -20,7 +20,7 @@ export function DetailsPanel({ isMobile }: DetailsPanelProps) {
   // Get referenceId from the movement
   const referenceId = useMemo(() => {
     if (!movement) return null
-    return movement.referenceId || null
+    return movement.referenceId 
   }, [movement])
   
   // Fetch order details with the reference ID

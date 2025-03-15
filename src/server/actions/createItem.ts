@@ -2,25 +2,22 @@
 "use server"
 import { number, z } from 'zod'
 import { db } from '@/server/db'
-import { sql } from 'drizzle-orm'
+import { auth } from '@/lib/auth/auth'
+
 import { createItemsSchema, CreateItemsSchemaType, ItemSchema, ItemSchemaType, insertItemZod } from '@/types/items'
 import { items } from '../db/schema'
-import { boolean } from 'drizzle-orm/mysql-core'
-import { auth } from '@/lib/auth/auth'
-import useDelay from '@/hooks/useDelay'
-import { error } from 'console'
 
-// export type CreateItemResponse =
-//     | { success: true, item: z.infer<typeof ItemSchema> }
-//     | { success: false, error: string | { [x: string]: string[] } | undefined }; // Include undefined in error type
+
+
+
+
 export type CreateItemResponse =
     {
         success: boolean,
         item?: z.infer<typeof ItemSchema>,
         error?: any
-    }; // Include undefined in error type
+    }; 
 
-    // export async function createItemAction(prevData: any, formData: FormData) {
 export async function createItemAction(inputData: CreateItemsSchemaType): Promise<CreateItemResponse> {
 // export async function createItemAction(formData: FormData) {
     // export const createItemAction = async (formData: any): Promise<CreateItemResponse> => {
