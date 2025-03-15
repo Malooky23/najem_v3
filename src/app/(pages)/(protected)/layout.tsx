@@ -2,11 +2,11 @@ import { auth } from "@/lib/auth/auth";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import Loading from "@/components/ui/loading";
-import { AppSidebar } from "@/components/layout/sidebar/app-sidebar";
+import { AppSidebar } from "@/components/sidebar/app-sidebar";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { cookies } from "next/headers";
-import { Header } from "@/components/layout/header/page";
-import BackButton from "@/components/redirectBack";
+
+
 
 export default async function ProtectedLayout({
   children,
@@ -15,8 +15,8 @@ export default async function ProtectedLayout({
 }) {
   const session = await auth();
 
-  if (!session) {
-    redirect("/login");
+  if (!session?.user) {
+    redirect("/");
   }
   const cookieStore = await cookies()
   const defaultOpen = cookieStore.get("sidebar_state")?.value === "true"

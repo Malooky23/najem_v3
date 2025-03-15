@@ -1,18 +1,15 @@
 "use client"
 
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
 import { 
   Ship, 
   UsersRound, 
   Warehouse, 
   Package, 
   BarChart4, 
-  TrendingUp, 
   Calendar,
   ArrowUpRight,
   ArrowRight,
-  Package2
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -73,7 +70,7 @@ const upcomingShipments = [
 
 export function DashboardShell({ session }: { session: any }) {
   return (
-    <div className="p-6   min-h-screen">
+    <div className="p-6 min-h-screen">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Welcome Card */}
         <Card>
