@@ -241,11 +241,6 @@ export const items = pgTable("items", {
   updatedAt: timestamp("updated_at", { withTimezone: true }),
   isDeleted: boolean("is_deleted").default(false),
 
-
-  // THIS IS NOT WORKING
-  //   updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(
-  //     () => sql`CURRENT_TIMESTAMP`
-  //   ),
 });
 
 // Inventory tracking tables
@@ -584,9 +579,18 @@ export const loginAttemptsRelations = relations(loginAttempts, ({ one }) => ({
 }));
 
 export const itemsRelations = relations(items, ({ one, many }) => ({
-  itemStock: many(itemStock)
-  // stockMovements: many(stockMovements),
-  // orderItems: many(orderItems),
+  itemStock: many(itemStock),
+  customer: one(customers, {
+    fields: [items.customerId],
+    references: [customers.customerId],
+    relationName: "item_customer_relation"
+  }),
+}));
+// stockMovements: many(stockMovements),
+// orderItems: many(orderItems),
+
+export const customerRelations = relations(customers, ({ one, many }) => ({
+  customerItems: many(items)
 }));
 
 export const itemStockRelations = relations(itemStock, ({ one }) => ({

@@ -1,5 +1,11 @@
 import { z } from "zod";
-import { contactType } from "@/server/db/schema";
+
+// Define a type for the response from API operations
+export type ApiResponse<T> = {
+    success: boolean;
+    message?: string;
+    data?: T;
+  };
 
 // Address Schemas
 export const AddressDetailsSchema = z.object({

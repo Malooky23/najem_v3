@@ -2,6 +2,7 @@ import { z } from "zod";
 import { type InsertItem, items, type Item } from "@/server/db/schema";
 import {createInsertSchema,} from 'drizzle-zod'
 import { stockMovement, stockReconciliation, stockMovementsView } from "./stockMovement";
+import { is } from "drizzle-orm";
 
 export const emptyStringToNull = z.string().optional().nullable().nullish().transform((val) => val === '' ? null : val);
 
@@ -38,7 +39,10 @@ export const createItemsSchema = z.object({
   customerId: z.string().min(35, {message: "please select a customer"}),
   notes: emptyStringToNull,
   createdBy: z.string(),
+  isDeleted: z.boolean().default(false).optional(),
 });
+export type CreateItemsSchemaType = z.infer<typeof createItemsSchema>
+
 
 export const ItemSchema = z.object({
   itemId: z.string(),
@@ -56,21 +60,35 @@ export const ItemSchema = z.object({
   }).optional().nullable(),
   weightGrams: z.coerce.number().nullable(),
   customerId: z.string(),
+  customerDisplayName: z.string().optional(),
   notes: z.string().nullable(),
   createdBy: z.string(),
   createdAt: z.date(),
   updatedAt: z.date().nullable(),
-  isDeleted: z.boolean().default(false),
+  isDeleted: z.boolean().default(false).optional(),
   itemStock: z.array(itemStock).nullable().optional(),
   stockMovements: z.array(stockMovementsView).optional(), // Changed to use enriched view
   stockReconciliations: z.array(stockReconciliation).optional(),
 });
+export type ItemSchemaType = z.infer<typeof ItemSchema>
+
 
 export const EnrichedItemsSchema = ItemSchema.extend({
   customerDisplayName: z.string(),
 });
-
-export type ItemSchemaType = z.infer<typeof ItemSchema>
 export type EnrichedItemsType = z.infer<typeof EnrichedItemsSchema>
-export type CreateItemsSchemaType = z.infer<typeof createItemsSchema>
+
+export const UpdateItemSchema = createItemsSchema.extend({
+  itemId: z.string(),
+});
+export type UpdateItemSchemaType = z.infer<typeof UpdateItemSchema>;
+
 export const insertItemZod = createInsertSchema(items)
+
+
+
+export type ItemResponse = {
+    success: boolean,
+    message?: string,
+    data?: ItemSchemaType[] | ItemSchemaType,
+}

@@ -11,8 +11,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <SessionProvider>
-        <ReactQueryDevtools initialIsOpen={true} />
         {children}
+        <ReactQueryDevtools initialIsOpen={true} />
       </SessionProvider>
     </QueryClientProvider>
   );

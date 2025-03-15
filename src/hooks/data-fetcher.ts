@@ -65,7 +65,7 @@ export function useOrderDetails(orderId: string | null) {
       selectOrder(orderId, result.data);
       return result.data;
     },
-    initialData: selectedOrderData,
+    placeholderData: selectedOrderData,
     enabled: !!orderId,
     staleTime: 30 * 1000, // 30 seconds
     gcTime: 5 * 60 * 1000, // 5 minutes

@@ -34,7 +34,7 @@ export const QUERIES = {
       }
 
       let checkCustomerId = "EMPTY"
-      if (!authData.user.customer_id){
+      if (!authData.user.customer_id) {
         checkCustomerId = "NOT FOUND"
       }
       const user: User = {
@@ -62,7 +62,7 @@ export const QUERIES = {
     return user[0];
   },
 
-getCustomers: async function () {
+  getCustomers: async function () {
     try {
       const result = db
         .select({
@@ -166,7 +166,7 @@ getCustomers: async function () {
 
     })
   },
-  getSingleCustomersFULL: async function (customerId:string) {
+  getSingleCustomersFULL: async function (customerId: string) {
     return db.query.customers.findFirst({
       with: {
         individual: {
