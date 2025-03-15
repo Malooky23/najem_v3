@@ -1,9 +1,6 @@
 "use client"
-
 import * as React from "react"
 import Image from 'next/image';
-
-
 import { NavMain } from "./nav-main"
 import { NavProjects } from "./nav-projects"
 import { NavUser } from "./nav-user"
@@ -16,15 +13,13 @@ import {
   SidebarRail,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { UserMenu } from "../header/user-menu/user-menu"
 import { Separator } from "@/components/ui/separator";
 import { Session } from "next-auth";
 import { data } from "./sidebar-data"
 import BackButton from "@/components/redirectBack";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { is } from "drizzle-orm";
-// This is sample data.
+
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   session: Session | null
