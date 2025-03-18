@@ -15,6 +15,7 @@ import {
   Building,
   StickyNote,
   Layers,
+  Plus,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -91,27 +92,27 @@ export default function CreateItemForm() {
   // Track scroll state for touch devices
   useEffect(() => {
     const formContainer = document.getElementById("form-container");
-    
+
     if (formContainer && isMobile) {
       const handleTouchStart = () => {
         isTouchScrolling.current = false;
       };
-      
+
       const handleTouchMove = () => {
         isTouchScrolling.current = true;
       };
-      
+
       const handleTouchEnd = () => {
         // Reset after a short delay to allow click/focus events to process
         setTimeout(() => {
           isTouchScrolling.current = false;
         }, 100);
       };
-      
+
       formContainer.addEventListener("touchstart", handleTouchStart);
       formContainer.addEventListener("touchmove", handleTouchMove);
       formContainer.addEventListener("touchend", handleTouchEnd);
-      
+
       return () => {
         formContainer.removeEventListener("touchstart", handleTouchStart);
         formContainer.removeEventListener("touchmove", handleTouchMove);
@@ -517,9 +518,12 @@ export default function CreateItemForm() {
     return (
       <Drawer disablePreventScroll={false} modal={true} open={open} onOpenChange={setOpen} >
         <DrawerTrigger asChild>
-          <Button variant="default" className="bg-primary hover:bg-primary/90">
+          {/* <Button variant="default" className="bg-primary hover:bg-primary/90">
             <Package className="mr-2 h-4 w-4" />
             Create New Item
+          </Button> */}
+          <Button className="h-12 w-12 rounded-full absolute -top-6 left-1/2 transform -translate-x-1/2 flex items-center justify-center">
+            <Plus className="h-6 w-6" />
           </Button>
         </DrawerTrigger>
         <DrawerContent className="h-[90vh]">
@@ -564,16 +568,16 @@ export default function CreateItemForm() {
     }
   `}</style>
           <DrawerFooter className="flex flex-row justify-between border-t border-primary/20 pt-2 bg-primary/5">
-            <Button 
-              onClick={form.handleSubmit(onSubmit)} 
+            <Button
+              onClick={form.handleSubmit(onSubmit)}
               className="bg-primary hover:bg-primary/90"
               tabIndex={0} // Ensure the button is keyboard accessible
             >
               {createItemMutation.isPending ? 'Creating...' : 'Create Item'}
             </Button>
             <DrawerClose asChild>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="border-primary/20 hover:bg-primary/10"
                 tabIndex={0} // Ensure the button is keyboard accessible
               >

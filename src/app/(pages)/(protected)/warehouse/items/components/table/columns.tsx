@@ -13,29 +13,28 @@ export const itemColumns: ColumnDef<ItemSchemaType>[] = [
       const itemNumber = row.getValue("itemNumber") as string
       return  <span className="text-gray-500 font-semibold">#{itemNumber}</span>
     },
+    enableSorting: true,
   },
   {
     accessorKey: "itemType",
-    header: "Type",
+    // header: "Type",
+    header: () => (
+      <div className="text-center bg-red-100  w-24">Type</div>
+    ),
     cell: ({ row }) => {
       const type = row.getValue("itemType") as string | null
       return type ? (
         <TypeCell type={type} />
       ) : null
     },
+    enableSorting: true,
   },
   {
     accessorKey: "itemName",
     header: "Name",
+    enableSorting: true,
   },
-  // {
-  //   accessorKey: "itemBrand",
-  //   header: "Brand",
-  // },
-  // {
-  //   accessorKey: "itemModel",
-  //   header: "Model",
-  // },
+
   {
     accessorKey: "itemStock",
     // header: "Item Stock",
@@ -50,24 +49,9 @@ export const itemColumns: ColumnDef<ItemSchemaType>[] = [
           return <Badge className="flex mx-auto justify-center max-w-[100px] rounded-none " variant='secondary'>Out of stock</Badge>
         }
       return <p className="flex mx-auto justify-center max-w-[100px] text-center  ">{stockLevel.toString()}</p>
-    }
+    },
+    enableSorting: false,
   },
-  // {
-  //   accessorKey: "createdAt",
-  //   header: "Created",
-  //   cell: ({ row }) => {
-  //     const date = row.getValue("createdAt") as Date
-  //     return format(date, 'dd/MM/yyyy')
-  //   },
-  // },
-  // {
-  //   accessorKey: "updatedAt",
-  //   header: "Updated",
-  //   cell: ({ row }) => {
-  //     const date = row.getValue("updatedAt") as Date | null
-  //     return date ? format(date, 'dd/MM/yyyy') : '-'
-  //   },
-  // },
 ]
 
 

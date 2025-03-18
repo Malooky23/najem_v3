@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { format } from "date-fns"
-import { ItemSchemaType } from "@/types/items"
+import { ITEM_TYPES, ItemSchemaType } from "@/types/items"
 import {
   Package2,
   Barcode,
@@ -36,17 +36,17 @@ import {
   DrawerFooter,
   DrawerClose
 } from "@/components/ui/drawer"
+import { useMediaQuery } from "@/hooks/use-media-query"
 
 interface DetailsPanelProps {
-  isMobile: boolean;
   items: ItemSchemaType[];
 }
 
 export const DetailsPanel = memo<DetailsPanelProps>(function DetailsPanel({
-  isMobile,
   items
 }) {
   const store = useItemsStore()
+  const isMobile = useMediaQuery("(max-width: 800px)")
   // Local drawer state for smooth animations
   const [isDrawerOpen, setIsDrawerOpen] = useState(store.isDetailsOpen)
   const selectedItem = items.find(item => item.itemId === store.selectedItemId)
@@ -71,7 +71,7 @@ export const DetailsPanel = memo<DetailsPanelProps>(function DetailsPanel({
   }
 
   if (!selectedItem) {
-    return 
+    return
 
   }
 
@@ -91,7 +91,7 @@ export const DetailsPanel = memo<DetailsPanelProps>(function DetailsPanel({
     <div className="space-y-4">
       {/* Main Info Card */}
       <Card className="border-none shadow-none">
-        <CardHeader className="pb-2 px-0">
+        <CardHeader className="pb-2 ">
           <div className="flex items-start justify-between">
             <div>
               <CardTitle className="text-2xl font-bold">
@@ -103,13 +103,13 @@ export const DetailsPanel = memo<DetailsPanelProps>(function DetailsPanel({
               </CardDescription>
             </div>
             {selectedItem.itemType && (
-              <Badge variant="outline" className="capitalize text-sm">
+              <Badge variant={selectedItem.itemType as "CARTON" | "BOX" | "SACK" | "EQUIPMENT" | "PALLET" | "CAR" | "OTHER"} className="capitalize text-sm">
                 {selectedItem.itemType}
               </Badge>
             )}
           </div>
         </CardHeader>
-        <CardContent className="px-0">
+        <CardContent className="">
           <div className="grid grid-cols-2 gap-4">
             {selectedItem.itemBrand && (
               <div className="flex items-center gap-2">
@@ -154,6 +154,49 @@ export const DetailsPanel = memo<DetailsPanelProps>(function DetailsPanel({
         </CardContent>
       </Card>
 
+      {/* Customer Info Card */}
+      <Card>
+        <CardHeader className="pb-2">
+          <div className="flex items-center">
+            <Info className="h-4 w-4 text-purple-500 mr-2" />
+            <CardTitle className="text-sm">Customer Information</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex items-center gap-2">
+              <User2 className="h-4 w-4 text-purple-500 shrink-0" />
+              <div className="min-w-0">
+                <p className="text-sm font-medium truncate">{selectedItem.customerDisplayName}</p>
+                <p className="text-xs text-muted-foreground">Customer ID</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <CalendarClock className="h-4 w-4 text-purple-500 shrink-0" />
+              <div className="min-w-0">
+                <p className="text-sm font-medium truncate">
+                  {format(selectedItem.createdAt, 'dd/MM/yyyy')}
+                </p>
+                <p className="text-xs text-muted-foreground">Created</p>
+              </div>
+            </div>
+
+            {selectedItem.updatedAt && (
+              <div className="flex items-center gap-2">
+                <CalendarClock className="h-4 w-4 text-purple-500 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate">
+                    {format(selectedItem.updatedAt, 'dd/MM/yyyy')}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Updated</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Current Stock Card */}
       <Card>
         <CardHeader className="pb-2">
@@ -181,7 +224,7 @@ export const DetailsPanel = memo<DetailsPanelProps>(function DetailsPanel({
               )}
             </div>
 
-            {selectedItem.itemStock?.map(stock => (
+            {/* {selectedItem.itemStock?.map(stock => (
               <div key={stock.locationId} className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <MapPin className="h-4 w-4 text-emerald-500 shrink-0" />
@@ -191,7 +234,7 @@ export const DetailsPanel = memo<DetailsPanelProps>(function DetailsPanel({
                   </div>
                 </div>
               </div>
-            ))}
+            ))} */}
           </div>
         </CardContent>
       </Card>
@@ -276,48 +319,7 @@ export const DetailsPanel = memo<DetailsPanelProps>(function DetailsPanel({
         </Card>
       )}
 
-      {/* Customer Info Card */}
-      <Card>
-        <CardHeader className="pb-2">
-          <div className="flex items-center">
-            <Info className="h-4 w-4 text-purple-500 mr-2" />
-            <CardTitle className="text-sm">Additional Information</CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex items-center gap-2">
-              <User2 className="h-4 w-4 text-purple-500 shrink-0" />
-              <div className="min-w-0">
-                <p className="text-sm font-medium truncate">{selectedItem.customerId}</p>
-                <p className="text-xs text-muted-foreground">Customer ID</p>
-              </div>
-            </div>
 
-            <div className="flex items-center gap-2">
-              <CalendarClock className="h-4 w-4 text-purple-500 shrink-0" />
-              <div className="min-w-0">
-                <p className="text-sm font-medium truncate">
-                  {format(selectedItem.createdAt, 'dd/MM/yyyy')}
-                </p>
-                <p className="text-xs text-muted-foreground">Created</p>
-              </div>
-            </div>
-
-            {selectedItem.updatedAt && (
-              <div className="flex items-center gap-2">
-                <CalendarClock className="h-4 w-4 text-purple-500 shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-sm font-medium truncate">
-                    {format(selectedItem.updatedAt, 'dd/MM/yyyy')}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Updated</p>
-                </div>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Notes Card */}
       {selectedItem.notes && (
@@ -394,11 +396,18 @@ export const DetailsPanel = memo<DetailsPanelProps>(function DetailsPanel({
 
   if (!isMobile) {
     return (
-      <div className="flex-1 p-4 bg-white rounded-lg border-2 border-slate-200">
-        <div className="flex justify-end mb-4">
-          <Button variant="outline" className="p-2" onClick={() => store.closeDetails()}>
-            <X className="h-4 w-4" />
-          </Button>
+      <div className="flex-1 p-4 w-full bg-gradient-to-tr from-pink-200/50 to-blue-200/50  backdrop-blur-lg rounded-lg border-2 border-slate-200">
+        <div className="flex items-center justify-between bg-red-300 mr-4">
+          <div className="">
+            <Badge variant={selectedItem.itemType as "CARTON" | "BOX" | "SACK" | "EQUIPMENT" | "PALLET" | "CAR" | "OTHER"} className=" text-sm border-slate-200 border">
+              {selectedItem.itemType}
+            </Badge>
+          </div>
+          <div className="">
+            <Button variant="outline" className="p-2 " onClick={() => store.closeDetails()}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
         <ScrollArea className="h-[calc(100vh-8rem)]">
           <div className="pr-4">

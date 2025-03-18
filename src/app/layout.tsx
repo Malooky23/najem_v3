@@ -22,9 +22,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="h-full">
-      {/* <head>
+      <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-      </head> */}
+      </head>
       <body className={`${inter.className} h-full bg-gradient-to-br from-blue-200/80 via-purple-200/80 to-amber-200/50`}>
         <Providers>
           <div className="h-full flex flex-col">

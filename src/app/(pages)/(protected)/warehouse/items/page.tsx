@@ -1,13 +1,13 @@
 
-import { Suspense } from "react";
-import ItemsPageWrapper from "./ItemsPageWrapper";
+// import { Suspense } from "react";
+// import ItemsPageWrapper from "./ItemsPageWrapper";
 
-export default function ItemsPage(){
-    return (
+// export default function ItemsPage(){
+//     return (
 
-        <Suspense fallback={<div>Loading...</div>}>
-            <ItemsPageWrapper />
-        </Suspense>
+//         <Suspense fallback={<div>Loading...</div>}>
+//             <ItemsPageWrapper />
+//         </Suspense>
 
-    );
-}
+//     );
+// }
