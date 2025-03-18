@@ -513,7 +513,6 @@ export default function CreateItemForm() {
       </form>
     </Form>
   )
-  if(window === undefined) return null
 
   if (isMobile) {
     return (

@@ -1,13 +1,10 @@
+import ItemsPageWrapper from "./components/data-table/items-page-wrapper"
 
-// import { Suspense } from "react";
-// import ItemsPageWrapper from "./ItemsPageWrapper";
+export default function Page() {
 
-// export default function ItemsPage(){
-//     return (
-
-//         <Suspense fallback={<div>Loading...</div>}>
-//             <ItemsPageWrapper />
-//         </Suspense>
-
-//     );
-// }
+  return (
+    // <div className="container mx-auto py-10">
+      <ItemsPageWrapper />
+    // </div>
+  )
+}

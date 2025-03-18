@@ -45,6 +45,7 @@ export default function ItemsPageWrapper() {
   const isMobile = useIsMobileTEST()
 
   const { data: itemsData, isLoading, status, error, refetch } = useItemsQuery();
+
     const [data, setData] = useState<ItemSchemaType[]>([]);
 
     useEffect(() => {
@@ -220,6 +221,9 @@ export default function ItemsPageWrapper() {
 
   // Get all available customers from data
   const availableCustomers = Array.from(new Set(data.map((item) => item.customerDisplayName))).filter(Boolean) as string[];
+  
+  if(isLoading) return <div>Loading...</div>
+if(isMobile===null) return <div>Loading...</div>
 
   return isMobile ? (
     <MobileView
@@ -239,6 +243,8 @@ export default function ItemsPageWrapper() {
       setActiveTab={setActiveTab}
       refreshData={refreshData}
       data={data}
+      isLoading={isLoading}
+      status={status}
     />
   ) : (
     <DesktopView

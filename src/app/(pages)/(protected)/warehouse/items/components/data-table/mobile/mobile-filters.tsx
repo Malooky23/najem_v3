@@ -1,18 +1,26 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { SlidersHorizontal } from "lucide-react"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+  SheetClose,
+} from "@/components/ui/sheet"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
-import type { FilterState } from "./items-page-wrapper"
+import type { FilterState } from "../items-page-wrapper"
 import type { ItemSchemaType } from "@/types/items"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useState } from "react"
 import { Input } from "@/components/ui/input"
 
-interface FilterControlsProps {
+interface MobileFiltersProps {
   activeFilters: FilterState
   handleTypeFilter: (type: string) => void
   handleCustomerFilter: (customer: string) => void
@@ -23,7 +31,7 @@ interface FilterControlsProps {
   data: ItemSchemaType[]
 }
 
-export function FilterControls({
+export function MobileFilters({
   activeFilters,
   handleTypeFilter,
   handleCustomerFilter,
@@ -32,7 +40,7 @@ export function FilterControls({
   availableItemTypes,
   availableCustomers,
   data,
-}: FilterControlsProps) {
+}: MobileFiltersProps) {
   const [itemSearchQuery, setItemSearchQuery] = useState("")
 
   // Filter items based on search query
@@ -43,16 +51,16 @@ export function FilterControls({
   )
 
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" className="h-9 gap-1">
-          <SlidersHorizontal className="h-4 w-4" />
-          <span className="hidden sm:inline">Advanced Filters</span>
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[350px] p-4" align="end">
-        <div className="space-y-4">
-          <h4 className="font-medium">Filter Items</h4>
+    <Sheet>
+      <SheetTrigger asChild>
+        <span id="filter-trigger-target" className="hidden" />
+      </SheetTrigger>
+      <SheetContent className="w-full sm:max-w-md">
+        <SheetHeader>
+          <SheetTitle>Filter Items</SheetTitle>
+          <SheetDescription>Apply filters to narrow down your inventory items</SheetDescription>
+        </SheetHeader>
+        <div className="py-4">
           <Accordion type="multiple" className="w-full">
             <AccordionItem value="type">
               <AccordionTrigger>Item Type</AccordionTrigger>
@@ -61,11 +69,11 @@ export function FilterControls({
                   {availableItemTypes.map((type) => (
                     <div key={type} className="flex items-center space-x-2">
                       <Checkbox
-                        id={`type-${type}`}
+                        id={`mobile-type-${type}`}
                         checked={activeFilters.types.includes(type)}
                         onCheckedChange={() => handleTypeFilter(type)}
                       />
-                      <Label htmlFor={`type-${type}`}>{type}</Label>
+                      <Label htmlFor={`mobile-type-${type}`}>{type}</Label>
                     </div>
                   ))}
                 </div>
@@ -79,11 +87,11 @@ export function FilterControls({
                   {availableCustomers.map((customer) => (
                     <div key={customer} className="flex items-center space-x-2">
                       <Checkbox
-                        id={`customer-${customer}`}
+                        id={`mobile-customer-${customer}`}
                         checked={activeFilters.customers.includes(customer)}
                         onCheckedChange={() => handleCustomerFilter(customer)}
                       />
-                      <Label htmlFor={`customer-${customer}`}>{customer}</Label>
+                      <Label htmlFor={`mobile-customer-${customer}`}>{customer}</Label>
                     </div>
                   ))}
                 </div>
@@ -103,13 +111,13 @@ export function FilterControls({
                   <ScrollArea className="h-[200px]">
                     <div className="space-y-2">
                       {filteredItems.map((item) => (
-                        <div key={item.itemName} className="flex items-center space-x-2">
+                        <div key={item.itemId} className="flex items-center space-x-2">
                           <Checkbox
-                            id={`item-${item.itemName}`}
-                            checked={activeFilters.selectedItems.includes(item.itemName)}
-                            onCheckedChange={() => handleItemSelection(item.itemName)}
+                            id={`mobile-item-${item.itemId}`}
+                            checked={activeFilters.selectedItems.includes(item.itemId)}
+                            onCheckedChange={() => handleItemSelection(item.itemId)}
                           />
-                          <Label htmlFor={`item-${item.itemName}`} className="flex flex-col">
+                          <Label htmlFor={`mobile-item-${item.itemId}`} className="flex flex-col">
                             <span>{item.itemName}</span>
                             <span className="text-xs text-muted-foreground">#{item.itemNumber}</span>
                           </Label>
@@ -124,12 +132,17 @@ export function FilterControls({
               </AccordionContent>
             </AccordionItem>
           </Accordion>
-          <Button variant="outline" size="sm" className="w-full mt-2" onClick={clearAllFilters}>
-            Clear All Filters
-          </Button>
         </div>
-      </PopoverContent>
-    </Popover>
+        <SheetFooter className="flex flex-col gap-2 sm:flex-row">
+          <Button variant="outline" className="w-full" onClick={clearAllFilters}>
+            Clear Filters
+          </Button>
+          <SheetClose asChild>
+            <Button className="w-full">Apply Filters</Button>
+          </SheetClose>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   )
 }
 

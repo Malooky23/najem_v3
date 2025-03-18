@@ -20,6 +20,7 @@ import type { FilterState } from "./items-page-wrapper"
 import { Item } from "@radix-ui/react-radio-group"
 import { DetailsPanel } from "../DetailsPanel"
 import { useItemsStore } from "@/stores/items-store"
+import { Spinner } from "@heroui/spinner"
 
 interface MobileViewProps {
   table: Table<ItemSchemaType>
@@ -38,6 +39,8 @@ interface MobileViewProps {
   setActiveTab: (tab: string) => void
   refreshData: () => void
   data: ItemSchemaType[]
+  isLoading: boolean
+  status: string
 }
 
 export function MobileView({
@@ -57,6 +60,9 @@ export function MobileView({
   setActiveTab,
   refreshData,
   data,
+  
+  isLoading,
+  status,
 }: MobileViewProps) {
   const [isRefreshing, setIsRefreshing] = useState(false)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
@@ -242,6 +248,19 @@ export function MobileView({
   const handleRowClick = (item: ItemSchemaType) => {
     // setSelectedItem(item)
     store.selectItem(item.itemId)
+  }
+  if (isLoading) {
+    return (
+      <div className="flex flex-col h-screen w-full fixed overflow-hidden touch-none bg-background">
+        <MobileHeader 
+          onSearchClick={handleSearchClick}
+          onFilterClick={handleFilterClick}
+        />
+        <div className="flex-1 flex items-center justify-center">
+          <Spinner className="h-8 w-8 text-primary" />
+        </div>
+      </div>
+    )
   }
 
   return (
