@@ -67,8 +67,8 @@ export function useOrderDetails(orderId: string | null) {
     },
     placeholderData: selectedOrderData,
     enabled: !!orderId,
-    staleTime: 30 * 1000, // 30 seconds
-    gcTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
     retry: 1,
     refetchOnWindowFocus: false
   });
@@ -110,8 +110,8 @@ export function useOrdersQuery(params: OrdersQueryParams = {}) {
     },
     refetchOnMount: false,
     refetchOnWindowFocus: false,
-    staleTime: 3 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
     placeholderData: keepPreviousData,
   });
 
