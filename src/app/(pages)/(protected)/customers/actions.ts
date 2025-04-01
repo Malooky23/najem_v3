@@ -78,22 +78,23 @@ async function executeIndividualCustomerCreation(
         await createCustomerContacts(tx, customerId, customerData.contacts);
         
         // Send welcome email if primary email exists
-        const primaryEmail = getPrimaryEmail(customerData.contacts);
-        if (primaryEmail) {
-          const { subject, html } = emailTemplates.newCustomer(
-            `${customerData.firstName} ${customerData.lastName}`
-          );
-          await sendEmail({
-            to: primaryEmail,
-            subject,
-            html
-          });
-        }
+        // const primaryEmail = getPrimaryEmail(customerData.contacts);
+        // if (primaryEmail) {
+        //   const { subject, html } = emailTemplates.newCustomer(
+        //     `${customerData.firstName} ${customerData.lastName}`
+        //   );
+        //   await sendEmail({
+        //     to: primaryEmail,
+        //     subject,
+        //     html
+        //   });
+        // }
       }
 
       revalidatePath('/customers');
       return { success: true };
     } catch (error) {
+      console.error('Error during individual customer creation:', error);
       throw new CustomerCreationError(
         'Failed to create individual customer record',
         error

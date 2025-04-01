@@ -59,10 +59,10 @@ export function DataTable<TValue>({
       <div className="rounded-md border flex-1 relative">
         <div className="absolute inset-0 overflow-auto rounded-md ">
 
-          <Table className="relative " style={{ tableLayout: 'auto' }}>
+          <Table className="relative bg-slate-50 " style={{ tableLayout: 'auto' }}>
             <TableHeader className="sticky top-0 rounded-t-md   ">
               {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow className='bg-amber-400' key={headerGroup.id}
+                <TableRow className='bg-white' key={headerGroup.id}
                   style={{ position: 'relative' }}
                 >
                   {headerGroup.headers.map((header) => {

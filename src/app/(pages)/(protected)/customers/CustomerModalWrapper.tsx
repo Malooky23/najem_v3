@@ -49,8 +49,8 @@ export default function CustomerModalWrapper() {
           {/* <DrawerHeader className="mt rounded-lg border-b border-primary/20 bg-slate-300/10"> */}
           <div className="m-1 backdrop-blur-sm bg-transparent text-ellipsis">
             <DrawerTitle className="flex items-center justify-between">
-              <h1 className="text-xl ">New {
-                !isFormSelected ? "" : customerType === "business" ? "Business" : "Individual"} Customer</h1>
+              <span className="text-xl ">New {
+                !isFormSelected ? "" : customerType === "business" ? "Business" : "Individual"} Customer</span>
               <Button variant="ghost" onClick={() => setCustomerType(customerType === "individual" ? "business" : "individual")}>
                 {/* {customerType === "individual" ? "Switch to Business" : "Switch to Individual"} */}
                 <p className="text-slate-400">Switch Mode</p>

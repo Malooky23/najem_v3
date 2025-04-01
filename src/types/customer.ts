@@ -25,6 +25,8 @@ export interface Individual {
   updatedAt: Date | null;
 }
 
+export const emptyStringToNull = z.string().optional().nullable().nullish().transform((val) => val === '' ? null : val);
+
 
 // Customer data schemas for transaction-based operations
 export const IndividualDataSchema = z.object({
@@ -33,7 +35,7 @@ export const IndividualDataSchema = z.object({
   displayName: z.string().max(100, "Display name must be at most 100 characters"),
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
-  personalId: z.string().optional().nullish(),
+  personalId: emptyStringToNull,
   address: CreateAddressSchema.optional().nullish(),
   contacts: z.array(CreateContactSchema).min(1, "At least one contact required"),
 });
@@ -44,7 +46,7 @@ export const BusinessDataSchema = z.object({
   displayName: z.string().max(100, "Display name must be at most 100 characters"),
   businessName: z.string().min(2, "Business name must be at least 2 characters"),
   isTaxRegistered: z.boolean().default(false),
-  taxNumber: z.string().nullish(),
+  taxNumber: emptyStringToNull,
   address: CreateAddressSchema.optional().nullish(),
   contacts: z.array(CreateContactSchema).min(1, "At least one contact required"),
 });

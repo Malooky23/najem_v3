@@ -8,6 +8,8 @@
     "build": "next build",
     "start": "next start",
     "go": "next build && next start",
+    "studio": "npx drizzle-kit studio",
+    "push": "npx drizzle-kit push",
     "lint": "next lint",
     "copy-users": "tsx src/scripts/copyUsers.ts"
   },

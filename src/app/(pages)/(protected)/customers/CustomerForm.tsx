@@ -1,16 +1,14 @@
-import { useState } from "react"
+'use client'
+import { useState, useCallback, memo } from "react"
 import { useFieldArray, useForm } from "react-hook-form"
 import { ContactsSection, type ContactFormData } from "@/components/contacts-section"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { createBusinessCustomer, createIndividualCustomer } from "./actions"
-import { COUNTRIES } from "@/lib/constants/countries";
 import { useToast } from "@/hooks/use-toast"
 import { useQueryClient } from '@tanstack/react-query'
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { useActionState } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -58,10 +56,10 @@ async function submitCustomerForm(prevState: any, formData: FormData, options: {
     formData.forEach((value, key) => {
       if (!key.startsWith('contacts') && key !== 'isTaxRegistered') {
         if (key.startsWith('address.')) {
-          const addressField = key.split('.')[1];
-          addressFields[addressField] = value as string;
+          const addressField = key.split('.')[ 1 ];
+          addressFields[ addressField ] = value as string;
         } else {
-          formObject[key] = value;
+          formObject[ key ] = value;
         }
       }
     });
@@ -103,7 +101,7 @@ async function submitCustomerForm(prevState: any, formData: FormData, options: {
     }
 
     if (result?.success === true) {
-      queryClient.invalidateQueries({ queryKey: ['customers'] })
+      queryClient.invalidateQueries({ queryKey: [ 'customers' ] })
       onClose();
       toast({
         variant: "success",
@@ -121,12 +119,15 @@ async function submitCustomerForm(prevState: any, formData: FormData, options: {
   }
 }
 
-export default function CustomerForm({ type, onClose }: { type: "individual" | "business" ; onClose: () => void }) {
-  const [isTaxRegistered, setIsTaxRegistered] = useState(false)
+// Memoize the LocationSelector component
+const MemoizedLocationSelector = memo(LocationSelector);
+
+export default function CustomerForm({ type, onClose }: { type: "individual" | "business"; onClose: () => void }) {
+  const [ isTaxRegistered, setIsTaxRegistered ] = useState(false)
   const { toast } = useToast()
   const queryClient = useQueryClient()
 
-  const [state, formAction, isPending] = useActionState(
+  const [ state, formAction, isPending ] = useActionState(
     (prevState: any, formData: FormData) =>
       submitCustomerForm(prevState, formData, {
         type,
@@ -168,13 +169,15 @@ export default function CustomerForm({ type, onClose }: { type: "individual" | "
     }
   });
 
-  const [selectedCountry, setSelectedCountry] = useState<any>(null)
+  const [ selectedCountry, setSelectedCountry ] = useState<any>(null)
 
-  const handleCountryChange = (country: any) => {
+  // Memoize the callback to prevent recreation on every render
+  const handleCountryChange = useCallback((country: any) => {
     setSelectedCountry(country)
-  }
+  }, [])
 
-  const [focusCountry, setFocusCountry] = useState(false)
+  const [ focusCountry, setFocusCountry ] = useState(false)
+  const [ focusContacts, setFocusContacts ] = useState(false)
 
   const handleSubmit = (e: React.FormEvent) => {
     const formErrors = form.formState.errors;
@@ -209,13 +212,17 @@ export default function CustomerForm({ type, onClose }: { type: "individual" | "
         title: "Validation Error",
         description: "At least one valid contact is required.",
       });
+      setFocusContacts(true)
+      setTimeout(() => {
+        setFocusContacts(false)
+      }, 6000)
       return;
     }
 
     if (Object.keys(formErrors).length > 0) {
       e.preventDefault();
       const errorMessages = Object.entries(formErrors)
-        .map(([field, error]) => `${field}: ${error.message}`)
+        .map(([ field, error ]) => `${field}: ${error.message}`)
         .join('\n');
 
       toast({
@@ -244,117 +251,119 @@ export default function CustomerForm({ type, onClose }: { type: "individual" | "
           />
 
           <div className="mb-4"></div>
-            <Label htmlFor="displayName">Display Name <span className="text-red-500">*</span></Label>
-            <Input id="displayName" name="displayName" placeholder="How the customer will appear in lists" required />
-          </div>
+          <Label htmlFor="displayName">Display Name <span className="text-red-500">*</span></Label>
+          <Input id="displayName" name="displayName" placeholder="How the customer will appear in lists" required />
+        </div>
 
-          {/* Basic Information */}
-          <div className="space-y-4">
-            {type === "business" ? (
-              <div>
-                <Label htmlFor="businessName">Business Name <span className="text-red-500">*</span></Label>
-                <Input id="businessName" name="businessName" placeholder="Company name" required />
-              </div>
-            ) : (
-              <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2">
-                <div>
-                  <Label htmlFor="firstName">First Name <span className="text-red-500">*</span></Label>
-                  <Input id="firstName" name="firstName" placeholder="First name" required />
-                </div>
-                <div>
-                  <Label htmlFor="middleName">Middle Name</Label>
-                  <Input id="middleName" name="middleName" placeholder="Middle name" />
-                </div>
-                <div>
-                  <Label htmlFor="lastName">Last Name <span className="text-red-500">*</span></Label>
-                  <Input id="lastName" name="lastName" placeholder="Last name" required />
-                </div>
-                <div>
-                  <Label htmlFor="personalId">Personal ID</Label>
-                  <Input id="personalId" name="personalId" placeholder="ID number" />
-                </div>
-              </div>
-            )}
-            
-            <div className={cn("space-y-1", focusCountry ? "animate-flash-red border-2 border-red-500 p-2 rounded-md" : "")}>
-              <Label>Location <span className="text-red-500">*</span></Label>
-              <LocationSelector
-                isStateNeeded={false}
-                onCountryChange={handleCountryChange}
-                onStateChange={() => { }}
-              />
+        {/* Basic Information */}
+        <div className="space-y-4">
+          {type === "business" ? (
+            <div>
+              <Label htmlFor="businessName">Business Name <span className="text-red-500">*</span></Label>
+              <Input id="businessName" name="businessName" placeholder="Company name" required />
             </div>
-            
-            {type === "business" && (
-              <div className="space-y-2 pt-2">
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="isTaxRegistered"
-                    name="isTaxRegistered"
-                    checked={isTaxRegistered}
-                    onCheckedChange={setIsTaxRegistered}
-                    defaultChecked={false}
-                  />
-                  <Label htmlFor="isTaxRegistered">Tax Registered</Label>
-                </div>
-                {isTaxRegistered && (
-                  <div className="ml-6 pt-2">
-                    <Label htmlFor="taxNumber">
-                      Tax Registration Number <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      id="taxNumber"
-                      name="taxNumber"
-                      placeholder="Tax ID"
-                      required={isTaxRegistered}
-                    />
-                  </div>
-                )}
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2">
+              <div>
+                <Label htmlFor="firstName">First Name <span className="text-red-500">*</span></Label>
+                <Input id="firstName" name="firstName" placeholder="First name" required />
               </div>
-            )}
-          </div>
+              <div>
+                <Label htmlFor="middleName">Middle Name</Label>
+                <Input id="middleName" name="middleName" placeholder="Middle name" />
+              </div>
+              <div>
+                <Label htmlFor="lastName">Last Name <span className="text-red-500">*</span></Label>
+                <Input id="lastName" name="lastName" placeholder="Last name" required />
+              </div>
+              <div>
+                <Label htmlFor="personalId">Personal ID</Label>
+                <Input id="personalId" name="personalId" placeholder="ID number" />
+              </div>
+            </div>
+          )}
 
-          {/* Contacts Section */}
-          <div className="py-2">
-            {/* <h3 className="text-md font-medium mb-2">Contact Information <span className="text-red-500">*</span></h3> */}
-            <ContactsSection
-              fields={fields}
-              append={append}
-              remove={remove}
-              setValue={form.setValue}
-              watch={form.watch}
-              formState={form.formState}
-              control={form.control}
+          <div className={cn("space-y-1", focusCountry ? "animate-flash-red border-2 border-red-500 p-2 rounded-md" : "")}>
+            <Label>Location <span className="text-red-500">*</span></Label>
+            <MemoizedLocationSelector
+              isStateNeeded={false}
+              onCountryChange={handleCountryChange}
+              // onStateChange={() => { }}
             />
           </div>
 
-          {/* Additional Sections in Accordions */}
-          <div className="pt-2">
-            <Accordion type="single" collapsible>
-              <AccordionItem value="address">
-                <AccordionTrigger>Add Address</AccordionTrigger>
-                <AccordionContent>
-                  <AddressSection />
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-
-            <Accordion type="single" collapsible className="mt-2">
-              <AccordionItem value="notes">
-                <AccordionTrigger>Add Notes</AccordionTrigger>
-                <AccordionContent>
-                  <Textarea 
-                    id="notes" 
-                    name="notes"
-                    placeholder="Additional information about this customer"
-                    rows={4}
+          {type === "business" && (
+            <div className="space-y-2 pt-2">
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="isTaxRegistered"
+                  name="isTaxRegistered"
+                  checked={isTaxRegistered}
+                  onCheckedChange={setIsTaxRegistered}
+                  defaultChecked={false}
+                />
+                <Label htmlFor="isTaxRegistered">Tax Registered</Label>
+              </div>
+              {isTaxRegistered && (
+                <div className="ml-6 pt-2">
+                  <Label htmlFor="taxNumber">
+                    Tax Registration Number <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="taxNumber"
+                    name="taxNumber"
+                    placeholder="Tax ID"
+                    required={isTaxRegistered}
                   />
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-          </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
-      
+
+        {/* Contacts Section */}
+        <div className={cn("py-2", focusContacts ? "animate-flash-red border-2 border-red-500 rounded-md" : "")}>
+
+          {/* <div className="py-2"> */}
+          {/* <h3 className="text-md font-medium mb-2">Contact Information <span className="text-red-500">*</span></h3> */}
+          <ContactsSection
+            fields={fields}
+            append={append}
+            remove={remove}
+            setValue={form.setValue}
+            watch={form.watch}
+            formState={form.formState}
+            control={form.control}
+          />
+        </div>
+
+        {/* Additional Sections in Accordions */}
+        <div className="pt-2">
+          <Accordion type="single" collapsible>
+            <AccordionItem value="address">
+              <AccordionTrigger>Add Address</AccordionTrigger>
+              <AccordionContent>
+                <AddressSection />
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+
+          <Accordion type="single" collapsible className="mt-2">
+            <AccordionItem value="notes">
+              <AccordionTrigger>Add Notes</AccordionTrigger>
+              <AccordionContent>
+                <Textarea
+                  id="notes"
+                  name="notes"
+                  placeholder="Additional information about this customer"
+                  rows={4}
+                />
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </div>
+      </div>
+
 
       {/* Show error message if exists */}
       {state?.error && (

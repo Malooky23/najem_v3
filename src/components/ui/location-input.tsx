@@ -1,4 +1,5 @@
-import React, { useState } from 'react'
+'use client'
+import React, { useState, useCallback } from 'react'
 import { Check, ChevronsUpDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
@@ -95,17 +96,17 @@ const LocationSelector = ({
     (state) => state.country_id === selectedCountry?.id,
   )
 
-  const handleCountrySelect = (country: CountryProps | null) => {
+  const handleCountrySelect = useCallback((country: CountryProps | null) => {
     setSelectedCountry(country)
     setSelectedState(null) // Reset state when country changes
     onCountryChange?.(country)
     onStateChange?.(null)
-  }
+  }, [onCountryChange, onStateChange])
 
-  const handleStateSelect = (state: StateProps | null) => {
+  const handleStateSelect = useCallback((state: StateProps | null) => {
     setSelectedState(state)
     onStateChange?.(state)
-  }
+  }, [onStateChange])
 
   return (
     <div className="flex gap-4 relative ">
@@ -228,4 +229,4 @@ const LocationSelector = ({
   )
 }
 
-export default LocationSelector
+export default React.memo(LocationSelector)

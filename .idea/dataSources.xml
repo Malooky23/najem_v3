@@ -36,5 +36,12 @@
       <jdbc-url>jdbc:postgresql://ep-orange-mode-a1coh5zt.ap-southeast-1.aws.neon.tech/neondb?sslmode=require</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
+    <data-source source="LOCAL" name="whatsapp" uuid="09d2d452-f35c-413c-a3b3-256ec9e95721">
+      <driver-ref>postgresql</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.postgresql.Driver</jdbc-driver>
+      <jdbc-url>jdbc:postgresql://localhost:5433/postgres</jdbc-url>
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
   </component>
 </project>
