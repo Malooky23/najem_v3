@@ -2,7 +2,7 @@
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Check, ChevronsUpDown, Link } from "lucide-react"
+import { ArrowRight, Check, ChevronsUpDown } from "lucide-react"
 import { useForm, UseFormSetValue } from "react-hook-form"
 import { z } from "zod"
 
@@ -48,7 +48,7 @@ function ComboboxPopover<T extends string>({
   fieldName,
   placeholder,
 }: ComboboxPopoverProps<T>) {
-  const [open, setOpen] = useState(false)
+  const [ open, setOpen ] = useState(false)
 
   return (
     <Popover open={open} onOpenChange={setOpen} modal={true}>
@@ -151,6 +151,8 @@ import { set } from "date-fns"
 import testAction from "./action"
 import CreateItemFormGemini from "./test-item/upgades"
 import { CreateCustomerDialog } from "./customers/CreateCustomerForm"
+import Link from "next/link"
+import { DropdownDialogDemo } from "./DropdownDialogDemo"
 
 
 export function ComboboxForm() {
@@ -226,7 +228,17 @@ export default function ExperimentsPage() {
 
       <CreateItemFormGemini />
 
-      <CreateCustomerDialog/>
+      <CreateCustomerDialog />
+      <Link href="/orders">
+        <Button>Orders</Button>
+      </Link>
+      <div className="flex ">
+        <div className="flex">
+          <h1>Dropdown with Dialog </h1>
+          <ArrowRight />
+        </div>
+        <DropdownDialogDemo />
+      </div>
     </div>
   );
 }

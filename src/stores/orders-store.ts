@@ -1,8 +1,12 @@
 import { create } from 'zustand';
-import { OrderFilters, OrderSort, OrderStatus, OrderSortField, MovementType, EnrichedOrders } from '@/types/orders';
+import { OrderFilters, OrderSort, OrderSortField, EnrichedOrders } from '@/types/orders';
 import { subscribeWithSelector } from 'zustand/middleware';
 import { StateCreator } from 'zustand';
+import {orderStatusSchema, movementTypeSchema} from '@/server/db/schema';
+import { z } from 'zod';
 
+type OrderStatus = z.infer<typeof orderStatusSchema>;
+type MovementType = z.infer<typeof movementTypeSchema>;
 // Simpler state interface with focused responsibilities
 interface OrdersState {
   // Pagination

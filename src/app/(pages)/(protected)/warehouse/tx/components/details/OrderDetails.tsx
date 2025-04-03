@@ -6,7 +6,7 @@ import { OrderHeader } from "./OrderHeader"
 import { OrderInfoCard } from "./OrderInfoCard"
 import { OrderItemsTable } from "./OrderItemsTable"
 import { OrderNotesCard } from "./OrderNotesCard"
-import { EnrichedOrders, OrderStatus } from "@/types/orders"
+import { EnrichedOrders } from "@/types/orders"
 
 import { toast } from "@/hooks/use-toast"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"

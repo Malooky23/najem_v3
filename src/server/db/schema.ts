@@ -20,19 +20,21 @@ import {
 import { sql } from "drizzle-orm";
 import { relations } from 'drizzle-orm';
 import { string, z } from 'zod'
+import { createInsertSchema } from "drizzle-zod";
 
-export const userType = pgEnum("user_type", ["EMPLOYEE", "CUSTOMER", "DEMO"])
-export const customerType = pgEnum("customer_type", ["INDIVIDUAL", "BUSINESS"]);
-export const contactType = pgEnum("contact_type", ['email', 'phone', 'mobile', 'landline', 'other']);
-export const entityType = pgEnum("entity_type", ["CUSTOMER", "USER"]);
-export const packingType = pgEnum("packing_type", [
-  "SACK",
-  "PALLET",
-  "CARTON",
-  "OTHER",
-  "NONE",
-]);
-export const movementType = pgEnum("movement_type", ["IN", "OUT"]);
+export const userType = pgEnum("user_type", [ "EMPLOYEE", "CUSTOMER", "DEMO" ])
+export const userTypeSchema = z.enum(userType.enumValues);
+
+export const customerType = pgEnum("customer_type", [ "INDIVIDUAL", "BUSINESS" ]);
+export const customerTypeSchema = z.enum(customerType.enumValues);
+
+export const contactType = pgEnum("contact_type", [ 'email', 'phone', 'mobile', 'landline', 'other' ]);
+export const contactTypeSchema = z.enum(contactType.enumValues);
+
+export const entityType = pgEnum("entity_type", [ "CUSTOMER", "USER" ]);
+export const entityTypeSchema = z.enum(entityType.enumValues);
+
+
 // export const addressType = pgEnum("address_type", ["PRIMARY", "BILLING", "SHIPPING"]);
 
 //Contact Details such as Email
@@ -272,7 +274,7 @@ export const itemStock = pgTable("item_stock", {
   lastReconciliationBy: uuid("last_reconciliation_by").references(() => users.userId),
 },
   (table) => [
-    primaryKey({ columns: [table.itemId, table.locationId] }),
+    primaryKey({ columns: [ table.itemId, table.locationId ] }),
     check("quantity_check", sql`current_quantity >= 0`)
   ]);
 
@@ -289,44 +291,34 @@ export const stockReconciliation = pgTable("stock_reconciliation", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
-export const stockMovements = pgTable("stock_movements", {
-  movementId: uuid("movement_id").defaultRandom().primaryKey(),
-  movementNumber: serial("movement_number").notNull(),
 
-  itemId: uuid("item_id")
-    .notNull()
-    .references(() => items.itemId),
-  locationId: uuid("location_id")
-    .notNull()
-    .references(() => locations.locationId),
-  movementType: movementType("movement_type").notNull(),
-  quantity: integer("quantity").notNull(),
-  referenceType: text("reference_type"),
-  referenceId: uuid("reference_id"),
-  notes: text(),
-  createdBy: uuid("created_by")
-    // .notNull()   //MAKE NULLABLE TO ALLOW ORDER=COMPLETED TRIGGER TO UPDATE STOCK
-    .references(() => users.userId),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .defaultNow()
-    .notNull(),
-});
 
 export const deletedItems = pgTable('deleted_items', {
   itemId: uuid('item_id').primaryKey().notNull(),
   deletedAt: timestamp('deleted_at').defaultNow(),
 });
 
-export const orderStatus = pgEnum("order_status", ['DRAFT', 'PENDING', 'PROCESSING', 'READY', 'COMPLETED', 'CANCELLED'])
-export const orderType = pgEnum("order_type", ['CUSTOMER_ORDER',])
-export const deliveryMethod = pgEnum("delivery_method", ['NONE', 'PICKUP', 'DELIVERY'])
 
+export const movementType = pgEnum("movement_type", [ "IN", "OUT" ]);
+export const movementTypeSchema = z.enum(movementType.enumValues);
+
+export const orderStatus = pgEnum("order_status", [ 'DRAFT', 'PENDING', 'PROCESSING', 'READY', 'COMPLETED', 'CANCELLED' ]);
+export const orderStatusSchema = z.enum(orderStatus.enumValues);
+
+export const orderType = pgEnum("order_type", [ 'CUSTOMER_ORDER', 'SHIPMENT_ORDER', 'WAREHOUSE_ORDER' ])
+export const orderTypeSchema = z.enum(orderType.enumValues)
+
+export const deliveryMethod = pgEnum("delivery_method", [ 'NONE', 'PICKUP', 'DELIVERY' ])
+export const deliveryMethodSchema = z.enum(deliveryMethod.enumValues)
+
+export const packingType = pgEnum("packing_type", [ "SACK", "PALLET", "CARTON", "OTHER", "NONE" ]);
+export const packingTypeSchema = z.enum(packingType.enumValues)
 
 export const orders = pgTable("orders", {
   orderId: uuid("order_id").primaryKey().defaultRandom().notNull(),
   orderNumber: serial("order_number").notNull(),
   customerId: uuid("customer_id").notNull(),
-  orderType: orderType("order_type").notNull().default('CUSTOMER_ORDER'),
+  orderType: orderType("order_type").notNull(),
   movement: movementType().notNull(),
   packingType: packingType("packing_type").notNull().default('NONE'),
   deliveryMethod: deliveryMethod("delivery_method").notNull().default('NONE'),
@@ -343,22 +335,24 @@ export const orders = pgTable("orders", {
 },
   (table) => [
     foreignKey({
-      columns: [table.createdBy],
-      foreignColumns: [users.userId],
+      columns: [ table.createdBy ],
+      foreignColumns: [ users.userId ],
       name: "orders_creator_id_fkey"
     }).onDelete("restrict"),
     foreignKey({
-      columns: [table.customerId],
-      foreignColumns: [customers.customerId],
+      columns: [ table.customerId ],
+      foreignColumns: [ customers.customerId ],
       name: "orders_cus_id_fkey"
     }).onDelete("restrict"),
     foreignKey({
-      columns: [table.addressId],
-      foreignColumns: [addressDetails.addressId],
+      columns: [ table.addressId ],
+      foreignColumns: [ addressDetails.addressId ],
       name: "orders_address_id_fkey"
     }).onDelete("set null"),
     unique("orders_order_number_key").on(table.orderNumber),
   ]);
+
+export const orderInsertSchema = createInsertSchema(orders);
 
 
 export const orderItems = pgTable("order_items", {
@@ -371,18 +365,18 @@ export const orderItems = pgTable("order_items", {
   updatedAt: timestamp("updated_at", { withTimezone: true })
 }, (table) => [
   foreignKey({
-    columns: [table.itemLocationId],
-    foreignColumns: [locations.locationId],
+    columns: [ table.itemLocationId ],
+    foreignColumns: [ locations.locationId ],
     name: "orderItems_locations_location_id_fkey"
   }).onDelete("restrict"),
   foreignKey({
-    columns: [table.orderId],
-    foreignColumns: [orders.orderId],
+    columns: [ table.orderId ],
+    foreignColumns: [ orders.orderId ],
     name: "order_items_order_id_fkey"
   }).onDelete("cascade"),
   foreignKey({
-    columns: [table.itemId],
-    foreignColumns: [items.itemId],
+    columns: [ table.itemId ],
+    foreignColumns: [ items.itemId ],
     name: "order_items_item_id_fkey"
   }).onDelete("restrict"),
   check("order_items_quantity_check", sql`quantity
@@ -430,14 +424,37 @@ export const orderHistory = pgTable("order_history", {
 // Add to your existing relations
 export const orderHistoryRelations = relations(orderHistory, ({ one }) => ({
   order: one(orders, {
-    fields: [orderHistory.orderId],
-    references: [orders.orderId],
+    fields: [ orderHistory.orderId ],
+    references: [ orders.orderId ],
   }),
   user: one(users, {
-    fields: [orderHistory.changedBy],
-    references: [users.userId],
+    fields: [ orderHistory.changedBy ],
+    references: [ users.userId ],
   }),
 }));
+
+export const stockMovements = pgTable("stock_movements", {
+  movementId: uuid("movement_id").defaultRandom().primaryKey(),
+  movementNumber: serial("movement_number").notNull(),
+
+  itemId: uuid("item_id")
+    .notNull()
+    .references(() => items.itemId),
+  locationId: uuid("location_id")
+    .notNull()
+    .references(() => locations.locationId),
+  movementType: movementType("movement_type").notNull(),
+  quantity: integer("quantity").notNull(),
+  referenceType: text("reference_type"),
+  referenceId: uuid("reference_id"),
+  notes: text(),
+  createdBy: uuid("created_by")
+    // .notNull()   //MAKE NULLABLE TO ALLOW ORDER=COMPLETED TRIGGER TO UPDATE STOCK
+    .references(() => users.userId),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
 
 // Types
 export type OrderHistory = typeof orderHistory.$inferSelect;
@@ -483,13 +500,13 @@ export type InsertStockMovement = typeof stockMovements.$inferInsert;
 
 export const customersRelations = relations(customers, ({ one, many }) => ({
   individual: one(individualCustomers, {
-    fields: [customers.customerId],
-    references: [individualCustomers.individualCustomerId],
+    fields: [ customers.customerId ],
+    references: [ individualCustomers.individualCustomerId ],
     relationName: "customer_individual"
   }),
   business: one(businessCustomers, {
-    fields: [customers.customerId],
-    references: [businessCustomers.businessCustomerId],
+    fields: [ customers.customerId ],
+    references: [ businessCustomers.businessCustomerId ],
     relationName: "customer_business"
   }),
   addresses: many(entityAddresses),
@@ -500,16 +517,16 @@ export const customersRelations = relations(customers, ({ one, many }) => ({
 // Individual Customer Relations
 export const individualCustomersRelations = relations(individualCustomers, ({ one }) => ({
   customer: one(customers, {
-    fields: [individualCustomers.individualCustomerId],
-    references: [customers.customerId]
+    fields: [ individualCustomers.individualCustomerId ],
+    references: [ customers.customerId ]
   })
 }));
 
 // Business Customer Relations
 export const businessCustomersRelations = relations(businessCustomers, ({ one }) => ({
   customer: one(customers, {
-    fields: [businessCustomers.businessCustomerId],
-    references: [customers.customerId]
+    fields: [ businessCustomers.businessCustomerId ],
+    references: [ customers.customerId ]
   })
 }));
 
@@ -517,8 +534,8 @@ export const businessCustomersRelations = relations(businessCustomers, ({ one })
 // User Relations
 export const usersRelations = relations(users, ({ one, many }) => ({
   customer: one(customers, {
-    fields: [users.customerId],
-    references: [customers.customerId]
+    fields: [ users.customerId ],
+    references: [ customers.customerId ]
   }),
   loginAttempts: many(loginAttempts)
 }));
@@ -533,12 +550,12 @@ export const contactDetailsRelations = relations(contactDetails, ({ many }) => (
 // Entity Contact Details Relations
 export const entityContactDetailsRelations = relations(entityContactDetails, ({ one }) => ({
   contactDetail: one(contactDetails, {
-    fields: [entityContactDetails.contactDetailsId],
-    references: [contactDetails.contactDetailsId]
+    fields: [ entityContactDetails.contactDetailsId ],
+    references: [ contactDetails.contactDetailsId ]
   }),
   customer: one(customers, {
-    fields: [entityContactDetails.entityId],
-    references: [customers.customerId],
+    fields: [ entityContactDetails.entityId ],
+    references: [ customers.customerId ],
   })
   // You'll add similar relations for other entity types later:
   // order: one(orders, { ... }),
@@ -554,13 +571,13 @@ export const addressDetailsRelations = relations(addressDetails, ({ many }) => (
 // relations.ts
 export const entityAddressesRelations = relations(entityAddresses, ({ one }) => ({
   address: one(addressDetails, {
-    fields: [entityAddresses.addressId],
-    references: [addressDetails.addressId]
+    fields: [ entityAddresses.addressId ],
+    references: [ addressDetails.addressId ]
   }),
   // For customer addresses
   customer: one(customers, {
-    fields: [entityAddresses.entityId],
-    references: [customers.customerId]
+    fields: [ entityAddresses.entityId ],
+    references: [ customers.customerId ]
   })
   // You'll add similar relations for other entity types later:
   // order: one(orders, { ... }),
@@ -573,16 +590,16 @@ export const entityAddressesRelations = relations(entityAddresses, ({ one }) => 
 // Login Attempts Relations
 export const loginAttemptsRelations = relations(loginAttempts, ({ one }) => ({
   user: one(users, {
-    fields: [loginAttempts.userId],
-    references: [users.userId]
+    fields: [ loginAttempts.userId ],
+    references: [ users.userId ]
   })
 }));
 
 export const itemsRelations = relations(items, ({ one, many }) => ({
   itemStock: many(itemStock),
   customer: one(customers, {
-    fields: [items.customerId],
-    references: [customers.customerId],
+    fields: [ items.customerId ],
+    references: [ customers.customerId ],
     relationName: "item_customer_relation"
   }),
 }));
@@ -595,13 +612,13 @@ export const customerRelations = relations(customers, ({ one, many }) => ({
 
 export const itemStockRelations = relations(itemStock, ({ one }) => ({
   item: one(items, {
-    fields: [itemStock.itemId],
-    references: [items.itemId],
+    fields: [ itemStock.itemId ],
+    references: [ items.itemId ],
     relationName: "item_stock_relation"
   }),
   location: one(locations, {
-    fields: [itemStock.locationId],
-    references: [locations.locationId]
+    fields: [ itemStock.locationId ],
+    references: [ locations.locationId ]
   })
 }));
 

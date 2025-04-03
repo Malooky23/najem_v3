@@ -31,15 +31,16 @@ export function OrderHeader({
   
   return (
     <div className={cn(
-      "flex flex-col md:flex-row justify-between items-start md:items-center gap-4 w-full",
-      isMobile && "space-y-2"
+      "flex flex-row justify-between items-start md:items-center gap-4 w-full",
+      isMobile && "px-4 pb-2"
     )}>
-      <div className={cn("flex gap-2 flex-wrap", isMobile ? 'flex-col' : '')}>
+      <div className={cn("flex gap-2 ", isMobile ? 'flex-colZ' : '')}>
+      {/* <div className={cn("flex gap-2 flex-wrap", isMobile ? 'flex-col' : '')}> */}
         <Badge
           variant="outline"
           className="h-7 px-3 text-lg font-bold border-2 border-black bg-white rounded-full"
         >
-          <p className="whitespace-nowrap">Order #{orderNumber}</p>
+          <p className="whitespace-nowrap">{isMobile ? '#' : 'Order #'}{orderNumber}</p>
         </Badge>
         <StatusDropdown />
       </div>

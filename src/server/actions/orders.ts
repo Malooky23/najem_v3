@@ -5,7 +5,7 @@ import { db } from '@/server/db';
 import { auth } from '@/lib/auth/auth';
 import { orders, orderItems, customers, items, users } from '@/server/db/schema';
 import { eq, and, desc, asc, sql, gte, lte } from 'drizzle-orm';
-import { createOrderSchema, deliveryMethod, EnrichedOrders, packingType, UpdateOrderInput, updateOrderSchema, type OrderFilters, type OrderSort } from '@/types/orders';
+import { createOrderSchema, EnrichedOrders, UpdateOrderInput, updateOrderSchema, type OrderFilters, type OrderSort } from '@/types/orders';
 import useDelay from '@/hooks/useDelay';
 
 export type OrderActionResponse = {
@@ -156,6 +156,7 @@ export async function updateOrder(orderData: UpdateOrderInput): Promise<OrderUpd
             packingType: updateData.packingType,
             deliveryMethod: updateData.deliveryMethod,
             notes: updateData.notes,
+            orderMark: updateData.orderMark,
             updatedAt: new Date(),
           })
           .where(eq(orders.orderId, updateData.orderId))
@@ -258,6 +259,7 @@ export async function getOrderById(orderId: string): Promise<GetSingleOrderRespo
             deliveryMethod: order.delivery_method || 'NONE',
             status: order.status || 'PENDING',
             addressId: order.address_id || null,
+            orderMark: order.order_mark || null,
             fulliedAt: order.fullied_at ? new Date(order.fullied_at.toString()) : null,
             notes: order.notes || null,
             createdBy: order.created_by,

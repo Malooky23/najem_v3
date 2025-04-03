@@ -6,10 +6,13 @@ import { ChevronDown } from "lucide-react"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
-import { OrderStatus } from "@/types/orders"
 import { updateOrder } from "@/server/actions/orders"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useSelectedOrderId, useSelectedOrderData, useOrdersStore } from "@/stores/orders-store"
+import { z } from "zod"
+import { orderStatusSchema } from "@/server/db/schema"
+
+type OrderStatus = z.infer<typeof orderStatusSchema>
 
 const statusOptions = [
   { value: 'DRAFT', label: 'Draft' },
@@ -65,6 +68,7 @@ export const StatusDropdown = memo(function StatusDropdown() {
       
       // Update React Query cache
       queryClient.invalidateQueries({ queryKey: ['orders'] });
+      queryClient.invalidateQueries({ queryKey: ['stockMovements'] });
       
       toast.success(`Order status updated to ${newStatus}`);
       setShowConfirmDialog(false);

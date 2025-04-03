@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useFieldArray, useForm } from "react-hook-form";
-import { createOrderSchema, DeliveryMethod, MovementType, OrderStatus, PackingType, type CreateOrderInput } from "@/types/orders";
+import { createOrderSchema, type CreateOrderInput } from "@/types/orders";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import CustomerSelector from "@/components/ui/customer-dropdown";
@@ -10,7 +10,8 @@ import { createOrder } from "@/server/actions/orders";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useCustomers, useItems, useOrderUpdateMutation } from "@/hooks/data-fetcher";
+import { useCustomers, useOrderUpdateMutation } from "@/hooks/data-fetcher";
+
 import { startTransition, useActionState, useCallback } from "react";
 import { useQueryClient } from '@tanstack/react-query';
 import { Plus, PackageOpen } from "lucide-react";
@@ -20,6 +21,10 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Card } from "@/components/ui/card";
+import { orderStatusSchema, movementTypeSchema, packingTypeSchema, deliveryMethodSchema } from "@/server/db/schema";
+import { z } from "zod";
+import { useItemsQuery } from "@/hooks/data/useItems";
+import { Input } from "@/components/ui/input";
 
 async function submitOrderForm(formData: FormData) {
     try {
@@ -32,8 +37,8 @@ async function submitOrderForm(formData: FormData) {
         formData.forEach((value, key) => {
             if (key === 'items') {
                 try {
-                    console.log("cap Items::::::+++++_____________________")
-                    console.log("cap Items::::::", formObject[key])
+                    // console.log("cap Items::::::+++++_____________________")
+                    // console.log("cap Items::::::", formObject[key])
 
                     formObject[key] = JSON.parse(value as string);
                 } catch (e) {
@@ -45,7 +50,7 @@ async function submitOrderForm(formData: FormData) {
             }
         });
 
-        console.log('=== Captured Form Data ===', formObject);
+        // console.log('=== Captured Form Data ===', formObject);
 
         // Validate required fields
         for (const field of requiredFields) {
@@ -80,7 +85,7 @@ interface OrderFormProps {
 
 export default function OrderForm({ onClose, initialData, isEditMode = false }: OrderFormProps) {
     const { data: customerList, isSuccess: isCustomersSuccess, isLoading: isCustomersLoading, isError: isCustomersError } = useCustomers();
-    const { data: itemsList, isLoading: isItemsLoading, isError: isItemsError } = useItems();
+    const { data: itemsList, isLoading: isItemsLoading, isError: isItemsError } = useItemsQuery();
     const queryClient = useQueryClient();
     const isMobile = useIsMobileTEST()
 
@@ -95,12 +100,13 @@ export default function OrderForm({ onClose, initialData, isEditMode = false }: 
         if (isEditMode && initialData?.orderId) {
             // For edit mode, construct the update object from form data
             const orderId = initialData.orderId;
-            const status = formData.get('status') as OrderStatus;
-            const movement = formData.get('movement') as MovementType;
-            const packingType = formData.get('packingType') as PackingType;
-            const deliveryMethod = formData.get('deliveryMethod') as DeliveryMethod;
+            const status = formData.get('status') as z.infer<typeof orderStatusSchema>;
+            const movement = formData.get('movement') as z.infer<typeof movementTypeSchema>;
+            const packingType = formData.get('packingType') as z.infer<typeof packingTypeSchema>;
+            const deliveryMethod = formData.get('deliveryMethod') as z.infer<typeof deliveryMethodSchema>;
             const notes = formData.get('notes') as string;
             const customerId = formData.get('customerId') as string;
+            const orderMark = formData.get('orderMark') as string;
 
             // Parse items from form data
             const items: { itemId: string; quantity: number, itemLocationId: string }[] = [];
@@ -135,10 +141,12 @@ export default function OrderForm({ onClose, initialData, isEditMode = false }: 
                 notes,
                 customerId,
                 items: validItems,
+                orderMark
             }, {
                 onSuccess: () => {
                     queryClient.invalidateQueries({ queryKey: ['orders'] });
                     queryClient.invalidateQueries({ queryKey: ['order', orderId] });
+                    queryClient.invalidateQueries({ queryKey: ['stockMovement'] });
                     onClose();
                     toast.success("Order updated successfully");
                 },
@@ -165,7 +173,7 @@ export default function OrderForm({ onClose, initialData, isEditMode = false }: 
     const form = useForm<CreateOrderInput>({
         resolver: zodResolver(createOrderSchema),
         defaultValues: initialData || {
-            orderType: "CUSTOMER_ORDER",
+            orderType: "WAREHOUSE_ORDER",
             packingType: "NONE",
             deliveryMethod: "NONE",
             status: "PENDING",
@@ -217,7 +225,7 @@ export default function OrderForm({ onClose, initialData, isEditMode = false }: 
     // console.log(form.watch())
 
     return (
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full ">
             <Form {...form}>
                 <form
                     action={async (data) => {
@@ -236,16 +244,18 @@ export default function OrderForm({ onClose, initialData, isEditMode = false }: 
                             formAction(data) // Call server action if customerId is selected
                         })
                     }}
-                    className="flex flex-col h-full w-full"
+                    className="flex flex-col h-full w-full "
                 >
-                    <div className="flex flex-col px-2 sm:px-6  flex-grow overflow-auto">
+                    <div className="flex flex-col px-2 sm:px-6  flex-grow overflow-auto ">
                         {/* Main layout container */}
-                        <div className="grid grid-cols-1 lg:grid-cols-[1.2fr,2fr] gap-6">
+                        <div className="grid grid-cols-1 lg:grid-cols-[1.2fr,2fr] gap-6  ">
                             {/* Left Column - General Order Info */}
-                            {/* <Card className="flex flex-grow flex-col p-5 shadow-sm border-gray-200 h-full lg:sticky lg:top-0 lg:max-h-[calc(100vh-12rem)] overflow-hidden"> */}
                             <Card className={cn("shadow-sm border-gray-200 flex flex-col ",
-                                isMobile ? "h-full" : "h-[calc(100vh-20rem)] overflow-hidden"
+                                // isMobile ? "h-full " : "h-[calc(100vh-20rem)] overflow-hidden"
                             )}>
+                            {/* <Card className={cn("shadow-sm border-gray-200 flex flex-col ",
+                                isMobile ? "h-full " : "h-[calc(100vh-20rem)] overflow-hidden"
+                            )}> */}
                                 <div className="pt-5 px-5 pb-2 border-b  ">
 
                                     <h3 className="text-lg font-semibold text-gray-800 flex items-center">
@@ -346,6 +356,7 @@ export default function OrderForm({ onClose, initialData, isEditMode = false }: 
                                                             field.value === "PROCESSING" && "bg-yellow-100 text-yellow-800",
                                                             field.value === "READY" && "bg-green-100 text-green-800",
                                                             field.value === "COMPLETED" && "bg-gray-100 text-gray-800",
+                                                            field.value === "CANCELLED" && "bg-red-100 text-red-800 font-semibold",
                                                         )} >
                                                             <SelectValue placeholder="Select status" />
                                                         </SelectTrigger>
@@ -356,6 +367,7 @@ export default function OrderForm({ onClose, initialData, isEditMode = false }: 
                                                         <SelectItem value="PROCESSING">PROCESSING</SelectItem>
                                                         <SelectItem value="READY">READY</SelectItem>
                                                         <SelectItem value="COMPLETED">COMPLETED</SelectItem>
+                                                        <SelectItem value="CANCELLED">CANCELLED</SelectItem>
                                                     </SelectContent>
                                                 </Select>
                                                 <FormMessage />
@@ -369,6 +381,33 @@ export default function OrderForm({ onClose, initialData, isEditMode = false }: 
                                             </FormItem>
                                         )}
                                     />
+
+                                    <FormField
+                                        control={form.control}
+                                        name="orderMark"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel className="font-medium text-gray-700">Mark</FormLabel>
+                                                <FormControl>
+                                                    <Input
+                                                        placeholder="Order Mark"
+                                                        {...field}
+                                                        value={field.value ?? ''}
+                                                    // className="min-h-[100px] resize-none"
+                                                    />
+                                                </FormControl>
+                                                <FormMessage />
+
+                                                {/* Restored hidden input for mark */}
+                                                <input
+                                                    type="hidden"
+                                                    name="orderMark"
+                                                    value={field.value ?? ''}
+                                                />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    
 
                                     {/* Two-column layout for smaller fields */}
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -447,10 +486,11 @@ export default function OrderForm({ onClose, initialData, isEditMode = false }: 
                                                 <FormLabel className="font-medium text-gray-700">Notes</FormLabel>
                                                 <FormControl>
                                                     <Textarea
-                                                        placeholder="Add any additional notes here"
+                                                        placeholder="Add any additional notes here..."
                                                         {...field}
                                                         value={field.value ?? ''}
-                                                        className="min-h-[100px] resize-none"
+                                                        className={cn("max-h-[100px] ", isMobile ? "resize-none" : "")}
+                                                        // className="max-h-[100px] resize-none"
                                                     />
                                                 </FormControl>
                                                 <FormMessage />
@@ -464,12 +504,14 @@ export default function OrderForm({ onClose, initialData, isEditMode = false }: 
                                             </FormItem>
                                         )}
                                     />
+                                    
                                 </div>
                             </Card>
 
                             {/* Right Column - Items Section */}
                             <Card className={cn("shadow-sm border-gray-200 flex flex-col",
-                                isMobile ? "h-full" : "h-[calc(100vh-20rem)] overflow-hidden"
+                                isMobile ? "" : "h-[calc(100vh-20rem)] overflow-hidden"
+                                // isMobile ? "h-full" : "h-[calc(100vh-20rem)] overflow-hidden"
                             )}>
                                 <div className="pt-5 px-5 py-2 border-b bg ">
                                     <div className="flex justify-between items-center ">
@@ -558,7 +600,7 @@ export default function OrderForm({ onClose, initialData, isEditMode = false }: 
                     )}
 
                     {/* Form footer */}
-                    <div className="border-t px-4 sm:px-6 py-4 bg-white sticky bottom-0 shadow-inner z-10">
+                    <div className="border-t px-4 sm:px-6  py-4 bg-white sticky bottom-0 shadow-inner z-10">
                         <div className="flex justify-between items-center">
                             <div className="text-sm text-gray-500">
                                 {fields.length} item(s) in order

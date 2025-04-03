@@ -1,22 +1,12 @@
 import { z } from 'zod';
-import { type orders, addressDetails, items, orderItems, userType } from '@/server/db/schema';
+import { type orders, addressDetails, items, orderItems, userType, userTypeSchema } from '@/server/db/schema';
 import { ItemSchema } from './items';
-
+import { orderTypeSchema, orderStatusSchema, movementTypeSchema, deliveryMethodSchema, packingTypeSchema } from '@/server/db/schema';
 // Enums for order status and types
-export const orderStatus = z.enum(['DRAFT', 'PENDING', 'PROCESSING', 'READY', 'COMPLETED', 'CANCELLED']);
-export type OrderStatus = z.infer<typeof orderStatus>;
 
-export const orderType = z.enum(['CUSTOMER_ORDER']);
-export type OrderType = z.infer<typeof orderType>;
 
-export const deliveryMethod = z.enum(['NONE', 'PICKUP', 'DELIVERY']);
-export type DeliveryMethod = z.infer<typeof deliveryMethod>;
 
-export const movementType = z.enum(['IN', 'OUT']);
-export type MovementType = z.infer<typeof movementType>;
 
-export const packingType = z.enum(['SACK', 'PALLET', 'CARTON', 'OTHER', 'NONE']);
-export type PackingType = z.infer<typeof packingType>;
 
 // Base types from database schema
 // export type Order = typeof orders.$inferSelect;
@@ -29,11 +19,11 @@ export const OrderTable = z.object({
     orderId: z.string().uuid(),
     orderNumber: z.number().positive(),
     customerId: z.string().uuid(),
-    orderType: orderType,
-    movement: movementType,
-    packingType: packingType,
-    deliveryMethod: deliveryMethod,
-    status: orderStatus,
+    orderType: orderTypeSchema,
+    movement: movementTypeSchema,
+    packingType: packingTypeSchema,
+    deliveryMethod: deliveryMethodSchema,
+    status: orderStatusSchema,
     addressId: z.string().uuid().nullable(),
     fulfilledAt: z.date().nullable().nullish().optional(),
     notes: z.string().nullable(),
@@ -50,7 +40,7 @@ export const EnrichedOrders = OrderTable.extend({
         userId: z.string().uuid(),
         firstName: z.string(),
         lastName: z.string(),
-        userType: z.enum(['EMPLOYEE', 'CUSTOMER', 'DEMO']),
+        userType: userTypeSchema,
     }),
     items: z.array(
         z.object({
@@ -66,11 +56,11 @@ export type EnrichedOrders = z.infer<typeof EnrichedOrders>;
 // Validation schemas
 export const createOrderSchema = z.object({
     customerId: z.string().uuid(),
-    orderType: orderType.default('CUSTOMER_ORDER'),
-    movement: movementType,
-    packingType: packingType.default('NONE'),
-    deliveryMethod: deliveryMethod.default('NONE'),
-    status: orderStatus.default('PENDING'),
+    orderType: orderTypeSchema.default('CUSTOMER_ORDER'),
+    movement: movementTypeSchema,
+    packingType: packingTypeSchema.default('NONE'),
+    deliveryMethod: deliveryMethodSchema.default('NONE'),
+    status: orderStatusSchema.default('PENDING'),
     addressId: z.string().uuid().optional().nullable(),
     notes: z.string().optional().nullable(),
     orderMark: z.string().max(20,"Mark too long, Max 20 characters.").optional().nullable(),
@@ -94,13 +84,13 @@ export type UpdateOrderInput = z.infer<typeof updateOrderSchema>;
 
 // Filter and sort types
 export interface OrderFilters {
-    status?: OrderStatus;
+    status?: z.infer<typeof orderStatusSchema>;
     customerId?: string;
     dateRange?: {
         from: Date;
         to: Date;
     };
-    movement?: MovementType;
+    movement?: z.infer<typeof movementTypeSchema>;
     search?: string;
 }
 

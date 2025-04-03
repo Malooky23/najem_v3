@@ -7,37 +7,38 @@ import OrderForm from "./OrderForm"
 import { useState, memo, useCallback, ReactNode } from "react"
 import { cn } from "@/lib/utils"
 import { CreateOrderInput } from "@/types/orders"
+import { DialogTrigger } from "@radix-ui/react-dialog"
 
 interface CreateOrderDialogProps {
   isMobile?: boolean;
-  initialData?: CreateOrderInput & { orderId?: string };
+  initialData?: CreateOrderInput & { orderId?: string, orderNumber?: number };
   isEditMode?: boolean;
   triggerLabel?: string;
   children?: ReactNode; // Add support for custom trigger
 }
 
 // Create a memoized dialog trigger button
-const CreateOrderButton = memo(({ 
-  onClick, 
-  isMobile, 
+const CreateOrderButton = memo(({
+  onClick,
+  isMobile,
   isEditMode = false,
   triggerLabel
-}: { 
-  onClick: () => void, 
+}: {
+  onClick: () => void,
   isMobile?: boolean,
   isEditMode?: boolean,
   triggerLabel?: string
 }) => (
-  <Button 
-    variant="outline" 
-    onClick={onClick} 
-    size={isMobile ? "sm" : "default"} 
+  <Button
+    variant="outline"
+    onClick={onClick}
+    size={isMobile ? "sm" : "default"}
     className={cn(
       "transition-all flex items-center gap-2",
-      isEditMode 
-        ? "bg-amber-50 text-amber-700 hover:bg-amber-100" 
-        : isMobile 
-          ? "bg-blue-500 text-white hover:bg-blue-600" 
+      isEditMode
+        ? "bg-amber-50 text-amber-700 hover:bg-amber-100"
+        : isMobile
+          ? "bg-blue-500 text-white hover:bg-blue-600"
           : "bg-blue-50 text-blue-700 hover:bg-blue-100"
     )}
   >
@@ -48,17 +49,17 @@ const CreateOrderButton = memo(({
 
 CreateOrderButton.displayName = "CreateOrderButton";
 
-function CreateOrderDialogComponent({ 
-  isMobile = false, 
+function CreateOrderDialogComponent({
+  isMobile = false,
   initialData,
   isEditMode = false,
   triggerLabel,
   children
 }: CreateOrderDialogProps) {
-  const [isOpen, setIsOpen] = useState(false)
+  const [ isOpen, setIsOpen ] = useState(false)
   // Use a key to force re-render of form component when dialog reopens
-  const [formKey, setFormKey] = useState(0)
-  
+  const [ formKey, setFormKey ] = useState(0)
+
   const handleOpenChange = useCallback((open: boolean) => {
     if (open) {
       // Generate a new key every time the dialog opens
@@ -66,7 +67,7 @@ function CreateOrderDialogComponent({
     }
     setIsOpen(open);
   }, [])
-  
+
   const handleButtonClick = useCallback(() => {
     setFormKey(prev => prev + 1);
     setIsOpen(true);
@@ -78,6 +79,7 @@ function CreateOrderDialogComponent({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+
       {children ? (
         // If children is provided, use it as the trigger
         <div onClick={handleButtonClick}>
@@ -85,30 +87,34 @@ function CreateOrderDialogComponent({
         </div>
       ) : (
         // Otherwise use the default button
-        <CreateOrderButton 
-          onClick={handleButtonClick} 
+        <CreateOrderButton
+          onClick={handleButtonClick}
           isMobile={isMobile}
           isEditMode={isEditMode}
-          triggerLabel={triggerLabel} 
+          triggerLabel={triggerLabel}
         />
       )}
-      
-      <DialogContent 
+
+
+      <DialogContent
         className="max-w-full sm:max-w-[95%] md:max-w-[90%] lg:max-w-[80%] xl:max-w-[1100px] h-[90vh] sm:h-[85vh] p-0 overflow-hidden"
-        onInteractOutside={(e) => {
-          e.preventDefault();
-        }}
+      // className="max-w-full sm:max-w-[95%] md:max-w-[90%] lg:max-w-[80%] xl:max-w-[1100px] h-[90vh] sm:h-[85vh] p-0 overflow-hidden"
+      // onInteractOutside={(e) => {
+      //   e.preventDefault();
+      // }}
+
       >
-        <DialogHeader className="px-6 py-4 border-b sticky top-0 bg-white z-10">
+        <DialogHeader className="px-6 py-4 border-b sticky top-0 bg-white z-10 ">
+          {/* <DialogHeader className="px-6 py-4 border-b sticky top-0 bg-white z-10 "> */}
           <DialogTitle className="text-xl font-semibold">
-            {isEditMode ? `Edit Order ${initialData?.orderId ? `#${initialData.orderId}` : ''}` : "Create New Order"}
+            {isEditMode ? `Edit Order ${initialData?.orderId ? `#${initialData.orderNumber}` : ''}` : "Create New Order"}
           </DialogTitle>
         </DialogHeader>
-        <div className="flex-1 h-full overflow-hidden">
+        <div className="flex-1 h-full overflow-hidden ">
           {/* The key prop forces a fresh instance of OrderForm every time the dialog opens */}
-          <OrderForm 
-            key={formKey} 
-            onClose={handleFormClose} 
+          <OrderForm
+            key={formKey}
+            onClose={handleFormClose}
             initialData={initialData}
             isEditMode={isEditMode}
           />

@@ -1,25 +1,24 @@
 'use client';
 
-import { OrderType, MovementType, PackingType, DeliveryMethod } from "@/types/orders";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowUpRight, Box, Calendar, Package, RailSymbol, Truck, User, User2, UserCircle2 } from "lucide-react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
+import { orderTypeSchema, movementTypeSchema, packingTypeSchema, deliveryMethodSchema } from "@/server/db/schema";
+import { z } from "zod";
 
 interface OrderInfoCardProps {
   customerId: string;
   customerName: string;
-  orderType: OrderType;
-  movement: MovementType;
-  packingType: PackingType;
-  deliveryMethod: DeliveryMethod;
-  orderMark?: string;
+  orderType: z.infer<typeof orderTypeSchema>;
+  movement: z.infer<typeof movementTypeSchema>;
+  packingType: z.infer<typeof packingTypeSchema>;
+  deliveryMethod: z.infer<typeof deliveryMethodSchema>;
+  orderMark: string | undefined;
 }
 
 export function OrderInfoCard({
-  customerId,
   customerName,
-  orderType,
   movement,
   packingType,
   deliveryMethod,
@@ -101,7 +100,7 @@ export function OrderInfoCard({
             <Badge variant="outline" className="flex items-center gap-2 text-sm font-medium text-gray-700">
 
               <RailSymbol className="w-4 h-4 text-indigo-500" />
-              <span>{orderMark ?? "---"}</span>
+              <span>{orderMark ?? "NA"}</span>
             {/* </div> */}
             </Badge>
 

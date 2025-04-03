@@ -2,14 +2,15 @@
 import { keepPreviousData, useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { type ItemSchemaType } from "@/types/items";
 import { CustomerList, EnrichedCustomer } from "@/types/customer";
-import { EnrichedOrders, type OrderFilters, type OrderSort, OrderStatus, UpdateOrderInput } from "@/types/orders";
+import { EnrichedOrders, InsertOrder, type OrderFilters, type OrderSort, UpdateOrderInput } from "@/types/orders";
 import { getSession } from 'next-auth/react';
 import { getOrders, getOrderById, updateOrder } from "@/server/actions/orders";
 import { EnrichedStockMovementView, StockMovementFilters, StockMovementSort } from "@/types/stockMovement";
-import { StockMovement } from "@/server/db/schema";
+import { orderStatusSchema, StockMovement } from "@/server/db/schema";
 import { getStockMovements } from "@/server/actions/getStockMovements";
 import { useMemo, useCallback, useEffect, useState, useRef } from "react";
 import { useOrdersStore } from "@/stores/orders-store";
+import { z } from "zod";
 
 
 export interface OrdersQueryParams {
@@ -47,7 +48,7 @@ type MutationContext = {
 
 // Simplify the order details hook to work better with the store
 export function useOrderDetails(orderId: string | null) {
-  const queryClient = useQueryClient();
+  // const queryClient = useQueryClient();
   const selectOrder = useOrdersStore(state => state.selectOrder);
   const { selectedOrderData } = useOrdersStore();
   return useQuery({
@@ -139,7 +140,7 @@ export function useOrderStatusMutation() {
   return useMutation<
     OrderUpdateResult,
     Error,
-    { orderId: string; status: OrderStatus },
+    { orderId: string; status: z.infer<typeof orderStatusSchema> },
     { previousData: EnrichedOrders | undefined }
   >({
     mutationFn: async ({ orderId, status }) => {
@@ -347,36 +348,36 @@ export function useSelectCustomerList() {
   });
 }
 
-export function useItems() {
-  return useQuery<ItemSchemaType[]>({
-    queryKey: ['items'],
-    queryFn: async () => {
-      const session = await getSession();
+// export function useItems() {
+//   return useQuery<ItemSchemaType[]>({
+//     queryKey: ['items'],
+//     queryFn: async () => {
+//       const session = await getSession();
 
-      const res = await fetch('/api/items', {
-        headers: {
-          'Authorization': `Bearer ${session}`
-        }
-      });
-      if (!res.ok) {
-        let errorResponse;
-        try {
-          errorResponse = await res.json();
-        } catch (jsonError) {
-          errorResponse = { message: 'Failed to parse error response as JSON', rawResponse: await res.text() };
-          console.error("JSON parsing error:", jsonError);
-        }
-        console.error("API error response:", errorResponse);
-        throw new Error(`Failed to fetch items. API Response: ${JSON.stringify(errorResponse)}`);
-      }
-      return res.json();
-    },
-    staleTime: 60 * 60 * 1000, // 5 minutes
-    // gcTime: 60 * 60 * 1000, // 30 minutes
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
+//       const res = await fetch('/api/items', {
+//         headers: {
+//           'Authorization': `Bearer ${session}`
+//         }
+//       });
+//       if (!res.ok) {
+//         let errorResponse;
+//         try {
+//           errorResponse = await res.json();
+//         } catch (jsonError) {
+//           errorResponse = { message: 'Failed to parse error response as JSON', rawResponse: await res.text() };
+//           console.error("JSON parsing error:", jsonError);
+//         }
+//         console.error("API error response:", errorResponse);
+//         throw new Error(`Failed to fetch items. API Response: ${JSON.stringify(errorResponse)}`);
+//       }
+//       return res.json();
+//     },
+//     staleTime: 60 * 60 * 1000, // 5 minutes
+//     // gcTime: 60 * 60 * 1000, // 30 minutes
+//     refetchOnMount: true,
+//     refetchOnWindowFocus: true,
 
 
-  });
-}
+//   });
+// }
 

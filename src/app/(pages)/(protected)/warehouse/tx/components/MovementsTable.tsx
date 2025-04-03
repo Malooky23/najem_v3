@@ -97,7 +97,7 @@ export const MovementsTable = memo<MovementsTableProps>(function MovementsTable(
   const filters = getFilters()
   const sort = getSort()
 
-  const queryClient = useQueryClient() // Add queryClient hook
+  // const queryClient = useQueryClient() // Add queryClient hook
 
   // Fetch data
   const {
