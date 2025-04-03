@@ -9,7 +9,10 @@
     "start": "next start",
     "go": "next build && next start",
     "lint": "next lint",
-    "copy-users": "tsx src/scripts/copyUsers.ts"
+    "copy-users": "tsx src/scripts/copyUsers.ts",
+    "preview": "opennextjs-cloudflare && wrangler dev",
+    "deploy": "opennextjs-cloudflare && wrangler deploy",
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
   },
   "dependencies": {
     "@date-fns/tz": "^1.2.0",
@@ -73,6 +76,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@opennextjs/cloudflare": "^1.0.0-beta.0",
     "@tanstack/react-query-devtools": "^5.66.0",
     "@types/node": "^20",
     "@types/pg": "^8.11.11",
@@ -85,6 +89,7 @@
     "tailwindcss": "^3.4.1",
     "ts-node": "^10.9.2",
     "tsx": "^4.19.2",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wrangler": "^4.7.0"
   }
 }

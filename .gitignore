@@ -47,3 +47,5 @@ next-env.d.ts
 
 .idea
 .next
+# OpenNext build output
+.open-next
