@@ -60,6 +60,8 @@ function CreateOrderDialogComponent({
   // Use a key to force re-render of form component when dialog reopens
   const [ formKey, setFormKey ] = useState(0)
 
+
+
   const handleOpenChange = useCallback((open: boolean) => {
     if (open) {
       // Generate a new key every time the dialog opens

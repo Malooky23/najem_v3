@@ -8,17 +8,6 @@ import { broadcastQueryClient } from '@tanstack/query-broadcast-client-experimen
 const queryClient = new QueryClient();
 export function Providers({ children }: { children: React.ReactNode }) {
 
-  if(process.env.VERCEL === "0") {
-    return (
-      <QueryClientProvider client={queryClient}>
-        <SessionProvider>
-            {children}
-          <ReactQueryDevtools initialIsOpen={true} />
-        </SessionProvider>
-      </QueryClientProvider>
-    );
-  }
-
   return (
     <QueryClientProvider client={queryClient}>
       <SessionProvider>

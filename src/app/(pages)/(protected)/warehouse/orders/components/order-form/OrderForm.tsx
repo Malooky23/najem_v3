@@ -25,13 +25,15 @@ import { orderStatusSchema, movementTypeSchema, packingTypeSchema, deliveryMetho
 import { z } from "zod";
 import { useItemsQuery } from "@/hooks/data/useItems";
 import { Input } from "@/components/ui/input";
+import { useErrorDialog } from "@/hooks/useErrorDialog";
 
 async function submitOrderForm(formData: FormData) {
+
     try {
         const formObject: Record<string, any> = {};
 
         // Ensure all form fields are captured
-        const requiredFields = ['customerId', 'movement', 'packingType', 'deliveryMethod', 'status', 'orderType', 'notes'];
+        const requiredFields = [ 'customerId', 'movement', 'packingType', 'deliveryMethod', 'status', 'orderType', 'notes' ];
 
 
         formData.forEach((value, key) => {
@@ -40,13 +42,13 @@ async function submitOrderForm(formData: FormData) {
                     // console.log("cap Items::::::+++++_____________________")
                     // console.log("cap Items::::::", formObject[key])
 
-                    formObject[key] = JSON.parse(value as string);
+                    formObject[ key ] = JSON.parse(value as string);
                 } catch (e) {
                     console.error('Error parsing items:', e);
-                    formObject[key] = [];
+                    formObject[ key ] = [];
                 }
             } else if (value !== undefined) {
-                formObject[key] = value;
+                formObject[ key ] = value;
             }
         });
 
@@ -54,7 +56,7 @@ async function submitOrderForm(formData: FormData) {
 
         // Validate required fields
         for (const field of requiredFields) {
-            if (!formObject[field] && field !== 'notes') {
+            if (!formObject[ field ] && field !== 'notes') {
                 throw new Error(`${field} is required`);
             }
         }
@@ -89,6 +91,9 @@ export default function OrderForm({ onClose, initialData, isEditMode = false }: 
     const queryClient = useQueryClient();
     const isMobile = useIsMobileTEST()
 
+    const { showErrorDialog, ErrorDialogComponent } = useErrorDialog()
+
+
     const customersWithItems = customerList?.filter(customer =>
         itemsList?.some(item => item.customerId === customer.customerId)
     ) ?? [];
@@ -96,7 +101,7 @@ export default function OrderForm({ onClose, initialData, isEditMode = false }: 
     const { mutate: updateOrder, isPending: isUpdating } = useOrderUpdateMutation();
 
     // Update the server action to use the mutation for edit mode
-    const [state, formAction, isPending] = useActionState(async (prevState: any, formData: FormData) => {
+    const [ state, formAction, isPending ] = useActionState(async (prevState: any, formData: FormData) => {
         if (isEditMode && initialData?.orderId) {
             // For edit mode, construct the update object from form data
             const orderId = initialData.orderId;
@@ -113,17 +118,17 @@ export default function OrderForm({ onClose, initialData, isEditMode = false }: 
 
             formData.forEach((value, key) => {
                 if (key.startsWith('items.')) {
-                    const [_, index, field] = key.split('.');
+                    const [ _, index, field ] = key.split('.');
                     const idx = parseInt(index);
-                    if (!items[idx]) {
-                        items[idx] = { itemId: '', quantity: 0, itemLocationId: '' };
+                    if (!items[ idx ]) {
+                        items[ idx ] = { itemId: '', quantity: 0, itemLocationId: '' };
                     }
                     if (field === 'itemId') {
-                        items[idx].itemId = value as string;
+                        items[ idx ].itemId = value as string;
                     } else if (field === 'quantity') {
-                        items[idx].quantity = parseInt(value as string) || 0;
+                        items[ idx ].quantity = parseInt(value as string) || 0;
                     } else if (field === 'itemLocationId') {
-                        items[idx].itemLocationId = value as string;
+                        items[ idx ].itemLocationId = value as string;
                     }
                 }
             });
@@ -144,13 +149,14 @@ export default function OrderForm({ onClose, initialData, isEditMode = false }: 
                 orderMark
             }, {
                 onSuccess: () => {
-                    queryClient.invalidateQueries({ queryKey: ['orders'] });
-                    queryClient.invalidateQueries({ queryKey: ['order', orderId] });
-                    queryClient.invalidateQueries({ queryKey: ['stockMovement'] });
+                    queryClient.invalidateQueries({ queryKey: [ 'orders' ] });
+                    queryClient.invalidateQueries({ queryKey: [ 'order', orderId ] });
+                    queryClient.invalidateQueries({ queryKey: [ 'stockMovements' ] });
                     onClose();
                     toast.success("Order updated successfully");
                 },
                 onError: (error) => {
+                    showErrorDialog("error", error.message)
                     toast.error(`Failed to update order: ${error.message}`);
                     return { error: error.message };
                 }
@@ -162,11 +168,21 @@ export default function OrderForm({ onClose, initialData, isEditMode = false }: 
             console.log('Submitting form...', formData);
             const result = await submitOrderForm(formData);
             if (result.success) {
-                queryClient.invalidateQueries({ queryKey: ['orders'] });
+                queryClient.invalidateQueries({ queryKey: [ 'orders' ] });
+                queryClient.invalidateQueries({ queryKey: [ 'stockMovements' ] }); 
                 onClose();
                 toast.success("Order created successfully");
             }
-            return result;
+            if(!result.success){
+                console.log("======================")
+                console.log("======================")
+                console.log("======================")
+                console.log("======================")
+                console.log("======================")
+                showErrorDialog("error", result.error ?? "unknown")
+
+                return result;
+            }
         }
     }, null);
 
@@ -204,7 +220,7 @@ export default function OrderForm({ onClose, initialData, isEditMode = false }: 
 
         // Close the dialog
         onClose();
-    }, [form, onClose]);
+    }, [ form, onClose ]);
 
     if (isCustomersError) {
         return (
@@ -214,13 +230,13 @@ export default function OrderForm({ onClose, initialData, isEditMode = false }: 
         )
     }
 
-    if (isCustomersLoading) {
-        return (
-            <div className="p-4 rounded-md border border-gray-200 bg-gray-50 text-gray-700 h-full">
-                <LoadingSpinner />
-            </div>
-        )
-    }
+    // if (isCustomersLoading) {
+    //     return (
+    //         <div className="p-4 rounded-md border border-gray-200 bg-gray-50 text-gray-700 h-full">
+    //             <LoadingSpinner />
+    //         </div>
+    //     )
+    // }
 
     // console.log(form.watch())
 
@@ -253,7 +269,7 @@ export default function OrderForm({ onClose, initialData, isEditMode = false }: 
                             <Card className={cn("shadow-sm border-gray-200 flex flex-col ",
                                 // isMobile ? "h-full " : "h-[calc(100vh-20rem)] overflow-hidden"
                             )}>
-                            {/* <Card className={cn("shadow-sm border-gray-200 flex flex-col ",
+                                {/* <Card className={cn("shadow-sm border-gray-200 flex flex-col ",
                                 isMobile ? "h-full " : "h-[calc(100vh-20rem)] overflow-hidden"
                             )}> */}
                                 <div className="pt-5 px-5 pb-2 border-b  ">
@@ -490,7 +506,7 @@ export default function OrderForm({ onClose, initialData, isEditMode = false }: 
                                                         {...field}
                                                         value={field.value ?? ''}
                                                         className={cn("max-h-[100px] ", isMobile ? "resize-none" : "")}
-                                                        // className="max-h-[100px] resize-none"
+                                                    // className="max-h-[100px] resize-none"
                                                     />
                                                 </FormControl>
                                                 <FormMessage />
@@ -504,7 +520,7 @@ export default function OrderForm({ onClose, initialData, isEditMode = false }: 
                                             </FormItem>
                                         )}
                                     />
-                                    
+
                                 </div>
                             </Card>
 

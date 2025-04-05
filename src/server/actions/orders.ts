@@ -3,8 +3,8 @@
 import { z } from 'zod';
 import { db } from '@/server/db';
 import { auth } from '@/lib/auth/auth';
-import { orders, orderItems, customers, items, users } from '@/server/db/schema';
-import { eq, and, desc, asc, sql, gte, lte } from 'drizzle-orm';
+import { orders, orderItems, customers, items, users, itemStock } from '@/server/db/schema';
+import { eq, and, desc, asc, sql, gte, lte, inArray } from 'drizzle-orm';
 import { createOrderSchema, EnrichedOrders, UpdateOrderInput, updateOrderSchema, type OrderFilters, type OrderSort } from '@/types/orders';
 import useDelay from '@/hooks/useDelay';
 
@@ -15,16 +15,18 @@ export type OrderActionResponse = {
 };
 
 export interface OrderUpdateResult {
-  success: boolean;
-  data?: EnrichedOrders;
-  error?: {
-    message: string;
-    code?: string;
-    field?: string;
-  };
+    success: boolean;
+    data?: EnrichedOrders;
+    error?: {
+        message: string;
+        code?: string;
+        field?: string;
+    };
 }
 
 export async function createOrder(formData: FormData): Promise<OrderActionResponse> {
+
+
     try {
         const session = await auth();
         if (!session?.user?.id) {
@@ -47,20 +49,20 @@ export async function createOrder(formData: FormData): Promise<OrderActionRespon
         // First pass to collect all form fields
         formData.forEach((value, key) => {
             if (key.startsWith('items.')) {
-                const [_, index, field] = key.split('.');
-                if (!items[parseInt(index)]) {
-                    items[parseInt(index)] = { itemId: '', quantity: 0, itemLocationId: '' };
+                const [ _, index, field ] = key.split('.');
+                if (!items[ parseInt(index) ]) {
+                    items[ parseInt(index) ] = { itemId: '', quantity: 0, itemLocationId: '' };
                 }
                 if (field === 'itemId') {
-                    items[parseInt(index)].itemId = value as string;
+                    items[ parseInt(index) ].itemId = value as string;
                 } else if (field === 'quantity') {
-                    items[parseInt(index)].quantity = parseInt(value as string) || 0;
+                    items[ parseInt(index) ].quantity = parseInt(value as string) || 0;
                 } else if (field === 'itemLocationId') {
-                    items[parseInt(index)].itemLocationId = value as string;
+                    items[ parseInt(index) ].itemLocationId = value as string;
                 }
 
             } else if (value !== undefined) {
-                formObject[key] = value;
+                formObject[ key ] = value;
             }
         });
 
@@ -89,21 +91,63 @@ export async function createOrder(formData: FormData): Promise<OrderActionRespon
         }
 
         const orderData = validatedFields.data;
+        // ^?
 
         // Start a transaction to insert order and items
         const result = await db.transaction(async (tx) => {
-            const [newOrder] = await tx.insert(orders).values({
+
+            if (orderData.status === 'COMPLETED' && orderData.movement === 'OUT') {
+                // Gather required items and quantities
+                const requiredStock = orderData.items.map(item => ({
+                    itemId: item.itemId,
+                    requiredQuantity: item.quantity,
+                    // Include location if relevant to your stock check
+                    // itemLocationId: item.itemLocationId 
+                }));
+
+                if (requiredStock.length > 0) {
+                    const itemIds = requiredStock.map(item => item.itemId);
+
+                    // Fetch current stock levels for the relevant items IN ONE GO
+                    const currentStockLevels = await tx.select({
+                        itemId: itemStock.itemId,
+                        available: itemStock.currentQuantity // Adjust column name if needed
+                        // locationId: stockQuantities.locationId // If relevant
+                    })
+                        .from(itemStock)
+                        .where(inArray(itemStock.itemId, itemIds));
+                    // Add location filter here if stock is location-specific
+
+                    // Create a map for easy lookup
+                    const stockMap = new Map(currentStockLevels.map(s => [ s.itemId, s.available ]));
+
+                    // Check each item
+                    for (const item of requiredStock) {
+                        const available = stockMap.get(item.itemId) ?? 0;
+                        if (available < item.requiredQuantity) {
+                            // Insufficient stock - throw error BEFORE inserting the order
+                            throw new Error(`Insufficient stock for item ID ${item.itemId}. Required: ${item.requiredQuantity}, Available: ${available}`);
+                        }
+                    }
+                    // If we reach here, stock is sufficient for all items
+                    console.log("Stock pre-check passed.");
+                }
+            }
+
+            const [ newOrder ] = await tx.insert(orders).values({
                 customerId: orderData.customerId,
                 orderType: orderData.orderType,
                 movement: orderData.movement,
                 packingType: orderData.packingType,
                 deliveryMethod: orderData.deliveryMethod,
-                status: orderData.status,
+                // status: orderData.status,
+                status: orderData.status === 'COMPLETED' ? 'PENDING' : orderData.status, // Temporarily set to PENDING if it's COMPLETED
+
                 addressId: orderData.addressId,
                 notes: orderData.notes,
                 createdBy: session?.user.id ?? ""
             }).returning();
-
+                
             try {
                 // Insert order items
                 const orderItemsData = orderData.items.map(item => ({
@@ -114,94 +158,151 @@ export async function createOrder(formData: FormData): Promise<OrderActionRespon
                 }));
 
                 await tx.insert(orderItems).values(orderItemsData);
+
+
+                // If the original status was COMPLETED, update it now after items are inserted
+                if (orderData.status === 'COMPLETED') {
+                    // Use a raw SQL update to avoid ORM auto-timestamps
+                    await tx.execute(sql`
+                        UPDATE orders 
+                        SET status = 'COMPLETED' 
+                        WHERE order_id = ${newOrder.orderId}
+                    `);
+                }
+                // if (orderData.status === 'COMPLETED') {
+                //     await tx.update(orders)
+                //         .set({ status: 'COMPLETED' })
+                //         .where(eq(orders.orderId, newOrder.orderId));
+                // }
             } catch (error) {
-                throw new Error(`Failed to insert order items: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                console.log(newOrder)
+                // console.error('Error:', error);
+                throw new Error(error instanceof Error ? error.message : 'Unknown error');
             }
 
             return newOrder;
         });
 
+        // const result = await db.transaction(async (tx) => {
+        //     // First create the order WITHOUT the COMPLETED status
+        //     const [ newOrder ] = await tx.insert(orders).values({
+        //         customerId: orderData.customerId,
+        //         orderType: orderData.orderType,
+        //         movement: orderData.movement,
+        //         packingType: orderData.packingType,
+        //         deliveryMethod: orderData.deliveryMethod,
+        //         status: orderData.status === 'COMPLETED' ? 'PENDING' : orderData.status, // Temporarily set to PENDING if it's COMPLETED
+        //         addressId: orderData.addressId,
+        //         notes: orderData.notes,
+        //         createdBy: session?.user.id ?? ""
+        //     }).returning();
+
+        //     try {
+        //         // Insert order items
+        //         const orderItemsData = orderData.items.map(item => ({
+        //             orderId: newOrder.orderId,
+        //             itemId: item.itemId,
+        //             quantity: item.quantity,
+        //             itemLocationId: item.itemLocationId
+        //         }));
+
+        //         await tx.insert(orderItems).values(orderItemsData);
+
+        //         // If the original status was COMPLETED, update it now after items are inserted
+        //         if (orderData.status === 'COMPLETED') {
+        //             await tx.update(orders)
+        //                 .set({ status: 'COMPLETED' })
+        //                 .where(eq(orders.orderId, newOrder.orderId));
+        //         }
+        //     } catch (error) {
+        //         throw new Error(`Failed to insert order items: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        //     }
+
+        //     return newOrder;
+        // });
+
         return { success: true, data: result };
-    } catch (error) {
-        console.error('Error in createOrder:', error);
-        return { success: false, error: 'Failed to create order' };
+    } catch (error: any) {
+        console.log('Error in createOrder:')
+        console.error(error);
+        return { success: false, error: error.message || 'Failed to create order' };
     }
 }
 
 
 export async function updateOrder(orderData: UpdateOrderInput): Promise<OrderUpdateResult> {
     try {
-      const session = await auth();
-      if (!session?.user?.id) {
-        return { success: false, error: { message: "Unauthorized: Must be logged in to update orders." } };
-      }
-  
-      // Validate the update data
-      const validatedFields = updateOrderSchema.safeParse(orderData);
-  
-      if (!validatedFields.success) {
-        return { success: false, error: { message: validatedFields.error.message } };
-      }
-  
-      const updateData = validatedFields.data;
-  
-      // Start a transaction to update the order
-      const result = await db.transaction(async (tx) => {
-        // Update order
-        const [updatedOrder] = await tx
-          .update(orders)
-          .set({
-            status: updateData.status,
-            movement: updateData.movement,
-            packingType: updateData.packingType,
-            deliveryMethod: updateData.deliveryMethod,
-            notes: updateData.notes,
-            orderMark: updateData.orderMark,
-            updatedAt: new Date(),
-          })
-          .where(eq(orders.orderId, updateData.orderId))
-          .returning();
-  
-        if (!updatedOrder) {
-          throw new Error('Order update failed: No rows affected.');
+        const session = await auth();
+        if (!session?.user?.id) {
+            return { success: false, error: { message: "Unauthorized: Must be logged in to update orders." } };
         }
 
-        // Update order items if they're provided
-        if (updateData.items && updateData.items.length > 0) {
-          // First delete existing items
-          await tx
-            .delete(orderItems)
-            .where(eq(orderItems.orderId, updateData.orderId));
-          
-          // Then insert the updated items
-          const orderItemsData = updateData.items.map(item => ({
-            orderId: updateData.orderId,
-            itemId: item.itemId,
-            quantity: item.quantity,
-            itemLocationId: item.itemLocationId
-          }));
-          
-          await tx.insert(orderItems).values(orderItemsData);
+        // Validate the update data
+        const validatedFields = updateOrderSchema.safeParse(orderData);
+
+        if (!validatedFields.success) {
+            return { success: false, error: { message: validatedFields.error.message } };
         }
-        
-        // Get complete updated order with items for return
-        const fullOrder = await getOrderById(updateData.orderId);
-        if (!fullOrder.success || !fullOrder.data) {
-          throw new Error('Failed to retrieve updated order.');
-        }
-        
-        return fullOrder.data;
-      });
-      
-      return { success: true, data: result as EnrichedOrders };
-    } catch (error:any) {
+
+        const updateData = validatedFields.data;
+
+        // Start a transaction to update the order
+        const result = await db.transaction(async (tx) => {
+            // Update order
+            const [ updatedOrder ] = await tx
+                .update(orders)
+                .set({
+                    status: updateData.status,
+                    movement: updateData.movement,
+                    packingType: updateData.packingType,
+                    deliveryMethod: updateData.deliveryMethod,
+                    notes: updateData.notes,
+                    orderMark: updateData.orderMark,
+                    updatedAt: new Date(),
+                })
+                .where(eq(orders.orderId, updateData.orderId))
+                .returning();
+
+            if (!updatedOrder) {
+                throw new Error('Order update failed: No rows affected.');
+            }
+
+            // Update order items if they're provided
+            if (updateData.items && updateData.items.length > 0) {
+                // First delete existing items
+                await tx
+                    .delete(orderItems)
+                    .where(eq(orderItems.orderId, updateData.orderId));
+
+                // Then insert the updated items
+                const orderItemsData = updateData.items.map(item => ({
+                    orderId: updateData.orderId,
+                    itemId: item.itemId,
+                    quantity: item.quantity,
+                    itemLocationId: item.itemLocationId
+                }));
+
+                await tx.insert(orderItems).values(orderItemsData);
+            }
+
+            // Get complete updated order with items for return
+            const fullOrder = await getOrderById(updateData.orderId);
+            if (!fullOrder.success || !fullOrder.data) {
+                throw new Error('Failed to retrieve updated order.');
+            }
+
+            return fullOrder.data;
+        });
+
+        return { success: true, data: result as EnrichedOrders };
+    } catch (error: any) {
         console.error('Error in updateOrder:', error);
         return {
             success: false,
-            error: {message: error instanceof Error ? error.message : 'Failed to update order'}
+            error: { message: error instanceof Error ? error.message : 'Failed to update order' }
         };
     }
-  }
+}
 
 export type GetSingleOrderResponse = {
     success: boolean;
@@ -248,7 +349,7 @@ export async function getOrderById(orderId: string): Promise<GetSingleOrderRespo
             return { success: false, error: 'Order not found' };
         }
 
-        const order = results.rows[0];
+        const order = results.rows[ 0 ];
         const enrichedOrder = {
             orderId: order.order_id,
             orderNumber: Number(order.order_number) || 0,
@@ -410,19 +511,19 @@ export async function getOrders(
                 ) FILTER (WHERE ${items.itemId} IS NOT NULL),
                 '[]'::json)`
         })
-        .from(orders)
-        .leftJoin(customers, eq(orders.customerId, customers.customerId))
-        .leftJoin(orderItems, eq(orders.orderId, orderItems.orderId))
-        .leftJoin(items, eq(orderItems.itemId, items.itemId))
-        .leftJoin(users, eq(orders.createdBy, users.userId))
-        .groupBy(
-            orders.orderId,
-            customers.customerId,
-            customers.displayName,
-            users.firstName,
-            users.lastName
-        )
-        .$dynamic();
+            .from(orders)
+            .leftJoin(customers, eq(orders.customerId, customers.customerId))
+            .leftJoin(orderItems, eq(orders.orderId, orderItems.orderId))
+            .leftJoin(items, eq(orderItems.itemId, items.itemId))
+            .leftJoin(users, eq(orders.createdBy, users.userId))
+            .groupBy(
+                orders.orderId,
+                customers.customerId,
+                customers.displayName,
+                users.firstName,
+                users.lastName
+            )
+            .$dynamic();
 
         // Apply filters, sorting and pagination
         query = withFilters(query, filters, session);
@@ -448,12 +549,12 @@ export async function getOrders(
         }
 
         // Get total count from first row
-        const totalCount = results[0].totalCount || 0;
+        const totalCount = results[ 0 ].totalCount || 0;
 
         // Transform and validate orders
         const enrichedOrders = results.map(order => {
             // Parse items to ensure they're in the correct format
-            const itemsArray = Array.isArray(order.items) 
+            const itemsArray = Array.isArray(order.items)
                 ? order.items.map((item: any) => ({
                     itemId: item.itemId || '',
                     itemName: item.itemName || '',

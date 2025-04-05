@@ -14,6 +14,7 @@ import { Plus } from "lucide-react"
 import Link from "next/link"
 import { is } from "drizzle-orm"
 import { CreateOrderDialog } from "./order-form/create-order-dialog"
+import { useErrorDialog } from "@/hooks/useErrorDialog"
 
 interface PageHeaderProps {
   isLoading: boolean;
@@ -115,6 +116,10 @@ export function OrdersPage() {
     return () => clearTimeout(timer)
   }, [])
 
+
+  const { showErrorDialog, ErrorDialogComponent } = useErrorDialog()
+
+
   return (
     <div className="px-4 h-[100vh] flex flex-col overflow-hidden">
       <PageHeader isLoading={isPageLoading} isMobile={isMobile} />
@@ -137,6 +142,7 @@ export function OrdersPage() {
           />
         )}
       </div>
+      <ErrorDialogComponent/>
     </div>
   )
 }
