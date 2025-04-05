@@ -173,16 +173,11 @@ export default function OrderForm({ onClose, initialData, isEditMode = false }: 
                 onClose();
                 toast.success("Order created successfully");
             }
-            if(!result.success){
-                console.log("======================")
-                console.log("======================")
-                console.log("======================")
-                console.log("======================")
-                console.log("======================")
-                showErrorDialog("error", result.error ?? "unknown")
 
-                return result;
+            if (result.error) {
+                showErrorDialog("error", result.error);
             }
+            return result;
         }
     }, null);
 
@@ -666,6 +661,7 @@ export default function OrderForm({ onClose, initialData, isEditMode = false }: 
                             </div>
                         </div>
                     </div>
+                    <ErrorDialogComponent/>
                 </form>
             </Form>
         </div>

@@ -142,7 +142,6 @@ export function OrdersPage() {
           />
         )}
       </div>
-      <ErrorDialogComponent/>
     </div>
   )
 }
