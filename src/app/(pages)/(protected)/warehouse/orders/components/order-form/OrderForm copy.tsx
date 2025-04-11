@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useFieldArray, useForm } from "react-hook-form";
-import { createOrderSchema, type CreateOrderInput, updateOrderSchema, type UpdateOrderInput, EnrichedOrders, EnrichedOrderSchemaType, EnrichedOrderSchema } from "@/types/orders";
+import { createOrderSchema, type CreateOrderInput, updateOrderSchema, type UpdateOrderInput } from "@/types/orders";
 import {
     Form,
     FormControl,
@@ -23,10 +23,9 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-// Removed useOrderUpdateMutation as it wasn't used
-import { useCustomers } from "@/hooks/data-fetcher";
-// Removed startTransition, useTransition as we'll use formState.isSubmitting
-import { useCallback } from "react";
+import { useCustomers, useOrderUpdateMutation } from "@/hooks/data-fetcher";
+
+import { startTransition, useTransition, useCallback } from "react";
 import { useQueryClient } from '@tanstack/react-query';
 import { Plus, PackageOpen } from "lucide-react";
 import { ItemRow } from "./ItemRow";
@@ -34,60 +33,43 @@ import { useIsMobileTEST } from "@/hooks/use-media-query";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-// Removed unused schema imports if they aren't needed elsewhere
-// import { orderStatusSchema, movementTypeSchema, packingTypeSchema, deliveryMethodSchema } from "@/server/db/schema";
+import { Card } from "@/components/ui/card";
+import { orderStatusSchema, movementTypeSchema, packingTypeSchema, deliveryMethodSchema } from "@/server/db/schema";
 import { z } from "zod";
 import { useItemsQuery } from "@/hooks/data/useItems";
 import { Input } from "@/components/ui/input";
 import { useErrorDialog } from "@/hooks/useErrorDialog";
 import { useSession } from "next-auth/react";
-import { useOrdersStore } from "@/stores/orders-store";
-import { useOrderByIdQuery } from "@/hooks/data/useOrders";
-// Import your FormErrorSummary component (ensure path is correct)
+
 
 interface OrderFormProps {
     onClose: () => void;
-    initialData?: (CreateOrderInput & { orderId?: string }) | null;
+    initialData?: (CreateOrderInput & { orderId?: string }) | null; // Allow null for initialData
     isEditMode?: boolean;
 }
 
-// Ensure your Zod schemas require customerId and optionally items array
-// Example (in types/orders.ts or similar):
-/*
-export const createOrderSchema = z.object({
-    customerId: z.string().min(1, "Customer is required"),
-    // ... other fields
-    items: z.array(z.object({ // Your item schema
-        itemId: z.string().min(1, "Item is required"),
-        quantity: z.number().min(1, "Quantity must be at least 1"),
-        // ... other item fields
-    })).min(1, "At least one item is required"), // Validate minimum items here
-    // ... rest of schema
-});
-*/
-
-export const OrderForm = ({ onClose, initialData, isEditMode = false }: OrderFormProps) => {
-    const { data: customerList, isLoading: isCustomersLoading, isError: isCustomersError } = useCustomers();
+export  const OrderForm = ({ onClose, initialData, isEditMode = false }: OrderFormProps) => {
+    const { data: customerList, isSuccess: isCustomersSuccess, isLoading: isCustomersLoading, isError: isCustomersError } = useCustomers();
     const { data: itemsList, isLoading: isItemsLoading, isError: isItemsError } = useItemsQuery();
     const queryClient = useQueryClient();
-    const isMobile = useIsMobileTEST();
+    const isMobile = useIsMobileTEST()
     const { showErrorDialog, ErrorDialogComponent } = useErrorDialog();
-    const orderStore = useOrdersStore()
-    // Removed useTransition - formState.isSubmitting will handle this
+    const [ isSubmitting, startSubmitting ] = useTransition();
+
 
     const customersWithItems = customerList?.filter(customer =>
         itemsList?.some(item => item.customerId === customer.customerId)
     ) ?? [];
 
+
     const validationSchema = isEditMode && initialData?.orderId ? updateOrderSchema : createOrderSchema;
     type FormSchemaType = z.infer<typeof validationSchema>;
 
-    const { data: session } = useSession();
+    const { data: session } = useSession()
 
     const form = useForm<FormSchemaType>({
         resolver: zodResolver(validationSchema),
-        defaultValues: initialData || {
+        defaultValues: initialData || { // Use initialData directly
             orderType: "WAREHOUSE_ORDER",
             packingType: "NONE",
             deliveryMethod: "NONE",
@@ -97,82 +79,75 @@ export const OrderForm = ({ onClose, initialData, isEditMode = false }: OrderFor
             customerId: "",
             notes: "",
             orderMark: "",
-            createdBy: session?.user.id ?? undefined // Handle case where user ID might be undefined
+            createdBy: session?.user.id
         },
-        mode: "onChange" // Or "onBlur" or "onSubmit" depending on preference
+        mode: "onChange"
     });
+
 
     const { fields, append, remove } = useFieldArray({
         control: form.control,
         name: "items",
     });
 
-    // This function is now only called *after* successful validation
-    // const processSubmit = async (values: FormSchemaType) => {
-    async function processSubmit(values: FormSchemaType){
-        // No need for manual validation here - Zod handles it
-        let result;
-        try {
-            if (isEditMode && initialData?.orderId) {
-                // Ensure you pass the correct shape expected by updateOrder
-                result = await updateOrder({ ...values, orderId: initialData.orderId } as UpdateOrderInput);
-            } else {
-                // Ensure you pass the correct shape expected by createOrder
-                result = await createOrder(values as CreateOrderInput);
-            }
 
-            if (result?.success) {
-                // Consider combining invalidations if appropriate
-                await queryClient.invalidateQueries({ queryKey: [ 'orders' ] });
-                await queryClient.invalidateQueries({ queryKey: [ 'stockMovements' ] });
-                if (isEditMode && initialData?.orderId) {
-                    await queryClient.invalidateQueries({ queryKey: [ 'order', initialData.orderId ] });
-                }
-
-                const validateResponse = EnrichedOrderSchema.safeParse(result.data)
-                console.log("validateResponse: ", JSON.stringify(validateResponse, null, 2))
-                if(validateResponse.success){
-                    orderStore.selectOrder(validateResponse.data.orderId, validateResponse.data)
-                }
-                toast.success(`Order ${isEditMode ? 'updated' : 'created'} successfully`);
-                onClose(); // Close form on success
-            } else {
-                // Handle server-side errors (general or specific if returned)
-                const errorMessage = typeof result?.error === 'string'
-                    ? result.error
-                    : (result?.error as any)?.message || `Failed to ${isEditMode ? 'update' : 'create'} order.`;
-
-                showErrorDialog("error", errorMessage);
-                toast.error(errorMessage);
-                // Optionally set form-level errors if the server returns field-specific issues
-                // if (result?.errors) {
-                //   Object.entries(result.errors).forEach(([field, message]) => {
-                //     form.setError(field as keyof FormSchemaType, { type: 'server', message });
-                //   });
-                // }
-            }
-        } catch (error) {
-            console.error("Form submission error:", error);
-            const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred.";
-            showErrorDialog("error", errorMessage);
-            toast.error(`Failed to ${isEditMode ? 'update' : 'create'} order. ${errorMessage}`);
+    const onSubmit = async (values: FormSchemaType) => {
+        if (!values.customerId) {
+            form.setError("customerId", {
+                type: "manual",
+                message: "Please select a customer.",
+            });
+            return;
         }
-        // No need to manually set submitting state - RHF handles it
+
+        startSubmitting(async () => {
+            let result;
+            try {
+                if (isEditMode && initialData?.orderId) {
+                    result = await updateOrder({ ...values, orderId: initialData.orderId } as UpdateOrderInput);
+                } else {
+                    result = await createOrder(values as CreateOrderInput);
+                }
+
+
+                if (result?.success) {
+                    await queryClient.invalidateQueries({ queryKey: [ 'orders' ] });
+                    await queryClient.invalidateQueries({ queryKey: [ 'stockMovements' ] });
+                    if (isEditMode && initialData?.orderId) {
+                        await queryClient.invalidateQueries({ queryKey: [ 'order', initialData.orderId ] });
+                    }
+                    toast.success(`Order ${isEditMode ? 'updated' : 'created'} successfully`);
+                    onClose();
+                } else {
+                    showErrorDialog(
+                        "error",
+                        typeof result?.error === 'string' ? result.error : (result?.error?.message || "Failed to perform action")
+                    );
+                    toast.error(`Failed to ${isEditMode ? 'update' : 'create'} order: ${result?.error || "Unknown error"}`);
+                }
+            } catch (error) {
+                console.error("Form submission error:", error);
+                showErrorDialog("error", (error instanceof Error ? error.message : "An unexpected error occurred."));
+                toast.error(`Failed to ${isEditMode ? 'update' : 'create'} order. An unexpected error occurred.`);
+            }
+        });
     };
 
-    const handleCancel = useCallback(() => {
-        // form.reset(); // Resetting might clear initialData in edit mode, consider implications
-        onClose();
-    }, [ onClose ]);
 
-    // --- Loading / Error states for initial data ---
-    if (isCustomersError || isItemsError) { // Combine error checks
+    const handleCancel = useCallback(() => {
+        form.reset(); // Reset to default or initialData if needed
+        onClose();
+    }, [ form, onClose ]);
+
+
+    if (isCustomersError) {
         return (
             <div className="p-4 rounded-md border border-red-200 bg-red-50 text-red-700">
-                Error loading necessary data (customers or items). Please try again later.
+                Error loading customers
             </div>
         );
     }
+
     if (isCustomersLoading || isItemsLoading) {
         return (
             <div className="p-4 rounded-md border border-gray-200 bg-gray-50 text-gray-700 h-full flex justify-center items-center">
@@ -180,42 +155,26 @@ export const OrderForm = ({ onClose, initialData, isEditMode = false }: OrderFor
             </div>
         );
     }
-    // --- End Loading / Error states ---
+
 
     return (
         <div className="flex flex-col h-full ">
-            {form.formState.isSubmitting && (
-                <div className="fixed inset-0 bg-gray-500/50 backdrop-blur-sm z-50 flex justify-center items-center">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Creating Order</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <LoadingSpinner />
-                        </CardContent>
-                    </Card>
-                </div>
-            )}
-            {/* Pass form methods down */}
             <Form {...form}>
-                {/* Use form.handleSubmit to trigger validation before processSubmit */}
                 <form
-                    onSubmit={form.handleSubmit(processSubmit)} // <-- Key change
+                    onSubmit={form.handleSubmit(onSubmit)}
                     className="flex flex-col h-full w-full "
                 >
-                    <div className="flex flex-col px-2 sm:px-6 flex-grow overflow-auto ">
-                        {/* Grid Layout */}
-                        <div className="grid grid-cols-1 lg:grid-cols-[1.2fr,2fr] gap-6">
-
-                            {/* Left Column Card */}
+                    <div className="flex flex-col px-2 sm:px-6  flex-grow overflow-auto ">
+                        <div className="grid grid-cols-1 lg:grid-cols-[1.2fr,2fr] gap-6  ">
+                            {/* Left Column - General Order Info */}
                             <Card className={cn("shadow-sm border-gray-200 flex flex-col ")}>
-                                <div className="pt-5 px-5 pb-2 border-b">
+                                <div className="pt-5 px-5 pb-2 border-b  ">
                                     <h3 className="text-lg font-semibold text-gray-800 flex items-center">
                                         <div className="h-5 w-1.5 bg-blue-500 rounded-full mr-2"></div>
                                         Order Information
                                     </h3>
                                 </div>
-                                <div className="space-y-5 p-5"> {/* Adjusted padding */}
+                                <div className="space-y-5 p-2">
                                     {/* Customer Selection */}
                                     <FormField
                                         control={form.control}
@@ -228,7 +187,7 @@ export const OrderForm = ({ onClose, initialData, isEditMode = false }: OrderFor
                                                         customersInput={customersWithItems}
                                                         value={field.value}
                                                         onChange={field.onChange}
-                                                        isRequired={true} // Schema handles validation message
+                                                        isRequired={true}
                                                         isModal={true}
                                                     />
                                                 </FormControl>
@@ -246,7 +205,6 @@ export const OrderForm = ({ onClose, initialData, isEditMode = false }: OrderFor
                                                 <FormLabel className="font-medium text-gray-700">Movement Type</FormLabel>
                                                 <FormControl>
                                                     <div className="flex gap-3">
-                                                        {/* Badges for IN/OUT */}
                                                         <Badge
                                                             variant="outline"
                                                             className={cn(
@@ -254,8 +212,11 @@ export const OrderForm = ({ onClose, initialData, isEditMode = false }: OrderFor
                                                                 field.value === "IN"
                                                                     ? "bg-green-500 hover:bg-green-600 text-white border-0"
                                                                     : "bg-green-50 hover:bg-green-100",
-                                                            )} onClick={() => form.setValue("movement", "IN", { shouldValidate: true })}
-                                                        >IN</Badge>
+                                                            )}
+                                                            onClick={() => form.setValue("movement", "IN", { shouldValidate: true })}
+                                                        >
+                                                            IN
+                                                        </Badge>
                                                         <Badge
                                                             variant="outline"
                                                             className={cn(
@@ -263,8 +224,11 @@ export const OrderForm = ({ onClose, initialData, isEditMode = false }: OrderFor
                                                                 field.value === "OUT"
                                                                     ? "bg-red-500 hover:bg-red-600 text-white border-0"
                                                                     : "bg-red-50 hover:bg-red-100",
-                                                            )} onClick={() => form.setValue("movement", "OUT", { shouldValidate: true })}
-                                                        >OUT</Badge>
+                                                            )}
+                                                            onClick={() => form.setValue("movement", "OUT", { shouldValidate: true })}
+                                                        >
+                                                            OUT
+                                                        </Badge>
                                                     </div>
                                                 </FormControl>
                                                 <FormMessage />
@@ -325,7 +289,6 @@ export const OrderForm = ({ onClose, initialData, isEditMode = false }: OrderFor
                                         )}
                                     />
 
-                                    {/* Packing Type & Delivery Method */}
 
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                         <FormField
@@ -398,10 +361,12 @@ export const OrderForm = ({ onClose, initialData, isEditMode = false }: OrderFor
                                 </div>
                             </Card>
 
-                            {/* Right Column Card - Items */}
-                            <Card className={cn("shadow-sm border-gray-200 flex flex-col", isMobile ? "" : "h-[calc(100vh-20rem)] overflow-hidden")}>
-                                <div className="pt-5 px-5 py-2 border-b">
-                                    <div className="flex justify-between items-center">
+                            {/* Right Column - Items Section */}
+                            <Card className={cn("shadow-sm border-gray-200 flex flex-col",
+                                isMobile ? "" : "h-[calc(100vh-20rem)] overflow-hidden"
+                            )}>
+                                <div className="pt-5 px-5 py-2 border-b bg ">
+                                    <div className="flex justify-between items-center ">
                                         <h3 className="text-lg font-semibold text-gray-800 flex items-center">
                                             <div className="h-5 w-1.5 bg-green-500 rounded-full mr-2"></div>
                                             Order Items
@@ -410,17 +375,17 @@ export const OrderForm = ({ onClose, initialData, isEditMode = false }: OrderFor
                                             type="button"
                                             variant="outline"
                                             size="sm"
-                                            className="flex items-center border-green-500 text-green-600 hover:bg-green-50"
-                                            // Ensure you provide default/valid values required by your item schema
-                                            onClick={() => append({ itemId: "", quantity: 1, itemLocationId: "4e176e92-e833-44f5-aea9-0537f980fb4b" /* Add other required defaults */ })}
+                                            className="flex items-center  border-green-500 text-green-600 hover:bg-green-50"
+                                            onClick={() => append({ itemId: "", quantity: 0, itemLocationId: "4e176e92-e833-44f5-aea9-0537f980fb4b" })}
                                         >
                                             <Plus className="h-4 w-4" />
                                             <span>Add Item</span>
                                         </Button>
                                     </div>
                                 </div>
+
                                 <div className="flex-1 overflow-hidden flex flex-col">
-                                    {/* Desktop Header */}
+                                    {/* Fixed header for desktop */}
                                     <div className="hidden md:block bg-gray-50 border-b sticky top-0 z-10">
                                         <table className="w-full border-collapse">
                                             <thead>
@@ -434,7 +399,6 @@ export const OrderForm = ({ onClose, initialData, isEditMode = false }: OrderFor
                                         </table>
                                     </div>
 
-                                    {/* Items List */}
                                     <div className="flex-1 overflow-auto">
                                         {fields.length === 0 ? (
                                             <div className="text-center py-12 text-gray-500 bg-gray-50 h-full flex flex-col items-center justify-center">
@@ -463,24 +427,24 @@ export const OrderForm = ({ onClose, initialData, isEditMode = false }: OrderFor
                                         )}
                                     </div>
                                 </div>
-                                {/* Add Another Item Button */}
+
+                                {/* "Add another item" button at the bottom */}
                                 <div className="p-4 border-t bg-gray-50">
                                     <Button
                                         type="button"
                                         variant="ghost"
-                                        className="w-full ..."
-                                        // Ensure you provide default/valid values required by your item schema
-                                        onClick={() => append({ itemId: "", quantity: 1, itemLocationId: "4e176e92-e833-44f5-aea9-0537f980fb4b" /* Add other required defaults */ })}
+                                        className="w-full flex items-center justify-center gap-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                        onClick={() => append({ itemId: "", quantity: 1, itemLocationId: "4e176e92-e833-44f5-aea9-0537f980fb4b" })}
                                     >
                                         <Plus className="h-4 w-4" />
                                         Add Another Item
                                     </Button>
                                 </div>
                             </Card>
+                        </div>
+                    </div>
 
-                        </div> {/* End Grid Layout */}
-                    </div> {/* End Scrollable Content */}
-
+                    {/* Form error message */}
                     {form.formState.errors && Object.keys(form.formState.errors).length > 0 && (
                         <div className="mx-6 mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md">
                             {Object.entries(form.formState.errors).map(([ key, error ]) => (
@@ -491,8 +455,9 @@ export const OrderForm = ({ onClose, initialData, isEditMode = false }: OrderFor
                         </div>
                     )}
 
-                    {/* Form Footer */}
-                    <div className="border-t px-4 sm:px-6 py-4 bg-white sticky bottom-0 shadow-inner z-10">
+
+                    {/* Form footer */}
+                    <div className="border-t px-4 sm:px-6  py-4 bg-white sticky bottom-0 shadow-inner z-10">
                         <div className="flex justify-between items-center">
                             <div className="text-sm text-gray-500">
                                 {fields.length} item(s) in order
@@ -502,26 +467,37 @@ export const OrderForm = ({ onClose, initialData, isEditMode = false }: OrderFor
                                     type="button"
                                     variant="outline"
                                     onClick={handleCancel}
-                                    disabled={form.formState.isSubmitting} // <-- Use formState
+                                    disabled={isSubmitting}
                                 >
                                     Cancel
                                 </Button>
                                 <Button
                                     type="submit"
-                                    // Disable logic: Use formState.isSubmitting. Keep business logic (require items).
-                                    // Add !form.formState.isValid if you only want submission when the form is valid according to schema
-                                    disabled={
-                                        form.formState.isSubmitting ||
-                                        fields.length === 0
-                                        // You might want to rely on schema validation instead of the .some check here
-                                        // !form.formState.isValid // Add this if you want to prevent submission until valid
-                                    }
+                                    disabled={isSubmitting || fields.length === 0 || fields.some(field => !form.watch(`items.${fields.indexOf(field)}.itemId`))}
                                     className="px-6 bg-blue-600 hover:bg-blue-700"
                                 >
-                                    {/* Use formState.isSubmitting for loading state */}
-                                    {form.formState.isSubmitting ? (
+                                    {isSubmitting ? (
                                         <>
-                                            {/* <LoadingSpinner /> */}
+                                            <svg
+                                                className="animate-spin -ml-1 mr-2 h-4 w-4"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <circle
+                                                    className="opacity-25"
+                                                    cx="12"
+                                                    cy="12"
+                                                    r="10"
+                                                    stroke="currentColor"
+                                                    strokeWidth="4"
+                                                />
+                                                <path
+                                                    className="opacity-75"
+                                                    fill="currentColor"
+                                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                                />
+                                            </svg>
                                             {isEditMode ? 'Updating Order...' : 'Creating Order...'}
                                         </>
                                     ) : (

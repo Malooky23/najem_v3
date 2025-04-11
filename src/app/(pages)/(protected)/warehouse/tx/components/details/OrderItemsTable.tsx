@@ -1,9 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { EnrichedOrders } from "@/types/orders"
+import { EnrichedOrders, EnrichedOrderSchemaType } from "@/types/orders"
 
 interface OrderItemsTableProps {
-  order: EnrichedOrders
+  order: EnrichedOrderSchemaType
 }
 
 export function OrderItemsTable({ order }: OrderItemsTableProps) {

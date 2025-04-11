@@ -1,5 +1,6 @@
+'use client'
 import { create } from 'zustand';
-import { OrderFilters, OrderSort, OrderSortField, EnrichedOrders } from '@/types/orders';
+import { OrderFilters, OrderSort, OrderSortField, EnrichedOrderSchemaType } from '@/types/orders';
 import { subscribeWithSelector } from 'zustand/middleware';
 import { StateCreator } from 'zustand';
 import {orderStatusSchema, movementTypeSchema} from '@/server/db/schema';
@@ -26,7 +27,7 @@ interface OrdersState {
 
   // UI State - simplified
   selectedOrderId: string | null;
-  selectedOrderData: EnrichedOrders | null;
+  selectedOrderData: EnrichedOrderSchemaType | null;
   isDetailsOpen: boolean;
   isLoading: boolean;
 
@@ -38,7 +39,7 @@ interface OrdersState {
   setCustomerId: (id: string | null) => void;
   setMovement: (movement: MovementType | null) => void;
   setDateRange: (from: string | null, to: string | null) => void;
-  selectOrder: (id: string | null, data?: EnrichedOrders | null) => void;
+  selectOrder: (id: string | null, data?: EnrichedOrderSchemaType | null) => void;
   updateSelectedOrderStatus: (status: OrderStatus) => void;
   clearFilters: () => void;
   setLoading: (isLoading: boolean) => void;

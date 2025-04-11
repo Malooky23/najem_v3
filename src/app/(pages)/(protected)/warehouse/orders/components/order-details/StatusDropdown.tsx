@@ -11,6 +11,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useSelectedOrderId, useSelectedOrderData, useOrdersStore } from "@/stores/orders-store"
 import { z } from "zod"
 import { orderStatusSchema } from "@/server/db/schema"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 type OrderStatus = z.infer<typeof orderStatusSchema>
 
@@ -24,37 +25,39 @@ const statusOptions = [
 ];
 
 const statusColors: Record<OrderStatus, string> = {
-  DRAFT: "bg-gray-500",
-  PENDING: "bg-yellow-500",
-  PROCESSING: "bg-blue-500",
-  READY: "bg-purple-500",
-  COMPLETED: "bg-green-500",
-  CANCELLED: "bg-red-500",
+  DRAFT: "bg-gray-500 focus:text-white focus:bg-gray-600",
+  PENDING: "bg-yellow-500 focus:text-white focus:bg-yellow-600",
+  PROCESSING: "bg-blue-500 focus:text-white focus:bg-blue-600",
+  READY: "bg-purple-500 focus:text-white focus:bg-purple-600",
+  COMPLETED: "bg-green-500 focus:text-white focus:bg-green-600",
+  CANCELLED: "bg-red-500 focus:text-white focus:bg-red-600",
 };
 
-export const StatusDropdown = memo(function StatusDropdown() {
-  // Use separate selectors to prevent unnecessary renders
+
+interface StatusDropdownProps {
+  className?: string;
+}
+
+export const StatusDropdown = memo(function StatusDropdown({ className }: StatusDropdownProps) {
   const orderId = useSelectedOrderId();
   const orderData = useSelectedOrderData();
   const updateSelectedOrderStatus = useOrdersStore(state => state.updateSelectedOrderStatus);
-  
-  // Get current status safely
+
   const currentStatus = orderData?.status || "DRAFT" as OrderStatus;
-  
-  const [isOpen, setIsOpen] = useState(false);
-  const [pendingStatus, setPendingStatus] = useState<OrderStatus | null>(null);
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+
+  const [ pendingStatus, setPendingStatus] = useState<OrderStatus | null>(null);
+  const [ showConfirmDialog, setShowConfirmDialog ] = useState(false);
   const queryClient = useQueryClient();
 
   const { mutate: updateOrderStatus, isPending } = useMutation({
     mutationFn: async (newStatus: OrderStatus) => {
       if (!orderId) throw new Error("No order selected");
-      
+
       const result = await updateOrder({
         orderId,
         status: newStatus
       });
-      
+
       if (!result.success) {
         throw new Error(result.error?.message || 'Failed to update status');
       }
@@ -62,14 +65,12 @@ export const StatusDropdown = memo(function StatusDropdown() {
     },
     onSuccess: (result) => {
       const { newStatus } = result;
-      
-      // Update store state
+
       updateSelectedOrderStatus(newStatus);
-      
-      // Update React Query cache
-      queryClient.invalidateQueries({ queryKey: ['orders'] });
-      queryClient.invalidateQueries({ queryKey: ['stockMovements'] });
-      
+
+      queryClient.invalidateQueries({ queryKey: [ 'orders' ] });
+      queryClient.invalidateQueries({ queryKey: [ 'stockMovements' ] });
+
       toast.success(`Order status updated to ${newStatus}`);
       setShowConfirmDialog(false);
       setPendingStatus(null);
@@ -84,51 +85,49 @@ export const StatusDropdown = memo(function StatusDropdown() {
   const handleConfirm = useCallback(() => {
     if (!pendingStatus) return;
     updateOrderStatus(pendingStatus);
-  }, [pendingStatus, updateOrderStatus]);
+  }, [ pendingStatus, updateOrderStatus]);
 
   const handleStatusSelect = useCallback((newStatus: OrderStatus) => {
     if (newStatus !== currentStatus) {
       setPendingStatus(newStatus);
       setShowConfirmDialog(true);
     }
-    setIsOpen(false);
-  }, [currentStatus]);
+  }, [ currentStatus ]);
 
   return (
-    <>
-      <div className="relative">
-        <Badge
-          variant="secondary"
-          className={cn(
-            "h-7 px-3 cursor-pointer transition-all duration-300 ease-in-out hover:shadow-md text-white",
-            statusColors[currentStatus],
-            isPending && "opacity-50 cursor-not-allowed"
-          )}
-          onClick={() => !isPending && setIsOpen(!isOpen)}
-        >
-          {currentStatus}
-          <ChevronDown className="w-4 h-4 ml-1" />
-        </Badge>
-        {isOpen && (
-          <div className="absolute top-full left-0 mt-1 w-40 bg-white rounded-md shadow-lg overflow-hidden z-10">
-            {statusOptions.map((option) => (
-              <div
-                key={option.value}
-                className={cn(
-                  "px-4 py-2 cursor-pointer text-white transition-all duration-200",
-                  statusColors[option.value as OrderStatus],
-                  "hover:opacity-80 hover:translate-x-1",
-                  isPending && "opacity-50 cursor-not-allowed pointer-events-none",
-                  option.value === currentStatus && "font-semibold"
-                )}
-                onClick={() => !isPending && handleStatusSelect(option.value as OrderStatus)}
-              >
-                {option.label}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+    <div className={className}>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Badge
+            variant="outline"
+            className={cn(
+              "h-7 px-3 cursor-pointer transition-all duration-300 ease-in-out text-white",
+              statusColors[ currentStatus ],
+              isPending && "opacity-50 cursor-not-allowed",
+            )}
+          >
+            {currentStatus}
+            <ChevronDown className="w-4 h-4 ml-1" />
+          </Badge>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-40 p-0">
+          {statusOptions.map((option) => (
+            <DropdownMenuItem 
+              key={option.value}
+              className={cn(
+                "cursor-pointer text-white transition-all duration-200",
+                statusColors[ option.value as OrderStatus],
+                " hover:translate-x-1",
+                isPending && "opacity-50 cursor-not-allowed pointer-events-none",
+                option.value === currentStatus && "font-semibold"
+              )}
+              onSelect={() => !isPending && handleStatusSelect(option.value as OrderStatus)}
+            >
+              {option.label}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       <AlertDialog open={showConfirmDialog}>
         <AlertDialogContent>
@@ -166,6 +165,6 @@ export const StatusDropdown = memo(function StatusDropdown() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
+    </div>
   );
 });

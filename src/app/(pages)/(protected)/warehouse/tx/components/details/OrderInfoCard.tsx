@@ -1,10 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
-import { EnrichedOrders } from "@/types/orders"
+import { EnrichedOrders, EnrichedOrderSchemaType } from "@/types/orders"
 import { format } from "date-fns"
 
 interface OrderInfoCardProps {
-  order: EnrichedOrders
+  order: EnrichedOrderSchemaType
 }
 
 export function OrderInfoCard({ order }: OrderInfoCardProps) {

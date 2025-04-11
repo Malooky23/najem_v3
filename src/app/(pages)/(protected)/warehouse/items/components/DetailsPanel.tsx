@@ -394,6 +394,7 @@ export const DetailsPanel = memo<DetailsPanelProps>(function DetailsPanel({
     )
   }
 
+  
   if (!isMobile) {
     return (
       <div className="flex-1 p-4 w-full bg-gradient-to-tr from-pink-200/50 to-blue-200/50  backdrop-blur-lg ">

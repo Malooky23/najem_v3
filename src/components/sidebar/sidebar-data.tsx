@@ -30,7 +30,7 @@ const warehouse = {
     items: [
         {
             title: "Items",
-            url: "/experiments/items",
+            url: "/warehouse/items",
             icon: Box,
         },
         {

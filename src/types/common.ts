@@ -44,3 +44,10 @@ export const CreateContactSchema = z.object({
     contact_data: z.string(),
     is_primary: z.boolean(),
 })
+
+export type Pagination = {
+    total: number;
+    pageSize: number;
+    currentPage: number;
+    totalPages: number;
+};

@@ -8,7 +8,7 @@ import { User } from "next-auth";
 import { ApiResponse } from "@/types/common";
 
 
-export async function getItems(): Promise<ItemResponse>  {
+export async function getItems(): Promise<ApiResponse<ItemSchemaType[]>>  {
 
     const session = await auth();
     if (!session?.user) {
@@ -16,7 +16,9 @@ export async function getItems(): Promise<ItemResponse>  {
     }
     const { user } = session;
     const { userType, customerId } = user;
+    console.log(userType, customerId)
     if (userType === "CUSTOMER" && !customerId) {
+        // throw new Error("No Customer ID");
         return { success: false, message: "Unauthorized - Customer ID missing" };
     }
     let items;

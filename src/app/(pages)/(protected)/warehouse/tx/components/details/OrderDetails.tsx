@@ -6,13 +6,13 @@ import { OrderHeader } from "./OrderHeader"
 import { OrderInfoCard } from "./OrderInfoCard"
 import { OrderItemsTable } from "./OrderItemsTable"
 import { OrderNotesCard } from "./OrderNotesCard"
-import { EnrichedOrders } from "@/types/orders"
+import { EnrichedOrders, EnrichedOrderSchemaType } from "@/types/orders"
 
 import { toast } from "@/hooks/use-toast"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
 
 interface OrderDetailsProps {
-  order: EnrichedOrders | null
+  order: EnrichedOrderSchemaType | null
   isMobile: boolean
   handleClose: () => void
   isLoading: boolean

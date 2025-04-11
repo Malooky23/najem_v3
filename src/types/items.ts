@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { type InsertItem, items, type Item } from "@/server/db/schema";
+import { type InsertItem, items, type Item, itemTypesSchema } from "@/server/db/schema";
 import {createInsertSchema,} from 'drizzle-zod'
 import { stockMovement, stockReconciliation, stockMovementsView } from "./stockMovement";
 import { is } from "drizzle-orm";
@@ -7,9 +7,7 @@ import { is } from "drizzle-orm";
 export const emptyStringToNull = z.string().optional().nullable().nullish().transform((val) => val === '' ? null : val);
 
 
-export const ITEM_TYPES = ["SACK", "PALLET", "CARTON", "OTHER", "BOX", "EQUIPMENT", "CAR"] as const;
-// export const itemTypes = z.enum(["SACK", "PALLET", "CARTON", "OTHER", "BOX", "EQUIPMENT", "CAR"]);
-export const itemTypes = z.enum(ITEM_TYPES);
+
 
 export const itemStock = z.object({
   itemId: z.string(),
@@ -22,7 +20,7 @@ export const itemStock = z.object({
 });
 
 export const createItemsSchema = z.object({
-  itemType: itemTypes,
+  itemType: itemTypesSchema,
   itemName: z.string().min(3, {message:"Item Name too short, min 3 characters"}),
   itemBrand: emptyStringToNull,
   itemModel: emptyStringToNull,

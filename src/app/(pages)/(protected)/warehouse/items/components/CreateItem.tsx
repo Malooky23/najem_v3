@@ -47,12 +47,14 @@ import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { useIsMobileTEST } from "@/hooks/use-media-query"
 import CustomerDropdown from "@/components/ui/customer-dropdown"
-import { createItemsSchema, ITEM_TYPES, itemTypes } from "@/types/items"
+import { createItemsSchema } from "@/types/items"
 
 
 import { useSession } from "next-auth/react"
 import { ComboboxForm } from "@/components/ui/combobox"
-import { useCreateItem } from "@/hooks/useItems"
+import { useCreateItem } from "@/hooks/data/useItems";
+import { itemTypes, itemTypesSchema } from "@/server/db/schema";
+// import { useCreateItem } from "@/hooks/useItems"
 
 export default function CreateItemForm() {
   const [open, setOpen] = useState(false)
@@ -64,6 +66,7 @@ export default function CreateItemForm() {
 
   // Get the createItem mutation
   const createItemMutation = useCreateItem()
+
 
   const form = useForm<z.infer<typeof createItemsSchema>>({
     resolver: zodResolver(createItemsSchema),
@@ -210,7 +213,7 @@ export default function CreateItemForm() {
                 </FormLabel>
                 <ComboboxForm
                   name="itemType"
-                  options={ITEM_TYPES.map((type) => ({ label: type, value: type }))}
+                  options={itemTypes.enumValues.map((type) => ({ label: type, value: type }))}
                   value={field.value}
                   placeholder="Select item type"
                   enableFormMessage={false}
@@ -513,7 +516,6 @@ export default function CreateItemForm() {
       </form>
     </Form>
   )
-  if(window === undefined) return null
 
   if (isMobile) {
     return (

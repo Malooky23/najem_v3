@@ -80,6 +80,34 @@
   }
 }
 
+/* CSS for Expense Row Animation */
+.expense-row {
+  /* Hint to the browser about upcoming animations */
+  will-change: opacity, transform; 
+  
+  /* Encourage layer promotion */
+  transform: translateZ(0); 
+
+  /* Define transitions for performant properties */
+  transition: opacity 300ms ease-out, transform 300ms ease-out; 
+  /* overflow: hidden; - Still not needed for this animation type */
+}
+
+/* Exiting styles: Apply the actual exit transform */
+.expense-row-exiting {
+  opacity: 0;
+  /* The translateZ(0) from the base style is implicitly overridden */
+  transform: translateX(-20px); 
+  pointer-events: none; /* Prevent interaction while exiting */
+}
+
+/* Keep the custom scrollbar styles if you use them */
+.custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; border-radius: 3px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(0, 0, 0, 0.2); border-radius: 3px; border: 1px solid transparent; background-clip: content-box; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background-color: rgba(0, 0, 0, 0.3); }
+.custom-scrollbar { scrollbar-width: thin; scrollbar-color: rgba(0, 0, 0, 0.2) transparent; }
+
 
 @layer utilities {
   @keyframes flash-red {
@@ -143,3 +171,4 @@
     @apply  bg-pink-500/20 text-gray-700;
   }
 }
+

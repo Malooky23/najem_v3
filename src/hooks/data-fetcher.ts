@@ -47,33 +47,33 @@ type MutationContext = {
 } | undefined;
 
 // Simplify the order details hook to work better with the store
-export function useOrderDetails(orderId: string | null) {
-  // const queryClient = useQueryClient();
-  const selectOrder = useOrdersStore(state => state.selectOrder);
-  const { selectedOrderData } = useOrdersStore();
-  return useQuery({
-    queryKey: ['order', orderId],
-    queryFn: async () => {
-      if (!orderId) return null;
+// export function useOrderDetails(orderId: string | null) {
+//   // const queryClient = useQueryClient();
+//   const selectOrder = useOrdersStore(state => state.selectOrder);
+//   const { selectedOrderData } = useOrdersStore();
+//   return useQuery({
+//     queryKey: ['order', orderId],
+//     queryFn: async () => {
+//       if (!orderId) return null;
       
-      const result = await getOrderById(orderId);
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to fetch order');
-      }
+      // const result = await getOrderById(orderId);
+//       if (!result.success) {
+//         throw new Error(result.error || 'Failed to fetch order');
+//       }
       
-      // Use selectOrder instead of setSelectedOrderData to ensure consistent state
-      // This updates the store with fresh data while maintaining proper state transitions
-      selectOrder(orderId, result.data);
-      return result.data;
-    },
-    placeholderData: selectedOrderData,
-    enabled: !!orderId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
-    retry: 1,
-    refetchOnWindowFocus: false
-  });
-}
+//       // Use selectOrder instead of setSelectedOrderData to ensure consistent state
+//       // This updates the store with fresh data while maintaining proper state transitions
+//       selectOrder(orderId, result.data);
+//       return result.data;
+//     },
+//     placeholderData: selectedOrderData,
+//     enabled: !!orderId,
+//     staleTime: 5 * 60 * 1000, // 5 minutes
+//     gcTime: 10 * 60 * 1000, // 10 minutes
+//     retry: 1,
+//     refetchOnWindowFocus: false
+//   });
+// }
 
 // Completely refactored orders query for much better performance
 export function useOrdersQuery(params: OrdersQueryParams = {}) {

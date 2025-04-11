@@ -16,11 +16,13 @@ import {
   foreignKey,
   pgView,
   pgMaterializedView,
+  numeric,
 } from "drizzle-orm/pg-core";
-import { sql } from "drizzle-orm";
+import { sql, eq } from "drizzle-orm";
 import { relations } from 'drizzle-orm';
-import { string, z } from 'zod'
+import { z } from 'zod'
 import { createInsertSchema } from "drizzle-zod";
+
 
 export const userType = pgEnum("user_type", [ "EMPLOYEE", "CUSTOMER", "DEMO" ])
 export const userTypeSchema = z.enum(userType.enumValues);
@@ -220,11 +222,15 @@ export const locations = pgTable("locations", {
 });
 
 // Item table
+
+export const itemTypes = pgEnum("item_type", [ "SACK", "PALLET", "CARTON", "OTHER", "BOX", "EQUIPMENT", "CAR" ])
+export const itemTypesSchema = z.enum(itemTypes.enumValues);
+
 export const items = pgTable("items", {
   itemId: uuid("item_id").defaultRandom().primaryKey().notNull(),
   itemNumber: serial("item_number").notNull(),
   itemName: text("item_name").notNull().unique(),
-  itemType: text("item_type"),
+  itemType: itemTypes("item_type").default("OTHER").notNull(),
   itemBrand: text("item_brand"),
   itemModel: text("item_model"),
   itemBarcode: text("item_barcode").unique(),
@@ -245,24 +251,6 @@ export const items = pgTable("items", {
 
 });
 
-// Inventory tracking tables
-// export const itemStock = pgTable("item_stock", {
-//   itemId: uuid("item_id")
-//     .notNull()
-//     .references(() => items.itemId),
-//   locationId: uuid("location_id")
-//     .notNull()
-//     .references(() => locations.locationId),
-//   currentQuantity: integer("current_quantity").notNull().default(0),
-//   lastUpdated: timestamp("last_updated", { withTimezone: true })
-//     .defaultNow()
-//     .notNull(),
-// },
-//   // (table) => ({
-//   //   pk: primaryKey({ columns: [table.itemId, table.locationId] }),
-//   //   quantityCheck: check("quantity_check", sql`current_quantity >= 0`),
-//   // })
-// );
 
 export const itemStock = pgTable("item_stock", {
   itemId: uuid("item_id").notNull().references(() => items.itemId),
@@ -383,6 +371,8 @@ export const orderItems = pgTable("order_items", {
     > 0`),
 ]);
 
+
+
 export const orderHistoryType = pgEnum("order_history_type", [
   'STATUS_CHANGE',
   'MOVEMENT_CHANGE',
@@ -432,6 +422,47 @@ export const orderHistoryRelations = relations(orderHistory, ({ one }) => ({
     references: [ users.userId ],
   }),
 }));
+
+export const expenseCategoryType = pgEnum("expense_category_type", [ "LABOUR", "FORKLIFT", "PACKING" ])
+export const expenseCategoryTypeSchema = z.enum(expenseCategoryType.enumValues)
+
+export const expenseItems = pgTable("expense_items", {
+  expenseItemId: uuid("expense_item_id").defaultRandom().primaryKey(),
+  expenseName: text("expense_name").notNull(),
+  expensePrice: numeric("expense_price").notNull(),
+  expenseCategory: expenseCategoryType("expense_category"),
+  notes: text(),
+  createdBy: uuid("created_by"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }),
+
+})
+
+export const orderExpenses = pgTable("order_expenses", {
+  orderExpenseId: uuid("order_expense_id").defaultRandom().primaryKey(),
+  orderId: uuid("order_id").notNull().references(() => orders.orderId),
+  expenseItemId: uuid("expense_item_id").notNull().references(() => expenseItems.expenseItemId),
+  expenseItemQuantity: integer("expense_item_quantity").notNull(),
+  notes: text(),
+  createdBy: uuid("created_by").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }),
+})
+
+export const orderExpenseDetailsMaterializedView = pgMaterializedView('order_expense_details_mv')
+  .as((qb) => qb.select({
+    orderExpenseId: orderExpenses.orderExpenseId,
+    orderId: orderExpenses.orderId,
+    expenseItemId: orderExpenses.expenseItemId,
+    expenseItemQuantity: orderExpenses.expenseItemQuantity,
+    expenseName: expenseItems.expenseName,
+    expensePrice: expenseItems.expensePrice,
+    expenseCategory: expenseItems.expenseCategory,
+    totalExpensePrice: sql<number>`${orderExpenses.expenseItemQuantity} * ${expenseItems.expensePrice}`.mapWith(Number).as('total_expense_price') // Give the calculated column an alias
+  })
+    .from(orderExpenses)
+    .innerJoin(expenseItems, eq(orderExpenses.expenseItemId, expenseItems.expenseItemId))
+  );
 
 export const stockMovements = pgTable("stock_movements", {
   movementId: uuid("movement_id").defaultRandom().primaryKey(),

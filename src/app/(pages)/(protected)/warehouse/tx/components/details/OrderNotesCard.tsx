@@ -1,8 +1,8 @@
-import { EnrichedOrders } from "@/types/orders"
+import { EnrichedOrders, EnrichedOrderSchemaType } from "@/types/orders"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 interface OrderNotesCardProps {
-  order: EnrichedOrders
+  order: EnrichedOrderSchemaType
 }
 
 export function OrderNotesCard({ order }: OrderNotesCardProps) {

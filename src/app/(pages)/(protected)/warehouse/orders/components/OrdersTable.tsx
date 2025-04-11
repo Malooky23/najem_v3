@@ -3,8 +3,8 @@
 import { useCallback, useEffect, memo, useState, useRef } from "react"
 import { useOrdersStore } from "@/stores/orders-store"
 import { PaginationControls } from "@/components/ui/pagination-controls"
-import { EnrichedOrders, OrderSortField } from "@/types/orders"
-import { useOrders, usePrefetchOrders } from "@/hooks/useOrdersManager"
+import { EnrichedOrders, EnrichedOrderSchemaType, OrderSortField } from "@/types/orders"
+import { useOrdersQuery } from "@/hooks/data/useOrders"
 
 import {
   Table,
@@ -14,7 +14,6 @@ import {
   TableHeader,
   TableRow
 } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
 import { format } from "date-fns"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
@@ -82,33 +81,7 @@ const TablePagination = memo<TablePaginationProps>(function TablePagination({
   );
 });
 
-// Status badge component
-// const StatusBadge = memo<{ status: string }>(function StatusBadge({ status }) {
-//   let variant: "default" | "secondary" | "destructive" | "outline" = "default";
 
-//   switch (status) {
-//     case "COMPLETED":
-//       variant = "default";
-//       break;
-//     case "PENDING":
-//       variant = "secondary";
-//       break;
-//     case "PROCESSING":
-//       variant = "outline";
-//       break;
-//     case "CANCELED":
-//       variant = "destructive";
-//       break;
-//     default:
-//       variant = "outline";
-//   }
-
-//   return (
-//     <Badge variant={variant} className="capitalize">
-//       {status.toLowerCase().replace("_", " ")}
-//     </Badge>
-//   );
-// });
 
 const StatusBadge = ({ status }: { status: string }) => {
   const getStatusStyles = (status: string) => {
@@ -171,34 +144,35 @@ export const OrdersTable = memo<OrdersTableProps>(function OrdersTable({
 
   // Fetch data
   const {
-    data: orders,
-    pagination,
+    data,
+    // pagination,
     isLoading,
     isFetching,
     isError,
     error,
     refetch
-  } = useOrders({
+  } = useOrdersQuery({
     page,
     pageSize,
     filters,
     sort
   });
+  console.log(data?.pagination)
 
   // Create prefetch function for next page
-  const prefetchNextPage = usePrefetchOrders({
-    page: page + 1,
-    pageSize,
-    filters,
-    sort
-  });
+  // const prefetchNextPage = usePrefetchOrders({
+  //   page: page + 1,
+  //   pageSize,
+  //   filters,
+  //   sort
+  // });
 
-  // Handle next page hover - prefetch data
-  const handleNextPageHover = useCallback(() => {
-    if (page < (pagination?.totalPages || 0)) {
-      prefetchNextPage();
-    }
-  }, [page, pagination?.totalPages, prefetchNextPage]);
+  // // Handle next page hover - prefetch data
+  // const handleNextPageHover = useCallback(() => {
+  //   if (page < (pagination?.totalPages || 0)) {
+  //     prefetchNextPage();
+  //   }
+  // }, [page, pagination?.totalPages, prefetchNextPage]);
 
   // Track loading states
   useEffect(() => {
@@ -214,7 +188,7 @@ export const OrdersTable = memo<OrdersTableProps>(function OrdersTable({
   }, [page]);
 
   // Memoized callbacks
-  const handleRowClick = useCallback((order: EnrichedOrders) => {
+  const handleRowClick = useCallback((order: EnrichedOrderSchemaType) => {
     selectOrder(selectedOrderId === order.orderId ? null : order.orderId, order);
   }, [selectedOrderId, selectOrder]);
 
@@ -292,7 +266,7 @@ export const OrdersTable = memo<OrdersTableProps>(function OrdersTable({
               Array(5).fill(0).map((_, index) => (
                 <TableRowSkeleton key={`skeleton-${index}`} />
               ))
-            ) : orders.length === 0 ? (
+            ) : !data || data.orders.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                   No orders found
@@ -300,7 +274,7 @@ export const OrdersTable = memo<OrdersTableProps>(function OrdersTable({
               </TableRow>
             ) : (
               // Render orders
-              orders.map((order: EnrichedOrders) => (
+              data?.orders.map((order) => ( // Use EnrichedOrderSchemaType if that's what the hook returns
                 <TableRow
                   key={order.orderId}
                   className={cn(
@@ -330,12 +304,12 @@ export const OrdersTable = memo<OrdersTableProps>(function OrdersTable({
           </TableBody>
         </Table>
       </div>
-      {pagination && (
+      {data?.pagination && (
         <TablePagination
-          pagination={pagination}
+          pagination={data.pagination}
           onPageChange={handlePageChange}
           onPageSizeChange={handlePageSizeChange}
-          onNextPageHover={handleNextPageHover}
+          // onNextPageHover={handleNextPageHover} // Removed prefetching
         />
       )}
     </>

@@ -2,9 +2,10 @@
 import { useMemo } from "react"
 import { cn } from "@/lib/utils"
 import { OrderDetails } from "./OrderDetails"
-import { useOrderDetails } from "@/hooks/data-fetcher"
+// import { useOrderDetails } from "@/hooks/data-fetcher"
 import { useStockMovementStore } from "@/stores/stock-movement-store"
 import { useGetMovementById } from "@/hooks/useGetMovementById"
+import { useOrderByIdQuery } from "@/hooks/data/useOrders"
 
 interface DetailsPanelProps {
   isMobile: boolean
@@ -24,7 +25,8 @@ export function DetailsPanel({ isMobile }: DetailsPanelProps) {
   }, [movement])
   
   // Fetch order details with the reference ID
-  const { data: order, isLoading: orderLoading } = useOrderDetails(referenceId)
+  // const { data: order, isLoading: orderLoading } = useOrderDetails(referenceId)
+  const { data: order, isLoading: orderLoading } = useOrderByIdQuery(referenceId)
   
   // Handler for closing the panel
   const handleClose = () => selectMovement(null)

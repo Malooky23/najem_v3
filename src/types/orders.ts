@@ -1,7 +1,10 @@
 import { z } from 'zod';
-import { type orders, addressDetails, items, orderItems, userType, userTypeSchema } from '@/server/db/schema';
+import { addressDetails, items, orderItems, orders, userType, userTypeSchema } from '@/server/db/schema';
 import { ItemSchema } from './items';
 import { orderTypeSchema, orderStatusSchema, movementTypeSchema, deliveryMethodSchema, packingTypeSchema } from '@/server/db/schema';
+import { createInsertSchema, createSelectSchema, createUpdateSchema } from 'drizzle-zod';
+import { uuid } from 'drizzle-orm/pg-core';
+import { orderExpenseSchema } from './expense';
 // Enums for order status and types
 
 
@@ -100,3 +103,53 @@ export interface OrderSort {
     field: OrderSortField;
     direction: 'asc' | 'desc';
 }
+
+/////////////////////// New Order Types using zod implementation with drizzle
+
+export const OrderSchema = createSelectSchema(orders)
+export type OrderSchemaType = z.infer<typeof OrderSchema>
+
+export const CreateOrderSchemaWithoutItems = createInsertSchema(orders)
+export const CreateOrderSchema = CreateOrderSchemaWithoutItems.extend({
+    items: z.array(
+        z.object({
+            itemId: z.string().uuid(),
+            quantity: z.number().positive(),
+            itemLocationId: z.string().uuid()
+        })
+    ).min(1, 'At least one item is required')
+})
+export type CreateOrderSchemaType = z.infer<typeof CreateOrderSchema>
+
+export const UpdateOrderSchemaWithoutItems = createUpdateSchema(orders,{
+    orderId: z.string().uuid()
+})
+export const UpdateOrderSchema = UpdateOrderSchemaWithoutItems.extend({
+    items: z.array(
+        z.object({
+            itemId: z.string().uuid(),
+            quantity: z.number().positive(),
+            itemLocationId: z.string().uuid()
+        })
+    ).min(1, 'At least one item is required')
+})
+export type UpdateOrderSchemaType = z.infer<typeof UpdateOrderSchema>
+
+export const EnrichedOrderSchema = OrderSchema.extend({
+    customerName: z.string(),
+    creator: z.object({
+        userId: z.string().uuid(),
+        firstName: z.string(),
+        lastName: z.string(),
+        userType: userTypeSchema,
+    }),
+    items: z.array(
+        z.object({
+            itemId: z.string().uuid(),
+            itemName: z.string(),
+            quantity: z.number().positive(),
+            itemLocationId: z.string().uuid()
+        })),
+    expenses: z.array(orderExpenseSchema).optional()
+});
+export type EnrichedOrderSchemaType = z.infer<typeof EnrichedOrderSchema>;

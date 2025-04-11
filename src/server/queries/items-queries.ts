@@ -1,6 +1,6 @@
 'use server'
 import { db } from '@/server/db'; // Assuming you have db initialized in '@/server/db/index.ts'
-import { createItemsSchema, CreateItemsSchemaType, ItemResponse, ItemSchema, ItemSchemaType } from '@/types/items';
+import { createItemsSchema, CreateItemsSchemaType, ItemSchema, ItemSchemaType } from '@/types/items';
 import { and, desc, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { Customer, Item, items, } from '@/server/db/schema';
@@ -9,20 +9,20 @@ import { ApiResponse } from '@/types/common';
 // Type to represent an Item with its relations. Used to map the raw data from the database to the Item Schema.
 type RawItemWithRelations = Item & {
     customer: {
-        displayName: Customer["displayName"] | null | undefined;
+        displayName: Customer[ "displayName" ] | null | undefined;
     } | null | undefined;
 };
 
 export async function fetchItems(customerId?: string): Promise<z.infer<typeof ItemSchema>[]> {
     try {
-        const whereConditions = [eq(items.isDeleted, false)];
+        const whereConditions = [ eq(items.isDeleted, false) ];
 
         if (customerId) {
             whereConditions.push(eq(items.customerId, customerId));
         }
 
         const rawItems = await db.query.items.findMany({
-            orderBy: [desc(items.itemNumber)],
+            orderBy: [ desc(items.itemNumber) ],
             with: {
                 itemStock: true,
                 customer: {
@@ -57,24 +57,24 @@ export async function fetchItems(customerId?: string): Promise<z.infer<typeof It
 };
 
 export async function createItemInDb(inputData: CreateItemsSchemaType): Promise<ApiResponse<ItemSchemaType>> {
-    try{
+    try {
         const validatedFields = createItemsSchema.safeParse(inputData)
-    if (!validatedFields.success) {
-        return { success: false, message: "Invalid input data" };
-    }
-    const result = await db.insert(items).values(validatedFields.data).returning();
-    console.log(result)
-    if (result) {
-        return { success: true, message: "Item created successfully", data: result[0] as ItemSchemaType };
-    }
+        if (!validatedFields.success) {
+            return { success: false, message: "Invalid input data" };
+        }
+        const result = await db.insert(items).values(validatedFields.data).returning();
+        console.log(result)
+        if (result) {
+            return { success: true, message: "Item created successfully", data: result[ 0 ] as ItemSchemaType };
+        }
 
-    return { success: false, message: "DB - Failed to create item" };
+        return { success: false, message: "DB - Failed to create item" };
 
-    }catch(error: any){
+    } catch (error: any) {
         console.error("Error creating item:", error.message);
         return { success: false, message: "Failed to create item. Error: " + error.message };
     }
-    
+
 }
 
 export async function updateItemInDb(inputData: CreateItemsSchemaType): Promise<ApiResponse<ItemSchemaType>> {

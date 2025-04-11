@@ -2,6 +2,9 @@ CREATE OR REPLACE FUNCTION update_item_stock_on_movement()
 RETURNS TRIGGER AS $$
 DECLARE
     current_stock_quantity INTEGER;
+    item_name TEXT;
+    location_name TEXT;
+
 BEGIN
     -- Determine current stock quantity (or 0 if no stock record yet)
     SELECT current_quantity INTO current_stock_quantity
@@ -33,7 +36,7 @@ BEGIN
                 last_updated = NOW()
             WHERE item_id = NEW.item_id AND location_id = NEW.location_id;
         ELSE
-            RAISE EXCEPTION 'Insufficient stock for item % at location % for movement %', NEW.item_id, NEW.location_id, NEW.movement_id;
+            RAISE EXCEPTION 'Insufficient stock for item % at location', item_name, location_name;
         END IF;
     END IF;
 

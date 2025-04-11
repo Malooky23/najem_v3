@@ -4,8 +4,11 @@ import Loading from '@/components/ui/loading';
 
 export default function OrdersRoute() {
   return (
-    <Suspense fallback={<Loading />}>
+
       <OrdersPage />
-    </Suspense>
+
+    // <Suspense fallback={<Loading />}>
+    //   <OrdersPage />
+    // </Suspense>
   );
 }

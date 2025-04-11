@@ -15,7 +15,7 @@ import {
 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useDebounce } from "@/hooks/use-debounce"
-import { OrderStatus } from "@/types/orders"
+
 import { 
   Popover,
   PopoverContent,
@@ -27,6 +27,8 @@ import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { DateRange } from "react-day-picker"
+import { z } from "zod"
+import { orderStatusSchema } from "@/server/db/schema"
 
 interface SearchPanelProps {
   isLoading: boolean;
@@ -68,7 +70,7 @@ export const SearchPanel = memo<SearchPanelProps>(function SearchPanel({ isLoadi
   // Handlers
   const handleStatusChange = useCallback((value: string) => {
     // Use null for "ALL", which resets the filter
-    setStatus(value === "ALL" ? null : value as OrderStatus)
+    setStatus(value === "ALL" ? null : value as z.infer<typeof orderStatusSchema>)
   }, [setStatus])
 
   const handleMovementChange = useCallback((value: string) => {
@@ -159,8 +161,7 @@ export const SearchPanel = memo<SearchPanelProps>(function SearchPanel({ isLoadi
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-              
+              </div>              
               <div>
                 <label className="text-sm font-medium">Movement</label>
                 <Select value={movement || ""} onValueChange={handleMovementChange}>

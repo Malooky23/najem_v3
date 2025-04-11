@@ -4,10 +4,6 @@ import Loading from '@/components/ui/loading';
 
 export default function StockMovementsRoute() {
   return (
-    <Suspense fallback={
-      <Loading />
-    }>
       <StockMovementPage />
-    </Suspense>
   );
 }
