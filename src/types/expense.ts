@@ -5,12 +5,12 @@ import { z } from "zod";
 export const expenseItemsSchema = z.object({
     expenseItemId: z.string().uuid(),
     expenseName: z.string(),
-    expensePrice: z.number().nonnegative(),
-    expenseCategory: expenseCategoryTypeSchema.optional(),
-    notes: z.string().optional(),
+    expensePrice: z.coerce.number().nonnegative(),
+    expenseCategory: expenseCategoryTypeSchema.nullable(),
+    notes: z.string().optional().nullable(),
     createdBy: z.string().uuid().optional(),
-    createdAt: z.string().datetime().optional(),
-    updatedAt: z.string().datetime().optional()
+    createdAt: z.date(),
+    updatedAt: z.date().nullable()
 })
 export type selectExpenseSchemaType = z.infer<typeof expenseItemsSchema>
 

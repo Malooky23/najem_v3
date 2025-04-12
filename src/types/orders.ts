@@ -112,19 +112,41 @@ export type OrderSchemaType = z.infer<typeof OrderSchema>
 
 export const CreateOrderSchemaWithoutItems = createInsertSchema(orders)
 export const CreateOrderSchema = CreateOrderSchemaWithoutItems.extend({
+    // items: z.array(
+    //     z.object({
+    //         itemId: z.string().uuid(),
+    //         quantity: z.number().positive(),
+    //         itemLocationId: z.string().uuid()
+    //     })
+    // ).min(1, 'At least one item is required')
     items: z.array(
         z.object({
             itemId: z.string().uuid(),
             quantity: z.number().positive(),
             itemLocationId: z.string().uuid()
         })
-    ).min(1, 'At least one item is required')
+    )
+        .transform((items) => {
+            return items.filter(item => item.itemId); // Filters out items with empty itemId
+        })
+        .refine(items => items.length > 0, {
+            message: 'At least one item is required!!!!!!! FILTERING OUT IS NOT WORKING',
+        })
 })
 export type CreateOrderSchemaType = z.infer<typeof CreateOrderSchema>
 
 export const UpdateOrderSchemaWithoutItems = createUpdateSchema(orders,{
     orderId: z.string().uuid()
 })
+// export const UpdateOrderSchema = UpdateOrderSchemaWithoutItems.extend({
+//     items: z.array(
+//         z.object({
+//             itemId: z.string().uuid(),
+//             quantity: z.number().positive(),
+//             itemLocationId: z.string().uuid()
+//         })
+//     ).min(1, 'At least one item is required')
+// })
 export const UpdateOrderSchema = UpdateOrderSchemaWithoutItems.extend({
     items: z.array(
         z.object({
@@ -132,8 +154,15 @@ export const UpdateOrderSchema = UpdateOrderSchemaWithoutItems.extend({
             quantity: z.number().positive(),
             itemLocationId: z.string().uuid()
         })
-    ).min(1, 'At least one item is required')
+    )
+        .transform((items) => {
+            return items.filter(item => item.itemId); // Filters out items with empty itemId
+        })
+        .refine(items => items.length > 0, {
+            message: 'At least one item is required',
+        })
 })
+
 export type UpdateOrderSchemaType = z.infer<typeof UpdateOrderSchema>
 
 export const EnrichedOrderSchema1 = OrderSchema.extend({

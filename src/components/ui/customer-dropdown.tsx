@@ -197,6 +197,7 @@ interface CustomerDropdownProps {
   // Common props
   disabled?: boolean;
   isModal?: boolean;
+  className?:string
 }
 
 export function CustomerDropdown({
@@ -208,6 +209,7 @@ export function CustomerDropdown({
   isRequired,
   disabled = false,
   isModal = false,
+  className
 }: CustomerDropdownProps) {
   const [open, setOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<EnrichedCustomer | null>(null);
@@ -258,7 +260,7 @@ export function CustomerDropdown({
 
   return (
     <Popover open={open} onOpenChange={setOpen} modal={isModal}>
-      <PopoverTrigger asChild>
+      <PopoverTrigger asChild className={className}>
         <Button
           variant="outline"
           role="combobox"

@@ -57,7 +57,7 @@ export const ItemRow: React.FC<ItemRowProps> = ({
         value: item.itemId
     }));
 
-    const rowClasses = `border-b flex flex-col md:table-row gap-4 p-4 md:p-0 bg-background min-w-0 relative transition-all duration-300 ${isDeleting ? 'opacity-0 transform scale-95' : 'opacity-100 transform scale-100'}`;
+    const rowClasses = `border-b flex flex-col md:table-row gap-4 p-4 md:p-0 bg-background min-w-0 relative transition-all duration-100 ${isDeleting ? 'opacity-0 transform scale-95' : 'opacity-100 transform scale-100'}`;
 
     return (
         <tr className={rowClasses}>

@@ -1123,6 +1123,10 @@ import { useCreateOrderExpense } from "@/hooks/data/useOrders";
 import { LoadingSpinner } from "../ui/loading-spinner";
 import { useErrorDialog } from "@/hooks/useErrorDialog";
 import { toast } from "sonner";
+import { useExpenseItems } from "@/hooks/data/useExpenses";
+import { Skeleton } from "../ui/skeleton";
+import { Spinner } from "@heroui/spinner";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "../ui/alert-dialog";
 
 // --- Types ---
 type CreateOrderExpenseItem = z.infer<typeof createOrderExpenseSchema.element>;
@@ -1287,6 +1291,7 @@ export function OrderExpenseDialog({ children }: OrderExpenseDialogProps) {
 
     // --- State ---
     const [ isOpen, setIsOpen ] = useState(false);
+    const [ isCancelDialogOpen, setIsCancelDialogOpen ] = useState(false)
     const [ expenses, setExpenses ] = useState<OrderExpenseWithClient[]>([]);
     const [ nextClientId, setNextClientId ] = useState(1);
     const [ expenseNotes, setExpenseNotes ] = useState("");
@@ -1304,20 +1309,12 @@ export function OrderExpenseDialog({ children }: OrderExpenseDialogProps) {
     const isMobile = useIsMobileTEST();
 
     // --- Data Fetching ---
-    const { data: expenseItemsData, isLoading: isExpenseItemsLoading, isError: isExpenseItemsError } = useQuery<selectExpenseSchemaType[]>({
-        queryKey: [ "expenseItems" ],
-        queryFn: async (): Promise<selectExpenseSchemaType[]> => {
-            const demo: selectExpenseSchemaType[] = [
-                            { expenseItemId: "1aa82b76-fbf0-42ea-b17a-395e87cbf2fb", expenseName: "Sack Small", expensePrice: 5, expenseCategory: "PACKING", notes: "Small sacks", createdBy: "00000000-0000-0000-0000-000000000001", createdAt: new Date().toISOString() },
-                            { expenseItemId: "35608ed0-5472-4fc5-ae7d-049d9d46453b", expenseName: "Sack Large", expensePrice: 5, expenseCategory: "PACKING", notes: "Large sacks", createdBy: "00000000-0000-0000-0000-000000000001", createdAt: new Date().toISOString() },
-                            { expenseItemId: "c8a9f0b1-e2d3-4c5b-8a9f-0b1e2d3c4b5a", expenseName: "Loading", expensePrice: 10, expenseCategory: "LABOUR", createdBy: "00000000-0000-0000-0000-000000000002", createdAt: new Date().toISOString() },
-                            { expenseItemId: "969f409b-c721-43a1-b0a3-40950b8434fe", expenseName: "Offloading", expensePrice: 15, expenseCategory: "LABOUR", createdBy: "00000000-0000-0000-0000-000000000002", createdAt: new Date().toISOString() },
-            ];            await new Promise(resolve => setTimeout(resolve, 500));
-            return demo;
-        },
-        enabled: isOpen,
-        staleTime: 5 * 60 * 1000,
-    });
+
+
+    const { data: expenseItemsData, isLoading: isExpenseItemsLoading, isError: isExpenseItemsError } = useExpenseItems()
+
+
+
 
     // --- Mutation ---
     const { mutateAsync: createOrderExpenseMutate, isPending: isSaving } = useCreateOrderExpense();
@@ -1360,7 +1357,8 @@ export function OrderExpenseDialog({ children }: OrderExpenseDialogProps) {
     const canAddExpense = !!expenseItemsData && expenseItemsData.length > 0 && !!session?.user?.id;
     const showLoadingState = isOpen && isLoading;
     const showErrorState = isOpen && hasLoadError && !isLoading;
-    const showContent = isOpen && !isLoading && !hasLoadError;
+    const showContent = isOpen && !hasLoadError;
+    // const showContent = isOpen && !isLoading && !hasLoadError;
 
 
     // --- Effects ---
@@ -1571,10 +1569,15 @@ export function OrderExpenseDialog({ children }: OrderExpenseDialogProps) {
 
     // --- Main Render ---
     return (
-        <Dialog modal open={isOpen} onOpenChange={setIsOpen}>
+        <Dialog  open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>{children}</DialogTrigger>
 
-            <DialogContent className="max-w-6xl h-[90vh] overflow-hidden p-0 flex flex-col">
+            <DialogContent onInteractOutside={(e) => 
+                {e.preventDefault()
+                    setIsCancelDialogOpen(true)
+                }
+            } 
+            className="max-w-6xl h-[90vh] overflow-hidden p-0 flex flex-col border-0">
                 {/* Header */}
                 <DialogHeader className="p-6 pb-2 flex-shrink-0 border-b">
                     <DialogTitle className="text-2xl">Order Expense #{orderData.orderId}</DialogTitle>
@@ -1582,20 +1585,28 @@ export function OrderExpenseDialog({ children }: OrderExpenseDialogProps) {
 
                 {/* Saving Overlay */}
                 {isSaving && (
-                    <div className="absolute inset-0 bg-gray-500/50 backdrop-blur-sm z-50 flex justify-center items-center rounded-md">
-                        <Card>
+                    // <div className="absolute inset-0 bg-gray-500/50 backdrop-blur-sm z-50 flex justify-center items-center rounded-md shadow-sm">
+                    //     <Card>
+                    //         <CardHeader><CardTitle>Saving...</CardTitle></CardHeader>
+                    //         <CardContent><LoadingSpinner /></CardContent>
+                    //     </Card>
+                    // </div>
+                    <div className="absolute inset-0 bg-black/70 z-50 flex justify-center items-center ">
+                        <Spinner color="white"/>
+                        
+                        {/* <Card className="px-12">
                             <CardHeader><CardTitle>Saving...</CardTitle></CardHeader>
                             <CardContent><LoadingSpinner /></CardContent>
-                        </Card>
+                        </Card> */}
                     </div>
                 )}
 
                 {/* Loading State */}
-                {showLoadingState && (
+                {/* {showLoadingState && (
                     <div className="flex-grow flex items-center justify-center">
                         <LoadingSpinner /> <span className="ml-2">Loading Expense Items...</span>
                     </div>
-                )}
+                )} */}
 
                 {/* Error State */}
                 {showErrorState && (
@@ -1607,7 +1618,6 @@ export function OrderExpenseDialog({ children }: OrderExpenseDialogProps) {
                 {/* Content State */}
                 {showContent && (
                     <div className={cn("grid grid-cols-1 md:grid-cols-10 gap-6 p-6 pt-4 flex-grow overflow-hidden", isSaving && "opacity-50 pointer-events-none")}>
-
                         {/* Left Panel: Order Info & Items */}
                         <div className="flex flex-col md:col-span-3 gap-4 overflow-y-auto pr-2 custom-scrollbar">
                             {/* ... OrderInfoCard and OrderItemsTable ... */}
@@ -1627,24 +1637,34 @@ export function OrderExpenseDialog({ children }: OrderExpenseDialogProps) {
                         <Card className="md:col-span-7 flex flex-col overflow-hidden shadow-md border">
                             <CardHeader className="pb-3 flex flex-row items-center justify-between border-l-4 border-blue-500 flex-shrink-0 bg-gray-50/50 px-4 py-3">
                                 <CardTitle className="text-lg font-semibold">Order Expenses</CardTitle>
-                                <Button
-                                    onClick={addExpense}
-                                    variant="outline" size="sm"
-                                    className="flex items-center gap-1 border-blue-500 text-blue-600 hover:bg-blue-50"
-                                    disabled={!canAddExpense || isSaving}
-                                >
-                                    <Plus className="h-4 w-4" /> Add Expense
-                                </Button>
+                                {isLoading ? <Skeleton className="h-8 w-32 flex justify-center">
+                                    {/* <Spinner size="sm" />  */}
+                                    </Skeleton> :
+                                    <Button
+                                        onClick={addExpense}
+                                        variant="outline" size="sm"
+                                        className="flex items-center gap-1 border-blue-500 text-blue-600 hover:bg-blue-50"
+                                        disabled={!canAddExpense || isSaving}
+                                    >
+                                        <Plus className="h-4 w-4" /> Add Expense
+                                    </Button>}
                             </CardHeader>
 
                             <CardContent className="p-0 flex flex-col flex-grow overflow-hidden">
-                                {/* Use hasActiveExpenses which checks for qty > 0 */}
-                                {expenses.filter(e => e.expenseItemQuantity > 0 || !!e.orderExpenseId).length === 0 && exitingExpenseIds.size === 0 ? (
+                                {isLoading ? 
                                     <div className="text-center p-8 text-muted-foreground flex flex-col items-center justify-center h-full">
-                                        <p>No expenses added yet.</p>
+                                        <Spinner size="sm" /> 
+                                        <p>Loading expenses...</p>
+                                        {/* <p className="text-sm">Click "Add Expense" to begin.</p> */}
+
+                                    </div>
+                                    :
+                                    expenses.filter(e => e.expenseItemQuantity > 0 || !!e.orderExpenseId).length === 0 && exitingExpenseIds.size === 0 ? (
+                                    <div className="text-center p-8 text-muted-foreground flex flex-col items-center justify-center h-full">
+                                        <p>No expenses added.</p>
                                         <p className="text-sm">Click "Add Expense" to begin.</p>
                                     </div>
-                                ) : (
+                                    ) : (
                                     <>
                                         {/* Header Row */}
                                         <div className="grid grid-cols-12 gap-2 font-medium text-xs text-muted-foreground px-4 py-2 sticky top-0 bg-gray-100 z-10 border-b flex-shrink-0">
@@ -1705,23 +1725,25 @@ export function OrderExpenseDialog({ children }: OrderExpenseDialogProps) {
                                             />
                                         </div>
                                     </>
-                                )}
-                            </CardContent>
+                                    )
+                                }
+
+                                </CardContent>
 
                             {/* Footer with Totals (only if there are active expenses with qty > 0) */}
-                            {hasActiveExpenses && (
-                                <CardFooter className="flex flex-col items-stretch border-t pt-3 pb-3 flex-shrink-0 bg-gray-50/50 px-4">
-                                    <div className="flex justify-between items-center text-sm text-muted-foreground mb-1">
-                                        <span>Number of active expenses:</span>
-                                        {/* Count only items with quantity > 0 */}
-                                        <span>{expenses.filter(exp => !exitingExpenseIds.has(exp.clientId) && exp.expenseItemQuantity > 0).length}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center font-medium">
-                                        <span>Total Active Expense Cost:</span>
-                                        <span className="text-lg">${totalExpenseCost.toFixed(2)}</span>
-                                    </div>
-                                </CardFooter>
-                            )}
+                                {hasActiveExpenses && (
+                                    <CardFooter className="flex flex-col items-stretch border-t pt-3 pb-3 flex-shrink-0 bg-gray-50/50 px-4">
+                                        <div className="flex justify-between items-center text-sm text-muted-foreground mb-1">
+                                            <span>Number of active expenses:</span>
+                                            {/* Count only items with quantity > 0 */}
+                                            <span>{expenses.filter(exp => !exitingExpenseIds.has(exp.clientId) && exp.expenseItemQuantity > 0).length}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center font-medium">
+                                            <span>Total Active Expense Cost:</span>
+                                            <span className="text-lg">${totalExpenseCost.toFixed(2)}</span>
+                                        </div>
+                                    </CardFooter>
+                                )}
                         </Card>
                     </div>
                 )}
@@ -1747,6 +1769,27 @@ export function OrderExpenseDialog({ children }: OrderExpenseDialogProps) {
 
             {/* Error Dialog Component */}
             <ErrorDialogComponent />
+            <AlertDialog open={isCancelDialogOpen} onOpenChange={setIsCancelDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Cancel Edits?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Do you want to cancel creating this expense? Any unsaved changes will be lost.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setIsCancelDialogOpen(false)}>
+                            Continue Editing
+                        </AlertDialogCancel>
+                        <AlertDialogAction className="bg-red-400 hover:bg-red-600" onClick={() => {
+                            setIsCancelDialogOpen(false);
+                            setIsOpen(false); // Close the main dialog as well
+                        }}>
+                            Cancel Expense
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </Dialog>
     );
 }

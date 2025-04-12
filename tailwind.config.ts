@@ -96,15 +96,23 @@ export default {
 					from: { height: "var(--radix-collapsible-content-height)", opacity: "1" },
 					to: { height: "0px", opacity: "0" }
 				},
-				shake: {
+				'breathing-outline': {
+					'0%, 100%': { outlineWidth: '1px' },
+					'50%': { outlineWidth: '3px' },
+				},
+				"shake": {
 					'0%, 100%': {
-						transform: 'translateX(0)'
+						transform: 'translateX(0) translateY(0)'
+
 					},
 					'25%': {
-						transform: 'translateX(-4px)'
+						transform: 'translateX(-0.51px)'
 					},
+					// '50%': {
+					// 	transform: 'translateY(-0.51px)'
+					// },
 					'75%': {
-						transform: 'translateX(4px)'
+						transform: 'translateX(0.51px)'
 					}
 				},
 				'background-position-spin': {
@@ -120,10 +128,12 @@ export default {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
 				'flash-red': 'flash-red 3s ease-in-out',
-				shake: 'shake 0.5s cubic-bezier(.36,.07,.19,.97) both',
+				shake: 'shake 0.5s cubic-bezier(.36,.07,.19,.97) both infinite',
 				'background-position-spin': 'background-position-spin 3000ms infinite alternate',
 				"collapsible-down": "collapsible-down 0.2s ease-out",
-				"collapsible-up": "collapsible-up 0.2s ease-out"
+				"collapsible-up": "collapsible-up 0.2s ease-out",
+				'breathing-outline': 'breathing-outline 0.5s ease-in-out infinite',
+
 
 			}
 		}

@@ -135,7 +135,7 @@ export function OrderItemsTable({ items, isLoading }: OrderItemsTableProps) {
           </TableHeader>
           <TableBody>
             {items.map((item, index) => (
-              <TableRow key={index} className="hover:bg-gray-100/50 transition-colors">
+              <TableRow key={index}  className="hover:bg-gray-100/50 transition-colors">
                 <TableCell>
                   {index+1}
                 </TableCell>
