@@ -1,6 +1,6 @@
 "use client"
 import { Spinner } from "@heroui/spinner";
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, ReactNode } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
@@ -56,7 +56,12 @@ import { useCreateItem } from "@/hooks/data/useItems";
 import { itemTypes, itemTypesSchema } from "@/server/db/schema";
 // import { useCreateItem } from "@/hooks/useItems"
 
-export default function CreateItemForm() {
+interface CreateItemFormProps {
+  children?: ReactNode
+
+}
+
+export default function CreateItemForm({children}: CreateItemFormProps) {
   const [open, setOpen] = useState(false)
   const [useMeters, setUseMeters] = useState(false)
   const [useKilograms, setUseKilograms] = useState(false)
@@ -596,11 +601,16 @@ export default function CreateItemForm() {
   // Desktop dialog logic remains the same with added tabIndex attributes
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
+        <DialogTrigger>
+          {children ? (
+            // If children is provided, use it as the trigger
+            <div onClick={()=> setOpen(true)}>{children}</div>
+          ) : (
         <Button variant="default" className="bg-primary hover:bg-primary/90" tabIndex={0}>
           <Package className="mr-2 h-4 w-4" />
           Create New Item
         </Button>
+          )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-hidden">
 

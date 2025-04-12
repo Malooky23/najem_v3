@@ -29,7 +29,7 @@ import { useCustomers } from "@/hooks/data-fetcher";
 // Removed startTransition, useTransition as we'll use formState.isSubmitting
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQueryClient } from '@tanstack/react-query';
-import { Plus, PackageOpen, ArrowDownLeftIcon, ArrowUpRightIcon, CloudAlert, CloudAlertIcon, TriangleAlert } from "lucide-react";
+import { Plus, PackageOpen, ArrowDownLeftIcon, ArrowUpRightIcon, CloudAlert, CloudAlertIcon, TriangleAlert, PackagePlus } from "lucide-react";
 import { ItemRow } from "./ItemRow";
 import { useIsMobileTEST } from "@/hooks/use-media-query";
 import { Badge } from "@/components/ui/badge";
@@ -51,6 +51,7 @@ import { Spinner } from "@heroui/spinner";
 import { MagicCard } from "@/components/magicui/magic-card";
 import { NeonGradientCard } from "@/components/magicui/neon-gradient-card";
 import { TextAnimate } from "@/components/magicui/text-animate";
+import CreateItemForm from "../../../items/components/CreateItem";
 
 
 // Import your FormErrorSummary component (ensure path is correct)
@@ -238,7 +239,7 @@ export const OrderForm = ({ onClose, initialData, isEditMode = false }: OrderFor
                 <div className="absolute p-12 inset-0 bg-gray-100/70 backdrop-blur-[1px] z-40 flex justify-center items-center rounded-lg">
                     <div className="p-12  rounded-md border border-red-200 bg-red-50 text-red-700 flex-col justify-center items-center">
                         <TriangleAlert stroke="red" className="w-16 h-16 text-center mx-auto flex justify-center" />
-                        <p  className="text-center pt-4">Error loading necessary data (customers or items). Please try again later.</p>
+                        <p className="text-center pt-4">Error loading necessary data (customers or items). Please try again later.</p>
                     </div>
                 </div>
             );
@@ -256,12 +257,12 @@ export const OrderForm = ({ onClose, initialData, isEditMode = false }: OrderFor
                 <div className="absolute inset-0 bg-background/70 backdrop-blur-sm z-40 flex justify-center items-center rounded-lg p-4">
                     <NeonGradientCard className="max-w-sm h-auto items-center justify-center text-center shadow-lg">
                         {/* <CardContent className="px-24 py-14 gap-4 flex flex-col items-center space-y-3"> */}
-                            <Spinner />
-                            {/* <p className="text-sm font-medium text-foreground text-nowrap">Saving Order...</p> */}
+                        <Spinner />
+                        {/* <p className="text-sm font-medium text-foreground text-nowrap">Saving Order...</p> */}
                         <TextAnimate animation="blurInUp" by="character" once>
                             Saving Order..
                         </TextAnimate>
-                            {/* <p className="text-xs text-muted-foreground">Please wait.</p> */}
+                        {/* <p className="text-xs text-muted-foreground">Please wait.</p> */}
                         {/* </CardContent> */}
                     </NeonGradientCard>
                 </div>
@@ -522,17 +523,35 @@ export const OrderForm = ({ onClose, initialData, isEditMode = false }: OrderFor
                                             <div className="h-5 w-1.5 bg-green-500 rounded-full mr-2"></div>
                                             Order Items
                                         </h3>
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            size="sm"
-                                            className="flex items-center border-green-500 text-green-600 hover:bg-green-50"
-                                            // Ensure you provide default/valid values required by your item schema
-                                            onClick={() => append({ itemId: "", quantity: 1, itemLocationId: "4e176e92-e833-44f5-aea9-0537f980fb4b" /* Add other required defaults */ })}
-                                        >
-                                            <Plus className="h-4 w-4" />
-                                            <span>Add Item</span>
-                                        </Button>
+                                        <div className="flex gap-2">
+                                            <CreateItemForm>
+
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                    className="flex items-center hover:text-blue-900 border-blue-500 text-blue-600 hover:bg-blue-50"
+                                                // Ensure you provide default/valid values required by your item schema
+                                                // onClick={() => append({ itemId: "", quantity: 1, itemLocationId: "4e176e92-e833-44f5-aea9-0537f980fb4b" /* Add other required defaults */ })}
+                                            >
+                                                    <PackagePlus className="h-4 w-4" />
+                                                Create New Item
+                                            </Button>
+                                                </CreateItemForm>
+
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                className="flex items-center hover:text-green-900 border-green-500 text-green-600 hover:bg-green-50"
+                                                // Ensure you provide default/valid values required by your item schema
+                                                onClick={() => append({ itemId: "", quantity: 1, itemLocationId: "4e176e92-e833-44f5-aea9-0537f980fb4b" /* Add other required defaults */ })}
+                                            >
+                                                <Plus className="h-4 w-4" />
+                                                <span>Add Item</span>
+                                            </Button>
+                                        </div>
+
                                     </div>
                                 </div>
                                 <div className="flex-1 overflow-hidden flex flex-col">

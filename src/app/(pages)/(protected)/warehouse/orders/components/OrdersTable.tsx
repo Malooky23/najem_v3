@@ -279,7 +279,8 @@ export const OrdersTable = memo<OrdersTableProps>(function OrdersTable({
                   key={order.orderId}
                   className={cn(
                     "cursor-pointer",
-                    selectedOrderId === order.orderId && "bg-slate-100"
+                    selectedOrderId === order.orderId && "bg-slate-100",
+                    " hover:outline-amber-400 hover:outline hover:bg-white-200/60"
                   )}
                   onClick={() => handleRowClick(order)}
                 >
