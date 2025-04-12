@@ -240,7 +240,7 @@ interface CreateOrderDialogProps {
     onOpenChange: (open: boolean) => void
 }
 
-export function CreateOrderDialog({ open, onOpenChange }: CreateOrderDialogProps) {
+export function CreateOrderDialogEXP({ open, onOpenChange }: CreateOrderDialogProps) {
     const [isPending, setIsPending] = useState(false)
     const router = useRouter()
 

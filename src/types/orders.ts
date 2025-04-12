@@ -111,6 +111,17 @@ export type OrderSchemaType = z.infer<typeof OrderSchema>
 
 
 export const CreateOrderSchemaWithoutItems = createInsertSchema(orders)
+export const testCreateUpdateOrderSchema = CreateOrderSchemaWithoutItems.extend({
+    orderId: z.string().uuid().optional(),
+    items: z.array(
+        z.object({
+            itemId: z.string(),
+            quantity: z.number().positive(),
+            itemLocationId: z.string().uuid()
+        })
+    ).min(1, 'At least one item is required')
+})
+export type testCreateUpdateOrderSchemaType = z.infer<typeof testCreateUpdateOrderSchema>
 export const CreateOrderSchema = CreateOrderSchemaWithoutItems.extend({
     // items: z.array(
     //     z.object({

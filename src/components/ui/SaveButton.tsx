@@ -60,9 +60,11 @@ interface SaveButtonProps {
   children?: React.ReactNode
   className?: string
   hasError?: boolean
+  type?: "button" | "submit" | "reset"
 }
 
-export function SaveButton({ onClick, showLabel = false, disabled = false, children, className, hasError }: SaveButtonProps) {
+
+export function SaveButton({ onClick, showLabel = false, disabled = false, children, className, hasError,type= "button" }: SaveButtonProps) {
   const [ isLoading, setIsLoading ] = useState(false)
   // const [ hasError, setHasError ] = useState(false)
 
@@ -85,6 +87,7 @@ export function SaveButton({ onClick, showLabel = false, disabled = false, child
   return (
     <Button
       size="sm"
+      type={type}
       className={cn(
         "gap-2 transition-all duration-200 relative",
         isLoading && "text-transparent",

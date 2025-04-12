@@ -72,7 +72,8 @@ export function OrderHeader({
   // Access order data directly from store
   const order = useSelectedOrderData();
 
-  const isWideScreen = useMediaQuery('(min-width: 1500px)');
+  const isWideScreen = useMediaQuery('(min-width: 720px)');
+  // const isWideScreen = useMediaQuery('(min-width: 1500px)');
 
   if (isLoading) {
     return (

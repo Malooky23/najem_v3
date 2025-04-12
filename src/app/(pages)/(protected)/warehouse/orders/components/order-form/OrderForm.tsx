@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useFieldArray, useForm, useWatch } from "react-hook-form";
-import { createOrderSchema, type CreateOrderInput, updateOrderSchema, type UpdateOrderInput, EnrichedOrders, EnrichedOrderSchemaType, EnrichedOrderSchema, CreateOrderSchema } from "@/types/orders";
+import { createOrderSchema, type CreateOrderInput, updateOrderSchema, type UpdateOrderInput, EnrichedOrders, EnrichedOrderSchemaType, EnrichedOrderSchema, CreateOrderSchema, testCreateUpdateOrderSchema } from "@/types/orders";
 import {
     Form,
     FormControl,
@@ -29,7 +29,7 @@ import { useCustomers } from "@/hooks/data-fetcher";
 // Removed startTransition, useTransition as we'll use formState.isSubmitting
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQueryClient } from '@tanstack/react-query';
-import { Plus, PackageOpen, ArrowDownLeftIcon, ArrowUpRightIcon } from "lucide-react";
+import { Plus, PackageOpen, ArrowDownLeftIcon, ArrowUpRightIcon, CloudAlert, CloudAlertIcon, TriangleAlert } from "lucide-react";
 import { ItemRow } from "./ItemRow";
 import { useIsMobileTEST } from "@/hooks/use-media-query";
 import { Badge } from "@/components/ui/badge";
@@ -47,7 +47,12 @@ import { useOrdersStore } from "@/stores/orders-store";
 
 import { orderStatusSchema } from "@/server/db/schema";
 import { SaveButton } from "@/components/ui/SaveButton";
-import { useFormState } from "react-dom";
+import { Spinner } from "@heroui/spinner";
+import { MagicCard } from "@/components/magicui/magic-card";
+import { NeonGradientCard } from "@/components/magicui/neon-gradient-card";
+import { TextAnimate } from "@/components/magicui/text-animate";
+
+
 // Import your FormErrorSummary component (ensure path is correct)
 
 interface OrderFormProps {
@@ -89,9 +94,13 @@ export const OrderForm = ({ onClose, initialData, isEditMode = false }: OrderFor
     const customersWithItems = customerList?.filter(customer =>
         itemsList?.some(item => item.customerId === customer.customerId)
     ) ?? [];
+    const [ hasErrors, setHasErrors ] = useState(false);
 
-    const validationSchema = isEditMode && initialData?.orderId ? updateOrderSchema : CreateOrderSchema;
+
+    const validationSchema = testCreateUpdateOrderSchema;
     type FormSchemaType = z.infer<typeof validationSchema>;
+    // const validationSchema = isEditMode && initialData?.orderId ? updateOrderSchema : CreateOrderSchema;
+    // type FormSchemaType = z.infer<typeof validationSchema>;
 
     const { data: session } = useSession();
 
@@ -112,13 +121,23 @@ export const OrderForm = ({ onClose, initialData, isEditMode = false }: OrderFor
         mode: "onSubmit" // Or "onBlur" or "onSubmit" depending on preference
     });
 
+    useEffect(() => {
+        if (Object.keys(form.formState.errors).length > 0) {
+            setHasErrors(true);
+            const timer = setTimeout(() => {
+                setHasErrors(false);
+            }, 2000);
+            return () => clearTimeout(timer);
+        }
+    }, [ form.formState.errors ]);
+
     const { fields, append, remove } = useFieldArray({
         control: form.control,
         name: "items",
     });
 
 
-    
+
     const printField = (): Promise<boolean> => {
         console.log("Form Fields:", fields)
         return Promise.resolve(true);
@@ -130,6 +149,28 @@ export const OrderForm = ({ onClose, initialData, isEditMode = false }: OrderFor
             return watchedItems.map(item => item.itemId).filter(Boolean) as string[];
         }
     }, [ watchedItems ]);
+
+    const hasIncompleteItems = useMemo(() => {
+        return watchedItems?.some(item => !item.itemId || item.itemId.trim() === "") ?? false;
+    }, [ watchedItems ]);
+
+    // Wrapper function to clean data before validation/submission
+    const handleFormSubmit = (values: FormSchemaType) => {
+        // Filter out items where itemId is empty
+        const cleanedItems = values.items?.filter(item => item.itemId && item.itemId.trim() !== "") || [];
+
+        // Create a new values object with the cleaned items
+        const cleanedValues = {
+            ...values,
+            items: cleanedItems,
+        };
+
+        if (cleanedItems.length === 0) {
+            showErrorDialog("", "Please select items")
+            return
+        }
+        return processSubmit(cleanedValues);
+    };
 
     async function processSubmit(values: FormSchemaType) {
         // No need for manual validation here - Zod handles it
@@ -189,55 +230,78 @@ export const OrderForm = ({ onClose, initialData, isEditMode = false }: OrderFor
     }, [ onClose ]);
 
     // --- Loading / Error states for initial data ---
-    if (isCustomersError || isItemsError) { // Combine error checks
-        return (
-            <div className="p-4 rounded-md border border-red-200 bg-red-50 text-red-700">
-                Error loading necessary data (customers or items). Please try again later.
-            </div>
-        );
-    }
-    if (isCustomersLoading || isItemsLoading) {
-        return (
-            <div className="p-4 rounded-md border border-gray-200 bg-gray-50 text-gray-700 h-full flex justify-center items-center">
-                <LoadingSpinner />
-            </div>
-        );
-    }
-    // --- End Loading / Error states ---
-    const [ hasErrors, setHasErrors ] = useState(false);
-    useEffect(() => {
-        if (Object.keys(form.formState.errors).length > 0) {
-            setHasErrors(true);
-            const timer = setTimeout(() => {
-                setHasErrors(false);
-            }, 2000);
-            return () => clearTimeout(timer);
+
+
+    const LoadingOverlay = () => {
+        if (isCustomersError || isItemsError) { // Combine error checks
+            return (
+                <div className="absolute p-12 inset-0 bg-gray-100/70 backdrop-blur-[1px] z-40 flex justify-center items-center rounded-lg">
+                    <div className="p-12  rounded-md border border-red-200 bg-red-50 text-red-700 flex-col justify-center items-center">
+                        <TriangleAlert stroke="red" className="w-16 h-16 text-center mx-auto flex justify-center" />
+                        <p  className="text-center pt-4">Error loading necessary data (customers or items). Please try again later.</p>
+                    </div>
+                </div>
+            );
         }
-    }, [ form.formState.errors]);
+        if (isCustomersLoading || isItemsLoading) {
+            return (
+                <div className="absolute inset-0 bg-gray-100/50 backdrop-blur-[1px] z-40 flex justify-center items-center rounded-lg">
+                    <LoadingSpinner />
+                </div>
+            );
+        }
+        if (form.formState.isSubmitting) {
+            return (
+
+                <div className="absolute inset-0 bg-background/70 backdrop-blur-sm z-40 flex justify-center items-center rounded-lg p-4">
+                    <NeonGradientCard className="max-w-sm h-auto items-center justify-center text-center shadow-lg">
+                        {/* <CardContent className="px-24 py-14 gap-4 flex flex-col items-center space-y-3"> */}
+                            <Spinner />
+                            {/* <p className="text-sm font-medium text-foreground text-nowrap">Saving Order...</p> */}
+                        <TextAnimate animation="blurInUp" by="character" once>
+                            Saving Order..
+                        </TextAnimate>
+                            {/* <p className="text-xs text-muted-foreground">Please wait.</p> */}
+                        {/* </CardContent> */}
+                    </NeonGradientCard>
+                </div>
+            );
+        }
+        // if (submitting) {
+        //     return (
+
+        //         <div className="absolute inset-0 bg-gray-100/50 backdrop-blur-[1px] z-40 flex justify-center items-center rounded-lg">
+        //             <Card>
+        //                 <CardHeader>
+        //                     <CardTitle>Saving Order</CardTitle>
+        //                 </CardHeader>
+        //                 <CardContent>
+        //                     <LoadingSpinner />
+        //                 </CardContent>
+        //             </Card> 
+        //             </div>
+        //     );
+        // }
+    }
+
+
+    function checkModified() {
+        return (fields.length === 0) || hasIncompleteItems || ((form.getValues().movement === form.formState.defaultValues?.movement) && !form.formState.isDirty);
+    }
 
     return (
         <div className="flex flex-col h-full ">
-            {form.formState.isSubmitting && (
-                <div className="fixed inset-0 bg-gray-500/50 backdrop-blur-sm z-50 flex justify-center items-center">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Creating Order</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <LoadingSpinner />
-                        </CardContent>
-                    </Card>
-                </div>
-            )}
-            {/* Pass form methods down */}
             <Form {...form}>
-                {/* Use form.handleSubmit to trigger validation before processSubmit */}
                 <form
-                    onSubmit={form.handleSubmit(processSubmit)} // <-- Key change
+                    // onSubmit={form.handleSubmit(processSubmit)} // <-- Key change
+                    onSubmit={form.handleSubmit(handleFormSubmit)} // <--- CHANGE THIS LINE
+
+
                     className="flex flex-col h-full w-full "
                 >
                     <div className="flex flex-col px-2 sm:px-6 flex-grow overflow-auto ">
                         {/* Grid Layout */}
+                        {/* <LoadingOverlay /> */}
                         <div className="grid grid-cols-1 lg:grid-cols-[1.2fr,2fr] gap-6">
 
                             {/* Left Column Card */}
@@ -255,21 +319,27 @@ export const OrderForm = ({ onClose, initialData, isEditMode = false }: OrderFor
                                         name="customerId"
                                         render={({ field, formState }) => (
                                             <div className={cn(formState.errors.customerId && "outline-dashed outline-red-500 p-1 rounded-md animate-shake")}>
-                                            <FormItem>
-                                                <FormLabel className="font-medium text-gray-700">Customer {formState.errors.customerId?.message}</FormLabel>
-                                                <FormControl>
-                                                    <CustomerSelector
-                                                        customersInput={customersWithItems}
-                                                        value={field.value}
-                                                        onChange={field.onChange}
-                                                        isRequired={true} // Schema handles validation message
-                                                        isModal={true}
+                                                <FormItem>
+                                                    <FormLabel className="font-medium text-gray-700">Customer {formState.errors.customerId?.message}</FormLabel>
+                                                    <FormControl>
+                                                        <CustomerSelector
+                                                            customersInput={customersWithItems}
+                                                            value={field.value}
+                                                            isRequired={true} // Schema handles validation message
+                                                            isModal={true}
+                                                            // onChange={field.onChange}
+                                                            onChange={(val) => {
+                                                                field.onChange(val);
+                                                                remove(fields.map((field, index) => index));
+
+                                                            }}
+
                                                         // className={formState.errors.customerId ? "border-red-500 border-dashed" : ""}
 
-                                                    />
-                                                </FormControl>
-                                                {/* <FormMessage /> */}
-                                            </FormItem>
+                                                        />
+                                                    </FormControl>
+                                                    {/* <FormMessage /> */}
+                                                </FormItem>
                                             </div>
                                         )}
                                     />
@@ -297,7 +367,7 @@ export const OrderForm = ({ onClose, initialData, isEditMode = false }: OrderFor
                                                             )} onClick={() => form.setValue("movement", "IN", { shouldValidate: true })}
                                                         >
                                                             <ArrowDownLeftIcon />IN
-                                                            </Badge>
+                                                        </Badge>
                                                         <Badge
                                                             variant="outline"
                                                             className={cn(
@@ -513,7 +583,7 @@ export const OrderForm = ({ onClose, initialData, isEditMode = false }: OrderFor
                                                         const currentItemId = form.watch(`items.${index}.itemId`);
                                                         const filteredItems = itemsList?.filter(item => {
                                                             if (selectedItemIds)
-                                                            return !selectedItemIds.includes(item.itemId) || item.itemId === currentItemId;
+                                                                return !selectedItemIds.includes(item.itemId) || item.itemId === currentItemId;
                                                         }) || [];
 
                                                         return (
@@ -537,31 +607,31 @@ export const OrderForm = ({ onClose, initialData, isEditMode = false }: OrderFor
                                 </div>
                                 {/* Add Another Item Button */}
                                 {/* <div className="p-4 border-t bg-gray-50"> */}
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
+                                <Button
+                                    type="button"
+                                    variant="ghost"
                                     className="w-full p-4 border-t bg-gray-50"
-                                        // Ensure you provide default/valid values required by your item schema
-                                        onClick={() => append({ itemId: "", quantity: 1, itemLocationId: "4e176e92-e833-44f5-aea9-0537f980fb4b" /* Add other required defaults */ })}
-                                    >
-                                        <Plus className="h-4 w-4" />
-                                        Add Item
-                                    </Button>
+                                    // Ensure you provide default/valid values required by your item schema
+                                    onClick={() => append({ itemId: "", quantity: 1, itemLocationId: "4e176e92-e833-44f5-aea9-0537f980fb4b" /* Add other required defaults */ })}
+                                >
+                                    <Plus className="h-4 w-4" />
+                                    Add Item
+                                </Button>
                                 {/* </div> */}
                             </Card>
 
                         </div> {/* End Grid Layout */}
+                        {form.formState.errors && Object.keys(form.formState.errors).length > 0 && (
+                            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md">
+                                {Object.entries(form.formState.errors).map(([ key, error ]) => (
+                                    <div key={key}>
+                                        <strong>{key}:</strong> {error?.message}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div> {/* End Scrollable Content */}
 
-                    {/* {form.formState.errors && Object.keys(form.formState.errors).length > 0 && (
-                        <div className="mx-6 mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md">
-                            {Object.entries(form.formState.errors).map(([ key, error ]) => (
-                                <div key={key}>
-                                    <strong>{key}:</strong> {error?.message}
-                                </div>
-                            ))}
-                        </div>
-                    )} */}
 
                     {/* Form Footer */}
                     <div className="border-t px-4 sm:px-6 py-4 bg-white sticky bottom-0 shadow-inner z-10">
@@ -571,7 +641,7 @@ export const OrderForm = ({ onClose, initialData, isEditMode = false }: OrderFor
                             </div>
                             <div className="flex gap-3">
                                 <Button
-                                className="h-8"
+                                    className="h-8"
                                     type="button"
                                     variant="outline"
                                     onClick={handleCancel}
@@ -602,9 +672,9 @@ export const OrderForm = ({ onClose, initialData, isEditMode = false }: OrderFor
                                 </Button> */}
 
                                 <SaveButton
-                                    onClick={form.handleSubmit(processSubmit)}
-                                    // disabled={fields.length === 0  }
-                                    disabled={fields.length === 0 }
+                                    onClick={form.handleSubmit(handleFormSubmit)} // <--- CHANGE THIS LINE
+                                    // type="submit"
+                                    disabled={checkModified()}
                                     hasError={hasErrors}
                                 >
                                     {form.formState.isSubmitting ? (
@@ -615,13 +685,14 @@ export const OrderForm = ({ onClose, initialData, isEditMode = false }: OrderFor
                                         isEditMode ? 'Update Order' : 'Create Order'
                                     )}
                                 </SaveButton>
-                                
+
                             </div>
                         </div>
                     </div>
                     <ErrorDialogComponent />
                 </form>
             </Form>
+            <LoadingOverlay />
         </div>
     );
 };

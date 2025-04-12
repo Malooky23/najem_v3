@@ -10,6 +10,7 @@ import { OrdersTable } from "./OrdersTable"
 import { OrderDetailsContainer } from "./order-details/OrderDetailsContainer"
 import { useUrlSync } from "@/hooks/useUrlSync"
 import { CreateOrderDialog } from "./order-form/create-order-dialog"
+import { QuickAccess } from "@/components/quick-access"
 
 
 interface PageHeaderProps {
@@ -35,8 +36,10 @@ function PageHeader({ isLoading, isMobile }: PageHeaderProps) {
         <SearchPanel isLoading={isLoading} />
       </div>
 
-      <CreateOrderDialog isMobile={isMobile} />
-
+      <div className="flex gap-2">
+        <CreateOrderDialog isMobile={isMobile} />
+        <QuickAccess />
+      </div>
     </div>
   );
 }
@@ -94,10 +97,10 @@ export function OrdersPage() {
 
 
   return (
-    <div className="px-4 h-[100vh] flex flex-col overflow-hidden">
+    <div className="px-4 h-[100vh] flex flex-col overflow-hidden ">
       <PageHeader isLoading={isPageLoading} isMobile={isMobile} />
 
-      <div className="flex gap-2 flex-1 min-h-0 overflow-hidden mt-0">
+      <div className="flex gap-2 flex-1 min-h-0 overflow-hidden mt-0 ">
         <ContentLayout
           isMobile={isMobile}
           isDetailsOpen={store.isDetailsOpen}
@@ -109,21 +112,21 @@ export function OrdersPage() {
         </ContentLayout>
 
 
-          <div className={cn(
-            ' ',
-            "flex flex-col rounded-md  overflow-hidden",
-            isMobile ? "w-full" : "w-[40%]",
-            store.isDetailsOpen ? "ml-2" : "w-0 ml-0",
-            // !isMobile && !store.isDetailsOpen && "hidden", // Hide on desktop when details are closed
-            // "transition-width duration-100", // Enable transition for width
-            "origin-right", // Animate from right to left
-          )}
-          >
-            <OrderDetailsContainer
-              isMobile={isMobile}
-              className="w-full h-full"
-            />
-          </div>
+        <div className={cn(
+          ' ',
+          "flex flex-col rounded-md  overflow-hidden",
+          isMobile ? "w-full" : "w-[40%]",
+          store.isDetailsOpen ? "ml-2" : "hidden",
+          // !isMobile && !store.isDetailsOpen && "hidden", // Hide on desktop when details are closed
+          // "transition-width duration-100", // Enable transition for width
+          "origin-right", // Animate from right to left
+        )}
+        >
+          <OrderDetailsContainer
+            isMobile={isMobile}
+            className="w-full h-full"
+          />
+        </div>
 
       </div>
     </div>

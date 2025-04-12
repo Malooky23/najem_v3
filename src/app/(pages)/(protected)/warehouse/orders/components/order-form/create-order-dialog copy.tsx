@@ -135,7 +135,7 @@
 
 import { useState, memo, useCallback, type ReactNode } from "react"
 import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogContentNoXButton, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { DialogTrigger } from "@radix-ui/react-dialog"
 import { PlusIcon, PencilIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -229,9 +229,9 @@ function CreateOrderDialogComponent({
         )}
       </DialogTrigger>
 
-      <DialogContentNoXButton className="max-w-full sm:max-w-[95%] md:max-w-[90%] lg:max-w-[80%] xl:max-w-[1100px] h-[90vh] sm:h-[85vh] p-0 overflow-hidden flex-row">
-        <DialogHeader className="px-6 border-b ">
-          <DialogTitle className="text-xl font-semibold my-auto">
+      <DialogContent className="max-w-full sm:max-w-[95%] md:max-w-[90%] lg:max-w-[80%] xl:max-w-[1100px] h-[90vh] sm:h-[85vh] p-0 overflow-hidden flex-row">
+        <DialogHeader className="px-6 border-b h-fit">
+          <DialogTitle className="text-xl font-semibold">
             {isEditMode
               ? `Edit Order ${initialData?.orderId ? `#${initialData.orderNumber}` : ""}`
               : "Create New Order"}
@@ -241,7 +241,7 @@ function CreateOrderDialogComponent({
           {/* The key prop forces a fresh instance of OrderForm every time the dialog opens */}
           <OrderForm key={formKey} onClose={handleFormClose} initialData={initialData} isEditMode={isEditMode} />
         </div>
-      </DialogContentNoXButton>
+      </DialogContent>
     </Dialog>
   )
 }
