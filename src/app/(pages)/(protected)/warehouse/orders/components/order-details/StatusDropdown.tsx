@@ -69,6 +69,7 @@ export const StatusDropdown = memo(function StatusDropdown({ className }: Status
       updateSelectedOrderStatus(newStatus);
 
       queryClient.invalidateQueries({ queryKey: [ 'orders' ] });
+      queryClient.invalidateQueries({ queryKey: [ 'order', result.data?.orderId ] });
       queryClient.invalidateQueries({ queryKey: [ 'stockMovements' ] });
 
       toast.success(`Order status updated to ${newStatus}`);

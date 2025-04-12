@@ -153,6 +153,7 @@ import CreateItemFormGemini from "./test-item/upgades"
 import { CreateCustomerDialog } from "./customers/CreateCustomerForm"
 import Link from "next/link"
 import { DropdownDialogDemo } from "./DropdownDialogDemo"
+import { OrderDetailsContainer } from "../warehouse/orders/components/order-details/OrderDetailsContainer"
 
 
 export function ComboboxForm() {
@@ -239,6 +240,10 @@ export default function ExperimentsPage() {
         </div>
         <DropdownDialogDemo />
       </div>
+      <OrderDetailsContainer
+        // orderId={store.selectedOrderId}
+        isMobile={false}
+      />
     </div>
   );
 }

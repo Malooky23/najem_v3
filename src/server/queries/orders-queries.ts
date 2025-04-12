@@ -4,10 +4,8 @@ import { db } from '@/server/db';
 import { auth } from '@/lib/auth/auth';
 import { orders, orderItems, customers, items, users, itemStock, orderExpenses, orderExpenseDetailsMaterializedView, expenseItems } from '@/server/db/schema';
 // Import 'not' and 'sql'
-import { eq, and, desc, asc, sql, gte, lte, inArray, not } from 'drizzle-orm';
+import { eq, and, desc, asc, sql, gte, lte, inArray, not, or, SQL, SQLChunk, SQLWrapper } from 'drizzle-orm';
 import {
-    OrderSchema,
-    OrderSchemaType,
     CreateOrderSchema,
     CreateOrderSchemaType,
     UpdateOrderSchema,
@@ -18,7 +16,7 @@ import {
     EnrichedOrderSchemaType,
 } from '@/types/orders';
 import { ApiResponse, Pagination } from '@/types/common';
-import { createOrderExpenseSchema, createOrderExpenseSchemaType, orderExpenseSchemaType } from '@/types/expense';
+import { createOrderExpenseSchema, createOrderExpenseSchemaType, orderExpenseSchemaType, orderExpenseWithNameType } from '@/types/expense';
 
 // --- Helper Functions (Adapted from actions) ---
 
@@ -135,19 +133,20 @@ function mapRawOrderToSchema(rawOrder: any): EnrichedOrderSchemaType {
 
     // Fetch expenses separately or join them in the main query if needed often
     // For now, expenses are added later if needed by the specific use case
-    const expensesArray: orderExpenseSchemaType[] = Array.isArray(rawOrder.expenses)
+    const expensesArray: orderExpenseWithNameType[] = Array.isArray(rawOrder.expenses)
         ? rawOrder.expenses.map((exp: any) => ({
             orderExpenseId: exp.orderExpenseId,
             orderId: exp.orderId,
             expenseItemId: exp.expenseItemId,
             expenseItemQuantity: Number(exp.expenseItemQuantity) || 0,
+            expenseName: exp.expenseName,
+            expensePrice: exp.expensePrice,
             notes: exp.notes,
             createdBy: exp.createdBy,
             createdAt: exp.createdAt ? new Date(exp.createdAt) : new Date(),
             updatedAt: exp.updatedAt ? new Date(exp.updatedAt) : null,
         })).filter((exp: any) => exp.orderExpenseId) // Filter out potentially invalid expenses
         : [];
-
 
     return {
         orderId: rawOrder.orderId,
@@ -202,7 +201,7 @@ export async function fetchOrders(
         const countQuery = db.select({ count: sql<number>`count(*)`.mapWith(Number) }).from(orders).$dynamic();
         const filteredCountQuery = applyFilters(countQuery, filters, session.user.id, session.user.userType, session.user.customerId);
         const totalResult = await filteredCountQuery;
-        const totalCount = totalResult[0]?.count ?? 0;
+        const totalCount = totalResult[ 0 ]?.count ?? 0;
 
         // 4. Apply Sorting and Pagination
         let sortedQuery = applySort(filteredQuery, sort);
@@ -233,77 +232,276 @@ export async function fetchOrders(
 }
 
 
+// export async function fetchOrderById(orderId: string): Promise<ApiResponse<EnrichedOrderSchemaType>> {
+//     try {
+//         const session = await auth();
+//         if (!session?.user?.id) {
+//             return { success: false, message: "Unauthorized: Must be logged in." };
+//         }
+
+//         // Build query for a single order, including expenses join
+//         let query = buildBaseOrderQuery() // Base query already has items
+//             // Add expense aggregation
+//             .select({
+//                 expenses: sql<any>`COALESCE(
+//                     json_agg(
+//                         jsonb_build_object(
+//                             'orderExpenseId', ${orderExpenses.orderExpenseId},
+//                             'orderId', ${orderExpenses.orderId},
+//                             'expenseItemId', ${orderExpenses.expenseItemId},
+//                             'expenseItemQuantity', ${orderExpenses.expenseItemQuantity},
+//                             'notes', ${orderExpenses.notes},
+//                             'createdBy', ${orderExpenses.createdBy},
+//                             'createdAt', ${orderExpenses.createdAt},
+//                             'updatedAt', ${orderExpenses.updatedAt}
+//                             -- Add expense item details if needed via another join
+//                             -- 'expenseName', ${expenseItems.expenseName},
+//                             -- 'expensePrice', ${expenseItems.expensePrice}
+//                         )
+//                         ORDER BY ${orderExpenses.createdAt} -- Or some other relevant order
+//                     ) FILTER (WHERE ${orderExpenses.orderExpenseId} IS NOT NULL),
+//                     '[]'::json
+//                 )`
+//             })
+//             .leftJoin(orderExpenses, eq(orders.orderId, orderExpenses.orderId)) // Join expenses
+//             // Optional: Join expenseItems if name/price needed directly
+//             // .leftJoin(expenseItems, eq(orderExpenses.expenseItemId, expenseItems.expenseItemId))
+//             .where(and(
+//                 eq(orders.orderId, orderId),
+//                 eq(orders.isDeleted, false)
+//             ))
+//             .$dynamic();
+
+
+//         // Apply user type restriction if necessary
+//         if (session.user.userType === 'CUSTOMER' && session.user.customerId) {
+//             // Customers likely shouldn't see expenses, adjust query/mapping if needed
+//             // For now, apply the filter as is
+//              query = query.where(eq(orders.customerId, session.user.customerId));
+//         }
+
+//         const results = await query;
+
+//         if (!results || results.length === 0) {
+//             return { success: false, message: 'Order not found or access denied' };
+//         }
+
+//         // Map including expenses
+//         const mappedOrder = mapRawOrderToSchema(results[0]);
+//         const validatedOrder = EnrichedOrderSchema.safeParse(mappedOrder);
+
+//         if (!validatedOrder.success) {
+//             console.error("Data validation error (fetchOrderById):", JSON.stringify(validatedOrder.error.issues, null, 2));
+//             return { success: false, message: "Invalid order data structure received." };
+//         }
+
+//         return { success: true, data: validatedOrder.data };
+
+//     } catch (error: any) {
+//         console.error('Error in fetchOrderById:', error);
+//         return { success: false, message: error.message || 'Failed to fetch order' };
+//     }
+// }
+
+// export async function fetchOrderById(orderId: string): Promise<ApiResponse<EnrichedOrderSchemaType>> {
+//     try {
+//         const session = await auth();
+//         if (!session?.user?.id) {
+//             return { success: false, message: "Unauthorized: Must be logged in to fetch order." };
+//         }
+
+//         const rawQuery = sql<EnrichedOrderSchemaType>`
+//             SELECT
+//                 ${orders}.*,
+//                 ${customers}.display_name as "displayName",
+//                 ${users}.first_name as "creatorFirstName",
+//                 ${users}.last_name as "creatorLastName",
+//                 ${users}.user_type as "creatorUserType",
+//                 COALESCE(json_agg(
+//                     CASE WHEN ${items}.item_id IS NOT NULL THEN
+//                         jsonb_build_object(
+//                             'itemId', ${items}.item_id,
+//                             'itemName', ${items}.item_name,
+//                             'quantity', ${orderItems}.quantity,
+//                             'itemLocationId', ${orderItems}.item_location_id
+//                         )
+//                     END
+//                 ) FILTER (WHERE ${items}.item_id IS NOT NULL), '[]') AS items
+//             FROM ${orders}
+//             LEFT JOIN ${customers} ON ${orders}.customer_id = ${customers}.customer_id
+//             LEFT JOIN ${orderItems} ON ${orders}.order_id = ${orderItems}.order_id
+//             LEFT JOIN ${items} ON ${orderItems}.item_id = ${items}.item_id
+//             LEFT JOIN ${users} ON ${orders}.created_by = ${users}.user_id
+//             WHERE ${orders}.order_id = ${orderId}
+//             GROUP BY ${orders}.order_id, ${customers}.customer_id, ${users}.user_id
+//         `;
+
+//         const results = await db.execute(rawQuery);
+
+//         if (!results?.rows || !Array.isArray(results.rows) || results.rows.length === 0) {
+//             return { success: false, message: 'Order not found' };
+//         }
+
+//         const order = results.rows[ 0 ];
+//         const enrichedOrder = {
+//             orderId: order.order_id,
+//             orderNumber: Number(order.order_number) || 0,
+//             customerId: order.customer_id,
+//             orderType: order.order_type || 'CUSTOMER_ORDER',
+//             movement: order.movement || 'IN',
+//             packingType: order.packing_type || 'NONE',
+//             deliveryMethod: order.delivery_method || 'NONE',
+//             status: order.status || 'PENDING',
+//             addressId: order.address_id || null,
+//             orderMark: order.order_mark || null,
+//             fulliedAt: order.fullied_at ? new Date(order.fullied_at.toString()) : null,
+//             notes: order.notes || null,
+//             createdBy: order.created_by,
+//             createdAt: order.created_at ? new Date(order.created_at.toString()) : new Date(),
+//             updatedAt: order.updated_at ? new Date(order.updated_at.toString()) : null,
+//             isDeleted: Boolean(order.is_deleted),
+//             customerName: order.displayName || 'Unknown Customer',
+//             creator: {
+//                 userId: order.created_by,
+//                 firstName: order.creatorFirstName || '',
+//                 lastName: order.creatorLastName || '',
+//                 userType: order.creatorUserType || 'EMPLOYEE',
+//             },
+//             items: Array.isArray(order.items)
+//                 ? order.items.map((item: any) => ({
+//                     itemId: item.itemId || '',
+//                     itemName: item.itemName || '',
+//                     quantity: Number(item.quantity) || 0,
+//                     itemLocationId: item.itemLocationId
+//                 })).filter(item => item.itemId && item.quantity > 0)
+//                 : []
+//         };
+
+//         const parsedOrder = EnrichedOrderSchema.parse(enrichedOrder);
+//         return { success: true, data: parsedOrder };
+//     } catch (error) {
+//         console.error('Error in getOrderById:', error);
+//         return { success: false, message: 'Failed to fetch order' };
+//     }
+// }
+
+
 export async function fetchOrderById(orderId: string): Promise<ApiResponse<EnrichedOrderSchemaType>> {
     try {
         const session = await auth();
         if (!session?.user?.id) {
-            return { success: false, message: "Unauthorized: Must be logged in." };
+            return { success: false, message: "Unauthorized: Must be logged in to fetch order." };
         }
 
-        // Build query for a single order, including expenses join
-        let query = buildBaseOrderQuery() // Base query already has items
-            // Add expense aggregation
-            .select({
-                expenses: sql<any>`COALESCE(
-                    json_agg(
+        const rawQuery = sql<EnrichedOrderSchemaType>`
+            SELECT
+                ${orders}.*,
+                ${customers}.display_name as "displayName",
+                ${users}.first_name as "creatorFirstName",
+                ${users}.last_name as "creatorLastName",
+                ${users}.user_type as "creatorUserType",
+                COALESCE(json_agg(DISTINCT
+                    CASE WHEN ${items}.item_id IS NOT NULL THEN
                         jsonb_build_object(
-                            'orderExpenseId', ${orderExpenses.orderExpenseId},
-                            'orderId', ${orderExpenses.orderId},
-                            'expenseItemId', ${orderExpenses.expenseItemId},
-                            'expenseItemQuantity', ${orderExpenses.expenseItemQuantity},
-                            'notes', ${orderExpenses.notes},
-                            'createdBy', ${orderExpenses.createdBy},
-                            'createdAt', ${orderExpenses.createdAt},
-                            'updatedAt', ${orderExpenses.updatedAt}
-                            -- Add expense item details if needed via another join
-                            -- 'expenseName', ${expenseItems.expenseName},
-                            -- 'expensePrice', ${expenseItems.expensePrice}
+                            'itemId', ${items}.item_id,
+                            'itemName', ${items}.item_name,
+                            'quantity', ${orderItems}.quantity,
+                            'itemLocationId', ${orderItems}.item_location_id
                         )
-                        ORDER BY ${orderExpenses.createdAt} -- Or some other relevant order
-                    ) FILTER (WHERE ${orderExpenses.orderExpenseId} IS NOT NULL),
-                    '[]'::json
-                )`
-            })
-            .leftJoin(orderExpenses, eq(orders.orderId, orderExpenses.orderId)) // Join expenses
-            // Optional: Join expenseItems if name/price needed directly
-            // .leftJoin(expenseItems, eq(orderExpenses.expenseItemId, expenseItems.expenseItemId))
-            .where(and(
-                eq(orders.orderId, orderId),
-                eq(orders.isDeleted, false)
-            ))
-            .$dynamic();
+                    END
+                ) FILTER (WHERE ${items}.item_id IS NOT NULL), '[]') AS items,
+                COALESCE(json_agg(DISTINCT
+                    CASE WHEN ${expenseItems}.expense_item_id IS NOT NULL THEN
+                        jsonb_build_object(
+                            'orderExpenseId', ${orderExpenses}.order_expense_id,
+                            'expenseItemId', ${expenseItems}.expense_item_id,
+                            'expenseItemQuantity', ${orderExpenses}.expense_item_quantity,
+                            'notes', ${orderExpenses}.notes,
+                            'createdBy', ${orderExpenses}.created_by,
+                            'createdAt', ${orderExpenses}.created_at,
+                            'updatedAt', ${orderExpenses}.updated_at,
+                            'expenseName', ${expenseItems}.expense_name,
+                            'expensePrice', ${expenseItems}.expense_price,
+                            'expenseCategory', ${expenseItems}.expense_category
+                        )
+                    END
+                ) FILTER (WHERE ${expenseItems}.expense_item_id IS NOT NULL), '[]') AS expenses
+            FROM ${orders}
+            LEFT JOIN ${customers} ON ${orders}.customer_id = ${customers}.customer_id
+            LEFT JOIN ${orderItems} ON ${orders}.order_id = ${orderItems}.order_id
+            LEFT JOIN ${items} ON ${orderItems}.item_id = ${items}.item_id
+            LEFT JOIN ${users} ON ${orders}.created_by = ${users}.user_id
+            LEFT JOIN ${orderExpenses} ON ${orders}.order_id = ${orderExpenses}.order_id
+            LEFT JOIN ${expenseItems} ON ${orderExpenses}.expense_item_id = ${expenseItems}.expense_item_id
+            WHERE ${orders}.order_id = ${orderId}
+            GROUP BY ${orders}.order_id, ${customers}.customer_id, ${users}.user_id
+        `;
 
+        const results = await db.execute(rawQuery);
 
-        // Apply user type restriction if necessary
-        if (session.user.userType === 'CUSTOMER' && session.user.customerId) {
-            // Customers likely shouldn't see expenses, adjust query/mapping if needed
-            // For now, apply the filter as is
-             query = query.where(eq(orders.customerId, session.user.customerId));
+        if (!results?.rows || !Array.isArray(results.rows) || results.rows.length === 0) {
+            return { success: false, message: 'Order not found' };
         }
 
-        const results = await query;
+        const order = results.rows[ 0 ];
+        const enrichedOrder = {
+            orderId: order.order_id,
+            orderNumber: Number(order.order_number) || 0,
+            customerId: order.customer_id,
+            orderType: order.order_type || 'CUSTOMER_ORDER',
+            movement: order.movement || 'IN',
+            packingType: order.packing_type || 'NONE',
+            deliveryMethod: order.delivery_method || 'NONE',
+            status: order.status || 'PENDING',
+            addressId: order.address_id || null,
+            orderMark: order.order_mark || null,
+            // fulfilledAt: order.fulfilledAt ? new Date(order.fulfilled_at.toString()) : null,
+            fulfilledAt: order.fulfilledAt,
+            notes: order.notes || null,
+            createdBy: order.created_by,
+            createdAt: order.created_at ? new Date(order.created_at.toString()) : new Date(),
+            updatedAt: order.updated_at ? new Date(order.updated_at.toString()) : null,
+            isDeleted: Boolean(order.is_deleted),
+            customerName: order.displayName || 'Unknown Customer',
+            creator: {
+                userId: order.created_by,
+                firstName: order.creatorFirstName || '',
+                lastName: order.creatorLastName || '',
+                userType: order.creatorUserType || 'EMPLOYEE',
+            },
+            items: Array.isArray(order.items)
+                ? order.items.map((item: any) => ({
+                    itemId: item.itemId || '',
+                    itemName: item.itemName || '',
+                    quantity: Number(item.quantity) || 0,
+                    itemLocationId: item.itemLocationId
+                })).filter(item => item.itemId && item.quantity > 0)
+                : [],
+            expenses: Array.isArray(order.expenses)
+                ? order.expenses.map((expense: any) => ({
+                    orderId: orderId,
+                    orderExpenseId: expense.orderExpenseId,
+                    expenseItemId: expense.expenseItemId,
+                    expenseItemQuantity: Number(expense.expenseItemQuantity) || 0,
+                    notes: expense.notes || null,
+                    createdBy: expense.createdBy || null, // Assuming createdBy can be null
+                    createdAt: expense.createdAt ? new Date(expense.createdAt.toString()) : new Date(),
+                    updatedAt: expense.updatedAt ? new Date(expense.updatedAt.toString()) : null,
+                    expenseName: expense.expenseName || '',
+                    expensePrice: Number(expense.expensePrice) || 0,
+                    expenseCategory: expense.expenseCategory || null,
+                })).filter(expense => expense.expenseItemId)
+                : [],
+        };
 
-        if (!results || results.length === 0) {
-            return { success: false, message: 'Order not found or access denied' };
-        }
-
-        // Map including expenses
-        const mappedOrder = mapRawOrderToSchema(results[0]);
-        const validatedOrder = EnrichedOrderSchema.safeParse(mappedOrder);
-
-        if (!validatedOrder.success) {
-            console.error("Data validation error (fetchOrderById):", JSON.stringify(validatedOrder.error.issues, null, 2));
-            return { success: false, message: "Invalid order data structure received." };
-        }
-
-        return { success: true, data: validatedOrder.data };
-
-    } catch (error: any) {
-        console.error('Error in fetchOrderById:', error);
-        return { success: false, message: error.message || 'Failed to fetch order' };
+        // console.log(enrichedOrder)
+        const parsedOrder = EnrichedOrderSchema.parse(enrichedOrder);
+        return { success: true, data: parsedOrder };
+    } catch (error) {
+        console.error('Error in getOrderById:', error);
+        return { success: false, message: 'Failed to fetch order' };
     }
 }
-
 
 export async function createOrderInDb(inputData: CreateOrderSchemaType): Promise<ApiResponse<EnrichedOrderSchemaType>> {
     try {
@@ -320,7 +518,7 @@ export async function createOrderInDb(inputData: CreateOrderSchemaType): Promise
 
         if (!validatedFields.success) {
             console.error("Validation Error (createOrderInDb):", validatedFields.error.format());
-            const firstError = validatedFields.error.errors[0];
+            const firstError = validatedFields.error.errors[ 0 ];
             const errorMessage = `Invalid input: ${firstError?.path.join('.')} - ${firstError?.message}`;
             return { success: false, message: errorMessage || "Invalid input data" };
         }
@@ -348,8 +546,8 @@ export async function createOrderInDb(inputData: CreateOrderSchemaType): Promise
                         .innerJoin(items, eq(itemStock.itemId, items.itemId))
                         .where(inArray(itemStock.itemId, itemIds));
 
-                    const stockMap = new Map(currentStockLevels.map(s => [s.itemId, s.available]));
-                    const itemNameMap = new Map(currentStockLevels.map(s => [s.itemId, s.itemName]));
+                    const stockMap = new Map(currentStockLevels.map(s => [ s.itemId, s.available ]));
+                    const itemNameMap = new Map(currentStockLevels.map(s => [ s.itemId, s.itemName ]));
 
                     for (const item of requiredStock) {
                         const available = stockMap.get(item.itemId) ?? 0;
@@ -364,7 +562,7 @@ export async function createOrderInDb(inputData: CreateOrderSchemaType): Promise
 
             // 2b. Insert Order Header
             const initialStatus = orderDataPayload.status === 'COMPLETED' ? 'PENDING' : orderDataPayload.status;
-            const [newOrderHeader] = await tx.insert(orders).values({
+            const [ newOrderHeader ] = await tx.insert(orders).values({
                 customerId: orderDataPayload.customerId,
                 orderType: orderDataPayload.orderType,
                 movement: orderDataPayload.movement,
@@ -408,7 +606,7 @@ export async function createOrderInDb(inputData: CreateOrderSchemaType): Promise
                 throw new Error("Failed to retrieve the newly created order details within transaction.");
             }
 
-            return mapRawOrderToSchema(finalOrderResult[0]);
+            return mapRawOrderToSchema(finalOrderResult[ 0 ]);
         });
 
         // 3. Validate Final Output
@@ -442,7 +640,7 @@ export async function updateOrderInDb(inputData: UpdateOrderSchemaType): Promise
 
         if (!validatedFields.success) {
             console.error("Validation Error (updateOrderInDb):", validatedFields.error.format());
-            const firstError = validatedFields.error.errors[0];
+            const firstError = validatedFields.error.errors[ 0 ];
             const errorMessage = `Invalid input: ${firstError?.path.join('.')} - ${firstError?.message}`;
             return { success: false, message: errorMessage || "Invalid input data for update" };
         }
@@ -456,7 +654,7 @@ export async function updateOrderInDb(inputData: UpdateOrderSchemaType): Promise
         // 2. Database Transaction
         const result = await db.transaction(async (tx) => {
             // 2a. Fetch Existing Order
-            const [existingOrder] = await tx.select({
+            const [ existingOrder ] = await tx.select({
                 status: orders.status,
                 customerId: orders.customerId,
                 createdBy: orders.createdBy
@@ -482,7 +680,7 @@ export async function updateOrderInDb(inputData: UpdateOrderSchemaType): Promise
 
 
             // 2c. Update Order Header
-            const [updatedOrderHeader] = await tx
+            const [ updatedOrderHeader ] = await tx
                 .update(orders)
                 .set({
                     ...(updateData.status && { status: updateData.status === 'COMPLETED' ? 'PENDING' : updateData.status }),
@@ -540,7 +738,7 @@ export async function updateOrderInDb(inputData: UpdateOrderSchemaType): Promise
                 throw new Error("Failed to retrieve the updated order details within transaction.");
             }
 
-            return mapRawOrderToSchema(finalOrderResult[0]);
+            return mapRawOrderToSchema(finalOrderResult[ 0 ]);
         });
 
         // 3. Validate Final Output
@@ -561,103 +759,99 @@ export async function updateOrderInDb(inputData: UpdateOrderSchemaType): Promise
     }
 }
 
-// Function to sync order expenses (Upsert + Delete)
-// Keeps original name and signature for compatibility for now
-export async function createOrderExpenseInDb(inputData: createOrderExpenseSchemaType): Promise<ApiResponse<orderExpenseSchemaType>> {
+
+
+
+
+
+export async function createOrderExpenseInDb(inputData: createOrderExpenseSchemaType): Promise<ApiResponse<void>> {
     try {
-        // 1. Validate Input Array Structure
+        // 1. Validate Input Delta Structure
         const validatedSchema = createOrderExpenseSchema.safeParse(inputData);
         if (!validatedSchema.success) {
-            console.error("Validation Error (createOrderExpenseInDb input):", validatedSchema.error.format());
+            console.error("Validation Error (createOrderExpenseInDb delta input):", validatedSchema.error.format());
             return { success: false, message: "Invalid input data format." };
         }
-        const validatedData = validatedSchema.data;
+        const validatedDelta = validatedSchema.data;
 
-        // Handle empty array case - Needs orderId to delete all.
-        // For now, return error if empty, as orderId isn't passed separately.
-        if (validatedData.length === 0) {
-             console.warn("createOrderExpenseInDb called with empty array. Cannot delete without orderId.");
-             return { success: false, message: "Cannot sync empty expense list without Order ID." };
+        // 2. Handle Empty Delta (Indicates no changes were submitted)
+        if (validatedDelta.length === 0) {
+            console.warn("createOrderExpenseInDb called with empty delta array. No action taken.");
+            // Return success because no changes needed to be applied
+            return { success: true, message: "No changes submitted." };
         }
 
-        // Get orderId from the first item (assuming all items belong to the same order)
-        const orderId = validatedData[0]?.orderId;
+        // 3. Get Order ID (Ensure consistency if multiple items in delta)
+        // It's safer to check if all items in the delta belong to the same order.
+        const orderId = validatedDelta[ 0 ]?.orderId;
         if (!orderId) {
-             return { success: false, message: "Missing orderId in expense data." };
+            return { success: false, message: "Missing orderId in expense data." };
+        }
+        // Optional: Add check for consistent orderId across delta items if needed
+        const allSameOrder = validatedDelta.every(item => item.orderId === orderId);
+        if (!allSameOrder) {
+            return { success: false, message: "Delta contains items for multiple orders." };
         }
 
-        // Extract IDs of expenses submitted (for the delete step)
-        const submittedExpenseIds = validatedData
-            .map(item => item.orderExpenseId)
-            .filter((id): id is string => !!id); // Filter out null/undefined
+        // 4. Separate Delta Items
+        const itemsToUpsert = validatedDelta.filter(item => item.expenseItemQuantity > 0);
+        const itemsMarkedForDelete = validatedDelta.filter(item => item.expenseItemQuantity === 0 && item.orderExpenseId);
+        const idsMarkedForDelete: string[] = itemsMarkedForDelete.map(item => item.orderExpenseId as string); // Extract IDs for deletion
 
-        // 2. Database Transaction
+        // 5. Database Transaction
         await db.transaction(async (tx) => {
-            // 2a. Upsert Logic
-            if (validatedData.length > 0) {
-                // Prepare values, ensuring orderExpenseId is present or null/undefined for the insert
-                const valuesToInsert = validatedData.map(item => ({
+            // 5a. Upsert items with quantity > 0 from the DELTA
+            if (itemsToUpsert.length > 0) {
+                const valuesToUpsert = itemsToUpsert.map(item => ({
                     ...item,
-                    // Drizzle handles optional fields; ensure schema allows optional orderExpenseId
-                    orderExpenseId: item.orderExpenseId ?? undefined,
-                    // Ensure required fields are present
-                    orderId: item.orderId,
-                    expenseItemId: item.expenseItemId,
-                    expenseItemQuantity: item.expenseItemQuantity,
-                    createdBy: item.createdBy,
-                    notes: item.notes, // Pass notes as is (null/undefined/string)
+                    orderExpenseId: item.orderExpenseId ?? undefined, // Let DB handle default/null for new items
+                    expenseItemQuantity: item.expenseItemQuantity, // Set quantity for existing/new
                 }));
 
                 await tx.insert(orderExpenses)
-                    .values(valuesToInsert)
+                    .values(valuesToUpsert)
                     .onConflictDoUpdate({
-                        target: orderExpenses.orderExpenseId, // Target the PK
-                        // Define the columns to update on conflict using 'excluded'
-                        set: {
+                        target: orderExpenses.orderExpenseId, // Target PK
+                        set: { // Define updates for existing items
                             expenseItemId: sql`excluded.expense_item_id`,
                             expenseItemQuantity: sql`excluded.expense_item_quantity`,
                             notes: sql`excluded.notes`,
-                            updatedAt: new Date(), // Always update timestamp
+                            updatedAt: new Date(),
                             // Do NOT update orderId or createdBy on conflict
                         }
                     });
-            }
-
-            // 2b. Delete Logic
-            // Delete expenses for this orderId that are NOT in the submitted list.
-            const deleteConditions = [eq(orderExpenses.orderId, orderId)];
-            if (submittedExpenseIds.length > 0) {
-                 // Only delete if there were existing items submitted for comparison
-                 deleteConditions.push(not(inArray(orderExpenses.orderExpenseId, submittedExpenseIds)));
-                 await tx.delete(orderExpenses).where(and(...deleteConditions));
+                console.log(`Upserted ${valuesToUpsert.length} expense items from delta for order ${orderId}.`);
             } else {
-                 // If validatedData was not empty, but submittedExpenseIds IS empty,
-                 // it means only NEW items were sent. We should NOT delete any existing items.
-                 // If validatedData WAS empty, we returned an error earlier.
-                 // If the desired behavior *is* to delete all existing when only new are sent,
-                 // this 'else' block would contain: await tx.delete(orderExpenses).where(eq(orderExpenses.orderId, orderId));
-                 console.log("No existing expense IDs submitted, skipping delete operation for order:", orderId);
+                console.log(`No items to upsert in delta for order ${orderId}.`);
             }
 
+            // 5b. Delete items explicitly marked in the DELTA (quantity 0)
+            if (idsMarkedForDelete.length > 0) {
+                const deleteResult = await tx.delete(orderExpenses).where(
+                    and(
+                        eq(orderExpenses.orderId, orderId), // Ensure deletion is scoped to the correct order
+                        inArray(orderExpenses.orderExpenseId, idsMarkedForDelete) // Only delete items explicitly marked
+                    )
+                ).returning({ id: orderExpenses.orderExpenseId });
+                console.log(`Deleted ${deleteResult.length} expense items explicitly marked in delta for order ${orderId}.`);
+            } else {
+                console.log(`No items marked for deletion in delta for order ${orderId}.`);
+            }
 
-             // 2c. Refresh Materialized View
-             await tx.refreshMaterializedView(orderExpenseDetailsMaterializedView);
+            // REMOVED: The complex logic trying to delete items *not* in the payload.
+
+            // 5c. Refresh Materialized View (Still needed after changes)
+            await tx.refreshMaterializedView(orderExpenseDetailsMaterializedView);
+            console.log(`Refreshed materialized view for order ${orderId}.`);
         });
 
-        // Return the first item from the input to satisfy the type signature.
-        // This is a workaround because the service expects a single item back.
-        // Ideally, the service/hook should expect ApiResponse<void>.
-        const firstItemResult: orderExpenseSchemaType = {
-            ...validatedData[0],
-            // Coerce dates to Date objects if needed by the return type, though schema uses coerce
-            createdAt: new Date(), // Placeholder, actual value not returned by upsert easily
-            updatedAt: new Date(), // Placeholder
-        };
-
-        return { success: true, message: "Order expenses synchronized successfully.", data: firstItemResult };
+        // 6. Return Success
+        console.log(`Successfully processed expense delta for order ${orderId}.`);
+        return { success: true, message: "Order expenses updated successfully." };
 
     } catch (error: any) {
-        console.error("Error syncing order expenses:", error);
-        return { success: false, message: `Failed to sync order expenses: ${error.message}` };
+        console.error(`Error processing expense delta for order ${inputData[ 0 ]?.orderId}:`, error);
+        const message = error.message || "An unexpected error occurred.";
+        return { success: false, message: `Failed to update order expenses: ${message}` };
     }
 }

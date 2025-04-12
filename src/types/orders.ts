@@ -4,7 +4,7 @@ import { ItemSchema } from './items';
 import { orderTypeSchema, orderStatusSchema, movementTypeSchema, deliveryMethodSchema, packingTypeSchema } from '@/server/db/schema';
 import { createInsertSchema, createSelectSchema, createUpdateSchema } from 'drizzle-zod';
 import { uuid } from 'drizzle-orm/pg-core';
-import { orderExpenseSchema } from './expense';
+import { orderExpenseSchema, orderExpenseWithName } from './expense';
 // Enums for order status and types
 
 
@@ -109,6 +109,7 @@ export interface OrderSort {
 export const OrderSchema = createSelectSchema(orders)
 export type OrderSchemaType = z.infer<typeof OrderSchema>
 
+
 export const CreateOrderSchemaWithoutItems = createInsertSchema(orders)
 export const CreateOrderSchema = CreateOrderSchemaWithoutItems.extend({
     items: z.array(
@@ -135,7 +136,7 @@ export const UpdateOrderSchema = UpdateOrderSchemaWithoutItems.extend({
 })
 export type UpdateOrderSchemaType = z.infer<typeof UpdateOrderSchema>
 
-export const EnrichedOrderSchema = OrderSchema.extend({
+export const EnrichedOrderSchema1 = OrderSchema.extend({
     customerName: z.string(),
     creator: z.object({
         userId: z.string().uuid(),
@@ -150,6 +151,89 @@ export const EnrichedOrderSchema = OrderSchema.extend({
             quantity: z.number().positive(),
             itemLocationId: z.string().uuid()
         })),
-    expenses: z.array(orderExpenseSchema).optional()
+    expenses: z.array(orderExpenseWithName).optional()
 });
+export const EnrichedOrderSchema = EnrichedOrderSchema1.partial({
+    fulfilledAt: true
+
+})
+    
 export type EnrichedOrderSchemaType = z.infer<typeof EnrichedOrderSchema>;
+
+export const dummyOrderData = {
+    orderId: 'dummy-order-id',
+    orderNumber: 12345,
+    customerId: 'dummy-customer-id',
+    orderType: 'CUSTOMER_ORDER',
+    movement: 'DELIVERY',
+    packingType: 'CARTON',
+    deliveryMethod: 'COURIER',
+    status: 'PENDING',
+    addressId: 'dummy-address-id',
+    fulfilledAt: null,
+    notes: 'Dummy order data',
+    orderMark: 'Dummy Mark',
+    createdBy: 'dummy-user-id',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    isDeleted: false,
+    customerName: 'Dummy Customer',
+    creator: {
+        userId: 'dummy-creator-id',
+        firstName: 'Dummy',
+        lastName: 'Creator',
+        userType: 'ADMIN',
+    },
+    items: [
+        {
+            "itemId": "89bc83f4-0420-48cf-b3e5-2013d7216da3",
+            "itemName": "Face masks",
+            "quantity": 1,
+            "itemLocationId": "4e176e92-e833-44f5-aea9-0537f980fb4b"
+        },
+        {
+            "itemId": "e36c5e32-4990-4b86-a7d1-143b9c1bf8ac",
+            "itemName": "Cloak V2",
+            "quantity": 5,
+            "itemLocationId": "4e176e92-e833-44f5-aea9-0537f980fb4b"
+        }
+    ],
+    expenses: [
+        {
+            "orderExpenseId": "282682e4-2036-40bc-a6c5-0495f739cb72",
+            "orderId": "97ab39e6-2055-49e3-baa9-65ff423ff108",
+            "expenseItemId": "1aa82b76-fbf0-42ea-b17a-395e87cbf2fb",
+            "expenseItemQuantity": 10,
+            "notes": null,
+            "createdBy": "4bb68f57-fc14-4e49-96a4-f26c75418547",
+            "createdAt": new Date(),
+            "updatedAt": new Date(),
+            "expenseName": "Sack Small",
+            "expensePrice": 5
+        },
+        {
+            "orderExpenseId": "96658394-00b1-42a0-b1fa-dd405f1fd7a0",
+            "orderId": "97ab39e6-2055-49e3-baa9-65ff423ff108",
+            "expenseItemId": "969f409b-c721-43a1-b0a3-40950b8434fe",
+            "expenseItemQuantity": 2,
+            "notes": null,
+            "createdBy": "4bb68f57-fc14-4e49-96a4-f26c75418547",
+            "createdAt": new Date(),
+            "updatedAt": new Date(),
+            "expenseName": "Forklift Offloading",
+            "expensePrice": 10
+        },
+        {
+            "orderExpenseId": "c29747e4-2f6b-460e-a6fe-f69a1eea016b",
+            "orderId": "97ab39e6-2055-49e3-baa9-65ff423ff108",
+            "expenseItemId": "1aa82b76-fbf0-42ea-b17a-395e87cbf2fb",
+            "expenseItemQuantity": 1,
+            "notes": null,
+            "createdBy": "4bb68f57-fc14-4e49-96a4-f26c75418547",
+            "createdAt": new Date(),
+            "updatedAt": new Date(),
+            "expenseName": "Sack Small",
+            "expensePrice": 5
+        }
+    ]
+}

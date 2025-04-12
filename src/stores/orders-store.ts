@@ -95,7 +95,7 @@ const createOrdersStore: StoreWithSubscribe = (set, get) => ({
   setCustomerId: (customerId) => {
     if (get().customerId !== customerId) set({ customerId, page: 1 });
   },
-
+  
   setMovement: (movement) => {
     if (get().movement !== movement) set({ movement, page: 1 });
   },

@@ -24,6 +24,7 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { Dialog } from "@/components/ui/dialog";
+import { EnrichedOrderSchemaType } from "@/types/orders";
 
 interface OrderHeaderProps {
   handleClose: () => void;
@@ -70,6 +71,7 @@ export function OrderHeader({
 }: OrderHeaderProps) {
   // Access order data directly from store
   const order = useSelectedOrderData();
+
   const isWideScreen = useMediaQuery('(min-width: 1500px)');
 
   if (isLoading) {
@@ -86,6 +88,7 @@ export function OrderHeader({
       </div>
     );
   }
+
 
 
   // Safety check

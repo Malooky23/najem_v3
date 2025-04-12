@@ -13,7 +13,7 @@ interface OrderInfoCardProps {
   movement: z.infer<typeof movementTypeSchema>;
   packingType: z.infer<typeof packingTypeSchema>;
   deliveryMethod: z.infer<typeof deliveryMethodSchema>;
-  orderMark: string | undefined;
+  orderMark: string | undefined| null;
   isLoading: boolean;
   notes: string | null
 }

@@ -67,6 +67,11 @@ export function useUrlSync(store: any, config?: UseUrlSyncConfig) {
         const newSearch = params.toString();
         const currentSearch = searchParams.toString();
 
+        console.log("useUrlSync - State before URL update:", state);
+        console.log("useUrlSync - selectedOrderId:", state.selectedOrderId);
+        console.log("useUrlSync - New Search Params:", newSearch);
+        console.log("useUrlSync - Current Search Params:", currentSearch);
+
         // Only update URL if params actually changed
         if (newSearch !== currentSearch) {
           router.replace(`${pathname}${newSearch ? `?${newSearch}` : ''}`, {

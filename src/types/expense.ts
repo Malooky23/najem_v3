@@ -33,6 +33,11 @@ export const orderExpenseSchema = z.object({
 })
 export type orderExpenseSchemaType = z.infer<typeof orderExpenseSchema>
 
+export const orderExpenseWithName = orderExpenseSchema.extend({
+    expenseName: z.string(),
+    expensePrice: z.number().nonnegative(),
+})
+export type orderExpenseWithNameType = z.infer<typeof orderExpenseWithName>
 
 
 

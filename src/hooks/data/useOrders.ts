@@ -21,7 +21,7 @@ import { createOrderExpense } from "@/server/services/order-services";
 function useMutationFactory<T, R>(
   mutationFn: (data: T) => Promise<ApiResponse<R>>,
   options?: {
-    invalidateQueries?: (string | unknown[])[] // Allow complex query keys
+    invalidateQueries?: (data: T) => (string | unknown[])[] // Allow complex query keys, now a function
   }
 ) {
   const queryClient = useQueryClient();
@@ -38,7 +38,9 @@ function useMutationFactory<T, R>(
     onSuccess: (data, variables, context) => {
       // Invalidate relevant queries
       if (options?.invalidateQueries) {
-        options.invalidateQueries.forEach(queryKey => {
+        const queryKeysToInvalidate = options.invalidateQueries(variables); // Call the function to get query keys
+
+        queryKeysToInvalidate.forEach(queryKey => {
           // Ensure queryKey is treated as an array for invalidation
           queryClient.invalidateQueries({ queryKey: Array.isArray(queryKey) ? queryKey : [queryKey] });
         });
@@ -91,7 +93,6 @@ export function useOrdersQuery({
 }
 
 // --- Query Hook for Single Order ---
-
 export function useOrderByIdQuery(orderId: string | null, options?: { enabled?: boolean }) {
   const queryKey = ['order', orderId];
 
@@ -126,7 +127,7 @@ export function useCreateOrder() {
     {
       // Invalidate the base 'orders' query key and potentially specific filtered views
       // A simple invalidation of ['orders'] might suffice if detailed filtering isn't critical after creation
-      invalidateQueries: [['orders']]
+      invalidateQueries:()=> [['orders']]
     }
   );
 }
@@ -137,7 +138,7 @@ export function useUpdateOrder() {
     {
       // Invalidate the base 'orders' query key.
       // Also consider invalidating specific order detail queries if they exist (e.g., ['order', orderId])
-      invalidateQueries: [['orders']]
+      invalidateQueries: ()=> [['orders']]
       // TODO: Add optimistic updates if needed for better UX
     }
   );
@@ -151,7 +152,7 @@ export function useCreateOrderExpense(){
   return useMutationFactory<createOrderExpenseSchemaType, orderExpenseSchemaType>(
     createOrderExpense,
       {
-        invalidateQueries: [ [ 'orders' ] ]
+        invalidateQueries: (data) => [ [ 'orders', [ 'order', data[0].orderId ] ]]
       }
     );
   }

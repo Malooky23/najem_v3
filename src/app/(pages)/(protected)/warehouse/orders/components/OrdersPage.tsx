@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useEffect, useState, useCallback, memo } from "react"
@@ -28,13 +29,13 @@ function PageHeader({ isLoading, isMobile }: PageHeaderProps) {
   return (
     <div className="flex justify-between mt-2 pb-2 gap-1 max-w-full">
       <h1 className="text-2xl font-bold text-gray-900 text-nowrap pb-0 pr-2 flex items-end">
-          Orders
+        Orders
       </h1>
       <div className="">
         <SearchPanel isLoading={isLoading} />
       </div>
 
-        <CreateOrderDialog isMobile={isMobile} />
+      <CreateOrderDialog isMobile={isMobile} />
 
     </div>
   );
@@ -49,7 +50,7 @@ const ContentLayout = memo<{
   return (
     <div
       className={cn(
-        "flex flex-col rounded-md transition-all duration-300 overflow-hidden",
+        "flex flex-col rounded-md  duration-100 overflow-hidden",
         isMobile
           ? (isDetailsOpen ? "hidden" : "w-full")
           : (isDetailsOpen ? "w-[60%]" : "w-full")
@@ -65,7 +66,7 @@ export function OrdersPage() {
   const isMobile = useMediaQuery("(max-width: 768px)")
 
   // Loading state with debounce to prevent flashing
-  const [isPageLoading, setIsPageLoading] = useState(true)
+  const [ isPageLoading, setIsPageLoading ] = useState(true)
   const handleLoadingChange = useCallback((loading: boolean) => {
     // Small delay to prevent loading flash
     if (loading) {
@@ -81,7 +82,7 @@ export function OrdersPage() {
 
   // Setup URL synchronization
   useUrlSync(useOrdersStore, {
-    syncedKeys: ['page', 'pageSize', 'sortField', 'sortDirection', 'status', 'customerId', 'movement', 'dateFrom', 'dateTo']
+    syncedKeys: [ 'page', 'pageSize', 'sortField', 'sortDirection', 'status', 'customerId', 'movement', 'dateFrom', 'dateTo' ]
   });
 
   // Reset loading state after initial render
@@ -107,12 +108,23 @@ export function OrdersPage() {
           />
         </ContentLayout>
 
-        {store.isDetailsOpen && store.selectedOrderId && (
-          <OrderDetailsContainer
-            // orderId={store.selectedOrderId}
-            isMobile={isMobile}
-          />
-        )}
+
+          <div className={cn(
+            ' ',
+            "flex flex-col rounded-md  overflow-hidden",
+            isMobile ? "w-full" : "w-[40%]",
+            store.isDetailsOpen ? "ml-2" : "w-0 ml-0",
+            // !isMobile && !store.isDetailsOpen && "hidden", // Hide on desktop when details are closed
+            // "transition-width duration-100", // Enable transition for width
+            "origin-right", // Animate from right to left
+          )}
+          >
+            <OrderDetailsContainer
+              isMobile={isMobile}
+              className="w-full h-full"
+            />
+          </div>
+
       </div>
     </div>
   )
