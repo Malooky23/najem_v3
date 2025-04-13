@@ -184,7 +184,7 @@ export async function fetchOrders(
     filters: OrderFilters = {},
     sort: OrderSort = { field: 'orderNumber', direction: 'desc' }
 ): Promise<{ orders: EnrichedOrderSchemaType[], pagination: Pagination }> {
-    console.log("NEW fetchOrders");
+
     try {
         const session = await auth();
         if (!session?.user?.id) {

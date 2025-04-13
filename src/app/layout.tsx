@@ -25,18 +25,19 @@ export default function RootLayout({
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
       </head>
-      <body className={`${inter.className} h-full bg-gradient-to-br from-blue-200/80 via-purple-200/80 to-amber-200/50`}>
+      {/* <body className={`${inter.className} h-full bg-gradient-to-br from-blue-200/80 via-purple-200/80 to-amber-200/50`}> */}
+      <body className={`${inter.className} h-full`}>
         <Providers>
           <div className="h-full flex flex-col">
             <div className="flex-1">
-              <Suspense fallback={
+              {/* <Suspense fallback={
                 <div className="flex items-center justify-center w-full h-full">
                   <Loading />
                 </div>
-              }>
+              }> */}
                 {children}
                 <SpeedInsights />
-              </Suspense>
+              {/* </Suspense> */}
             </div>
             <Toaster />
             <Sonner richColors />

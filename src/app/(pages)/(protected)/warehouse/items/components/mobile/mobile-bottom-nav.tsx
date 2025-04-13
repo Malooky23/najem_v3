@@ -1,7 +1,6 @@
-import CreateItemForm from "../../CreateItem"
+import CreateItemForm from "@/components/dialogs/ItemDialog/CreateItem"
 import { Button } from "@/components/ui/button"
 import { Home, ListFilter, Plus, Search, Settings } from "lucide-react"
-import Link from "next/link"
 import { useRouter } from "next/navigation"
 
 export function MobileBottomNav() {

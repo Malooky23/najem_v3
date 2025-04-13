@@ -73,22 +73,18 @@ export function useOrdersQuery({
     enabled = true, // Query is enabled by default
 }: UseOrdersQueryParams = {}) {
 
-  // Query key includes all parameters that affect the data
   const queryKey = ['orders', page, pageSize, filters, sort];
-
-  // return useQuery<ApiResponse<{ orders: OrderSchemaType[], pagination: Pagination }>, Error, { orders: OrderSchemaType[], pagination: Pagination }>({
   return useQuery({
     queryKey: queryKey,
-    queryFn: async () => { // queryFn returns the data shape
-      // Call the server function to fetch ordersx
+    queryFn: async () => { 
       const response = await fetchOrders(page, pageSize, filters, sort);
       return response 
     },
     enabled: enabled, // Control query execution
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 10 * 60 * 1000, // 10 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
     placeholderData: keepPreviousData, // Keep previous data while fetching new page/filters
-    refetchOnWindowFocus: false, // Optional: Adjust as needed
+    refetchOnWindowFocus: true, // Optional: Adjust as needed
   });
 }
 

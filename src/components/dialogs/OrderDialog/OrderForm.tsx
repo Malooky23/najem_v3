@@ -48,10 +48,10 @@ import { useOrdersStore } from "@/stores/orders-store";
 import { orderStatusSchema } from "@/server/db/schema";
 import { SaveButton } from "@/components/ui/SaveButton";
 import { Spinner } from "@heroui/spinner";
-import { MagicCard } from "@/components/magicui/magic-card";
 import { NeonGradientCard } from "@/components/magicui/neon-gradient-card";
 import { TextAnimate } from "@/components/magicui/text-animate";
-import CreateItemForm from "../../../items/components/CreateItem";
+import CreateItemForm from "@/components/dialogs/ItemDialog/CreateItem";
+
 
 
 // Import your FormErrorSummary component (ensure path is correct)
@@ -524,7 +524,7 @@ export const OrderForm = ({ onClose, initialData, isEditMode = false }: OrderFor
                                             Order Items
                                         </h3>
                                         <div className="flex gap-2">
-                                            <CreateItemForm>
+                                            <CreateItemForm disableMobileMode={true}> 
 
                                             <Button
                                                 type="button"

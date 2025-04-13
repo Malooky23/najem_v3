@@ -1,5 +1,5 @@
 export const COUNTRIES = [
-  { value: "ARE", label: "United Arab Emirates (the)" },
+  { value: "ARE", label: "United Arab Emirates" },
   { value: "AFG", label: "Afghanistan" },
   { value: "ALB", label: "Albania" },
   { value: "DZA", label: "Algeria" },

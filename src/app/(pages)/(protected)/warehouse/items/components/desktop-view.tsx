@@ -29,8 +29,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import type { ItemSchemaType } from "@/types/items"
 import { FilterControls } from "./filter-controls"
 import { ActiveFilters } from "./active-filters"
-import type { FilterState } from "./items-page-wrapper"
-import { DetailsPanel } from "../DetailsPanel"
+
+import { DetailsPanel } from "./DetailsPanel"
 import { useItemsStore } from "@/stores/items-store"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import {
@@ -38,8 +38,9 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable"
-import CreateItemForm from "../CreateItem"
+import CreateItemForm from "@/components/dialogs/ItemDialog/CreateItem"
 import { Skeleton } from "@/components/ui/skeleton"
+import { FilterState } from "../page"
 
 interface DesktopViewProps {
   table: Table<ItemSchemaType>

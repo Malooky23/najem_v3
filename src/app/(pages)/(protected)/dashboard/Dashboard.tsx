@@ -1,12 +1,12 @@
 "use client"
 
 import { Button } from "@/components/ui/button";
-import { 
-  Ship, 
-  UsersRound, 
-  Warehouse, 
-  Package, 
-  BarChart4, 
+import {
+  Ship,
+  UsersRound,
+  Warehouse,
+  Package,
+  BarChart4,
   Calendar,
   ArrowUpRight,
   ArrowRight,
@@ -17,38 +17,48 @@ import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useOrdersQuery } from "@/hooks/data/useOrders";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Mock Data 
 const menuItems = [
-  { 
-    title: 'Warehouse', 
-    description: "Inventory and storage management", 
-    icon: Warehouse, 
-    path: '/warehouse/', 
+  {
+    title: 'Warehouse Dashboard',
+    description: "Inventory and storage management",
+    icon: Warehouse,
+    path: '/warehouse/',
     active: true,
     badge: '143 items',
   },
-  { 
-    title: 'Shipments', 
-    description: "Track import/export logistics", 
-    icon: Ship, 
-    path: '/shipments/orders', 
+  {
+    title: 'Shipments',
+    description: "Track import/export logistics",
+    icon: Ship,
+    path: '/shipments/orders',
     active: false,
     badge: '12 pending',
   },
-  { 
-    title: 'Customers', 
-    description: "Manage customer details", 
-    icon: UsersRound, 
-    path: '/customers', 
+  {
+    title: 'View All Items',
+    description: "Manage customer details",
+    icon: Package,
+    path: '/warehouse/items',
     active: true,
     badge: '36 active',
   },
-  { 
-    title: 'Analytics', 
-    description: "Business insights and reports", 
-    icon: BarChart4, 
-    path: '/shipments/orders', 
+  {
+    title: 'View All Customers',
+    description: "Manage customer details",
+    icon: UsersRound,
+    path: '/customers',
+    active: true,
+    badge: '36 active',
+  },
+  {
+    title: 'Analytics',
+    description: "Business insights and reports",
+    icon: BarChart4,
+    path: '/shipments/orders',
     active: false,
     badge: 'Coming soon',
   },
@@ -69,6 +79,9 @@ const upcomingShipments = [
 ];
 
 export function DashboardShell({ session }: { session: any }) {
+
+  const { data: orders, isLoading: isOrdersLoading } = useOrdersQuery()
+
   return (
     <div className="p-6 min-h-screen">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -82,7 +95,7 @@ export function DashboardShell({ session }: { session: any }) {
               </div>
               <Avatar className="h-10 w-10 border-2 border-primary/10">
                 <AvatarImage src={session?.user?.image || ""} alt={session?.user?.name || ""} />
-                <AvatarFallback>{session?.user?.name?.[0] || "U"}</AvatarFallback>
+                <AvatarFallback>{session?.user?.name?.[ 0 ] || "U"}</AvatarFallback>
               </Avatar>
             </div>
           </CardHeader>
@@ -90,56 +103,117 @@ export function DashboardShell({ session }: { session: any }) {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <Card>
-            <CardHeader className="pb-2 pt-4">
-              <CardTitle className="text-sm font-medium text-gray-500">Pending Shipments</CardTitle>
-            </CardHeader>
-            <CardContent className="pb-2">
-              <div className="flex items-baseline justify-between">
-                <div className="text-3xl font-bold">18</div>
-                <Badge variant="secondary" className="text-emerald-600 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-900/20">
-                  +12%
-                </Badge>
-              </div>
-            </CardContent>
-            <CardFooter className="pt-0">
-              <p className="text-xs text-gray-500">5 require attention</p>
-            </CardFooter>
-          </Card>
 
-          <Card>
-            <CardHeader className="pb-2 pt-4">
-              <CardTitle className="text-sm font-medium text-gray-500">Active Orders</CardTitle>
-            </CardHeader>
-            <CardContent className="pb-2">
-              <div className="flex items-baseline justify-between">
-                <div className="text-3xl font-bold">27</div>
-                <Badge variant="secondary" className="text-emerald-600 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-900/20">
-                  +5%
-                </Badge>
-              </div>
-            </CardContent>
-            <CardFooter className="pt-0">
-              <p className="text-xs text-gray-500">3 processing now</p>
-            </CardFooter>
-          </Card>
+          {isOrdersLoading ?
+            <Card>
+              <CardHeader className="pb-2 pt-4">
+                <CardTitle className="text-sm font-medium text-gray-500">All Orders</CardTitle>
+              </CardHeader>
+              <CardContent className="pb-2">
+                <div className="flex items-baseline justify-between">
+                  <div className="text-3xl font-bold"><Skeleton className="h-8 w-[50px]" /></div>
+                  {/* <Badge variant="secondary" > */}
+                  <Skeleton className="h-4 w-[40px]" />
+                  {/* </Badge> */}
+                </div>
+              </CardContent>
+              <CardFooter className="pt-0">
+                <div className="text-xs text-gray-500"><Skeleton className="h-4 w-[100px]" /></div>
+              </CardFooter>
+            </Card>
+            :
+            <Card>
+              <CardHeader className="pb-2 pt-4">
+                <CardTitle className="text-sm font-medium text-gray-500">Orders</CardTitle>
+              </CardHeader>
+              <CardContent className="pb-2">
+                <div className="flex items-baseline justify-between">
+                  <div className="text-3xl font-bold">{orders?.pagination.total}</div>
 
-          <Card>
-            <CardHeader className="pb-2 pt-4">
-              <CardTitle className="text-sm font-medium text-gray-500">Inventory Items</CardTitle>
-            </CardHeader>
-            <CardContent className="pb-2">
-              <div className="flex items-baseline justify-between">
-                <div className="text-3xl font-bold">143</div>
-                <Badge variant="secondary" className="text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900/20">
-                  -3%
-                </Badge>
-              </div>
-            </CardContent>
-            <CardFooter className="pt-0">
-              <p className="text-xs text-gray-500">8 low stock alerts</p>
-            </CardFooter>
-          </Card>
+                  <Badge variant="secondary" className="text-emerald-600 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-900/20">
+                    +12%
+                  </Badge>
+                </div>
+              </CardContent>
+              <CardFooter className="pt-0">
+                <p className="text-xs text-gray-500">5 require attention</p>
+              </CardFooter>
+            </Card>
+          }
+
+
+          {isOrdersLoading ?
+            <Card>
+              <CardHeader className="pb-2 pt-4">
+                <CardTitle className="text-sm font-medium text-gray-500">Active Orders</CardTitle>
+              </CardHeader>
+              <CardContent className="pb-2">
+                <div className="flex items-baseline justify-between">
+                  <div className="text-3xl font-bold"><Skeleton className="h-8 w-[50px]" /></div>
+                  {/* <Badge variant="secondary" > */}
+                  <Skeleton className="h-4 w-[40px]" />
+                  {/* </Badge> */}
+                </div>
+              </CardContent>
+              <CardFooter className="pt-0">
+                <div className="text-xs text-gray-500"><Skeleton className="h-4 w-[100px]" /></div>
+              </CardFooter>
+            </Card>
+            :
+            <Card>
+              <CardHeader className="pb-2 pt-4">
+                <CardTitle className="text-sm font-medium text-gray-500">Active Orders</CardTitle>
+              </CardHeader>
+              <CardContent className="pb-2">
+                <div className="flex items-baseline justify-between">
+                  <div className="text-3xl font-bold">27</div>
+                  <Badge variant="secondary" className="text-emerald-600 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-900/20">
+                    +5%
+                  </Badge>
+                </div>
+              </CardContent>
+              <CardFooter className="pt-0">
+                <p className="text-xs text-gray-500">3 processing now</p>
+              </CardFooter>
+            </Card>
+          }
+
+
+          {isOrdersLoading ?
+            <Card>
+              <CardHeader className="pb-2 pt-4">
+                <CardTitle className="text-sm font-medium text-gray-500">Inventory Items</CardTitle>
+              </CardHeader>
+              <CardContent className="pb-2">
+                <div className="flex items-baseline justify-between">
+                  <div className="text-3xl font-bold"><Skeleton className="h-8 w-[50px]" /></div>
+                  {/* <Badge variant="secondary" > */}
+                  <Skeleton className="h-4 w-[40px]" />
+                  {/* </Badge> */}
+                </div>
+              </CardContent>
+              <CardFooter className="pt-0">
+                <div className="text-xs text-gray-500"><Skeleton className="h-4 w-[100px]" /></div>
+              </CardFooter>
+            </Card>
+            :
+            <Card>
+              <CardHeader className="pb-2 pt-4">
+                <CardTitle className="text-sm font-medium text-gray-500">Inventory Items</CardTitle>
+              </CardHeader>
+              <CardContent className="pb-2">
+                <div className="flex items-baseline justify-between">
+                  <div className="text-3xl font-bold">143</div>
+                  <Badge variant="secondary" className="text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900/20">
+                    -3%
+                  </Badge>
+                </div>
+              </CardContent>
+              <CardFooter className="pt-0">
+                <p className="text-xs text-gray-500">8 low stock alerts</p>
+              </CardFooter>
+            </Card>
+          }
         </div>
 
         {/* Quick Actions & Activity */}
@@ -151,8 +225,8 @@ export function DashboardShell({ session }: { session: any }) {
             </CardHeader>
             <CardContent className="grid gap-2">
               {menuItems.filter(item => item.active).map(item => (
-                <Link 
-                  href={item.path} 
+                <Link
+                  href={item.path}
                   key={item.title}
                   className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 >
@@ -172,36 +246,60 @@ export function DashboardShell({ session }: { session: any }) {
           </Card>
 
           {/* Recent Activity */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ScrollArea className="h-[280px]">
-                <div className="space-y-4">
-                  {recentActivity.map(activity => (
-                    <div key={activity.id} className="flex gap-4 items-start">
-                      <div className={cn(
-                        "h-9 w-9 rounded-full flex items-center justify-center text-white",
-                        activity.type === "shipment" ? "bg-blue-500" :
-                        activity.type === "order" ? "bg-emerald-500" :
-                        activity.type === "inventory" ? "bg-amber-500" : "bg-purple-500"
-                      )}>
-                        {activity.type === "shipment" ? <Ship className="h-4 w-4" /> :
-                         activity.type === "order" ? <Package className="h-4 w-4" /> :
-                         activity.type === "inventory" ? <Warehouse className="h-4 w-4" /> :
-                         <UsersRound className="h-4 w-4" />}
+          {isOrdersLoading ?
+            <Card>
+              <CardHeader>
+                <CardTitle><Skeleton className="h-6 w-[120px]" /></CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[280px]">
+                  <div className="space-y-4">
+                    {Array.from({ length: 5 }).map((_, index) => (
+                      <div key={index} className="flex items-start">
+                        <Skeleton className="h-9 w-9 rounded-full" />
+                        <div className=
+                          "h-9 w-9 rounded-full flex items-center justify-center text-white"
+                        />
+                        <div className="pr-4"><Skeleton className="h-4 w-[150px]" /></div>
+                        <div className=""><Skeleton className="h-4 w-[100px]" /></div>
                       </div>
-                      <div>
-                        <p className="font-medium">{activity.action}</p>
-                        <p className="text-sm text-gray-500">{activity.time}</p>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+            :
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Activity</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[280px]">
+                  <div className="space-y-4">
+                    {recentActivity.map(activity => (
+                      <div key={activity.id} className="flex gap-4 items-start">
+                        <div className={cn(
+                          "h-9 w-9 rounded-full flex items-center justify-center text-white",
+                          activity.type === "shipment" ? "bg-blue-500" :
+                            activity.type === "order" ? "bg-emerald-500" :
+                              activity.type === "inventory" ? "bg-amber-500" : "bg-purple-500"
+                        )}>
+                          {activity.type === "shipment" ? <Ship className="h-4 w-4" /> :
+                            activity.type === "order" ? <Package className="h-4 w-4" /> :
+                              activity.type === "inventory" ? <Warehouse className="h-4 w-4" /> :
+                                <UsersRound className="h-4 w-4" />}
+                        </div>
+                        <div>
+                          <p className="font-medium">{activity.action}</p>
+                          <p className="text-sm text-gray-500">{activity.time}</p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
-            </CardContent>
-          </Card>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          }
         </div>
 
         {/* Upcoming Shipments */}
@@ -227,7 +325,7 @@ export function DashboardShell({ session }: { session: any }) {
                   <div className="flex items-center gap-2">
                     <Badge variant={
                       shipment.status === "Ready" ? "default" :
-                      shipment.status === "Processing" ? "secondary" : "outline"
+                        shipment.status === "Processing" ? "secondary" : "outline"
                     }>
                       {shipment.status}
                     </Badge>

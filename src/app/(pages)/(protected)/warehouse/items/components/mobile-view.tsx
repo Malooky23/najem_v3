@@ -16,10 +16,10 @@ import { MobileSearch } from "./mobile/mobile-search"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { ArrowDown, Filter, X } from "lucide-react"
-import type { FilterState } from "./items-page-wrapper"
 import { Item } from "@radix-ui/react-radio-group"
-import { DetailsPanel } from "../DetailsPanel"
+import { DetailsPanel } from "./DetailsPanel"
 import { useItemsStore } from "@/stores/items-store"
+import { FilterState } from "../page"
 
 interface MobileViewProps {
   table: Table<ItemSchemaType>

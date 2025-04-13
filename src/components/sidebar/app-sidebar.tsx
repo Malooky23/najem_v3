@@ -40,7 +40,7 @@ export function AppSidebar({ session, ...props }: AppSidebarProps) {
   }
 
   return (
-    <Sidebar collapsible="icon" {...props}>
+    <Sidebar collapsible="icon" {...props} >
       <SidebarHeader className="flex-row items-center justify-center relative h-16">
         <Link href="/dashboard" onClick={handleLinkClick} className="flex items-center justify-center w-full h-full">
           <div className="relative w-full h-full flex items-center justify-center">
@@ -93,7 +93,7 @@ export function AppSidebar({ session, ...props }: AppSidebarProps) {
         <SidebarHoverToggle />
         <NavUser user={user} />
       </SidebarFooter>
-      <SidebarRail />
+      <SidebarRail className=" -translate-x-4"/>
     </Sidebar>
   )
 }

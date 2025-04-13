@@ -30,6 +30,8 @@ import {
 import {
   Drawer,
   DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer"
 import { useState } from "react"
@@ -197,7 +199,13 @@ export function ComboboxForm({
                   </Button>
                 </FormControl>
               </DrawerTrigger>
-              <DrawerContent>
+              <DrawerContent className="">
+              {/* <DrawerContent className="mb-12"> */}
+                  <DrawerHeader>
+                    <DrawerTitle>
+                      {/* NEEDED OTHERWISE WE GET ERRORS! */}
+                    </DrawerTitle>
+                  </DrawerHeader>
                 <div className="mt-4 border-t ">
                   <ComboboxContent
                     field={field}
@@ -209,6 +217,11 @@ export function ComboboxForm({
                     onChange={doo}
                   />
                 </div>
+                <div className="h-12 bg-amber-50 text-center text-gray-300">
+                    <p>i added some space. /components/ui/combobox.tsx line 220</p>
+                    <p>className="h-12 bg-amber-50 text-center</p>
+                  </div>
+
               </DrawerContent>
             </Drawer>
           )}

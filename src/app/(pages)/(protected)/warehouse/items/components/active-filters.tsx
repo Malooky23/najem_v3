@@ -3,8 +3,8 @@
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { X } from "lucide-react"
-import type { FilterState } from "./items-page-wrapper"
-import type { ItemSchemaType } from "./data"
+import type { FilterState } from "../page"
+import { ItemSchemaType } from "@/types/items"
 
 interface ActiveFiltersProps {
   globalFilter: string
@@ -41,7 +41,7 @@ export function ActiveFilters({
   // Find item names for selected item IDs
   const selectedItemNames =
     activeFilters.selectedItems?.map((id) => {
-      const item = data.find((item) => item.id === id)
+      const item = data.find((item) => item.itemId === id)
       return item ? `${item.itemName} (#${item.itemNumber})` : id
     }) || []
 

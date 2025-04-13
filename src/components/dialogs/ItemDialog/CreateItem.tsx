@@ -1,43 +1,14 @@
 "use client"
 import { Spinner } from "@heroui/spinner";
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, ReactNode } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
-import {
-  Package,
-  Tag,
-  Briefcase,
-  Barcode,
-  Globe,
-  Weight,
-  Box,
-  Building,
-  StickyNote,
-  Layers,
-  Plus,
-} from "lucide-react"
+import { Package, Tag, Briefcase, Barcode, Globe, Weight, Box, Building, StickyNote, Layers, Plus, } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@/components/ui/drawer"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, } from "@/components/ui/dialog"
+import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger, } from "@/components/ui/drawer"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -47,23 +18,30 @@ import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { useIsMobileTEST } from "@/hooks/use-media-query"
 import CustomerDropdown from "@/components/ui/customer-dropdown"
-import { createItemsSchema, ITEM_TYPES, itemTypes } from "@/types/items"
-
-
+import { createItemsSchema } from "@/types/items"
 import { useSession } from "next-auth/react"
 import { ComboboxForm } from "@/components/ui/combobox"
-import { useCreateItem } from "@/hooks/useItems"
+import { useCreateItem } from "@/hooks/data/useItems";
+import { itemTypes } from "@/server/db/schema";
 
-export default function CreateItemForm() {
-  const [open, setOpen] = useState(false)
-  const [useMeters, setUseMeters] = useState(false)
-  const [useKilograms, setUseKilograms] = useState(false)
+
+interface CreateItemFormProps {
+  children?: ReactNode
+  disableMobileMode?: boolean
+
+}
+
+export default function CreateItemForm({ children, disableMobileMode = false }: CreateItemFormProps) {
+  const [ open, setOpen ] = useState(false)
+  const [ useMeters, setUseMeters ] = useState(false)
+  const [ useKilograms, setUseKilograms ] = useState(false)
   const isMobile = useIsMobileTEST()
   const { data: session } = useSession()
   if (!session) return null
 
   // Get the createItem mutation
   const createItemMutation = useCreateItem()
+
 
   const form = useForm<z.infer<typeof createItemsSchema>>({
     resolver: zodResolver(createItemsSchema),
@@ -119,7 +97,7 @@ export default function CreateItemForm() {
         formContainer.removeEventListener("touchend", handleTouchEnd);
       };
     }
-  }, [isMobile]);
+  }, [ isMobile ]);
 
   // Modified touch handler to not interfere with keyboard focus
   const handleInputTouchStart = (e: React.TouchEvent) => {
@@ -210,7 +188,7 @@ export default function CreateItemForm() {
                 </FormLabel>
                 <ComboboxForm
                   name="itemType"
-                  options={ITEM_TYPES.map((type) => ({ label: type, value: type }))}
+                  options={itemTypes.enumValues.map((type) => ({ label: type, value: type }))}
                   value={field.value}
                   placeholder="Select item type"
                   enableFormMessage={false}
@@ -514,18 +492,18 @@ export default function CreateItemForm() {
     </Form>
   )
 
-  if (isMobile) {
+  if (isMobile && !disableMobileMode) {
     return (
-      <Drawer disablePreventScroll={false} modal={true} open={open} onOpenChange={setOpen} >
+      <Drawer modal={true} open={open} onOpenChange={setOpen} >
         <DrawerTrigger asChild>
-          {/* <Button variant="default" className="bg-primary hover:bg-primary/90">
-            <Package className="mr-2 h-4 w-4" />
-            Create New Item
-          </Button> */}
-          <Button className="h-12 w-12 rounded-full absolute -top-6 left-1/2 transform -translate-x-1/2 flex items-center justify-center">
-            <Plus className="h-6 w-6" />
-          </Button>
+          {children ? children
+            :
+            <Button className="h-12 w-12 rounded-full absolute -top-6 left-1/2 transform -translate-x-1/2 flex items-center justify-center">
+              <Plus className="h-6 w-6" />
+            </Button>
+          }
         </DrawerTrigger>
+
         <DrawerContent className="h-[90vh]">
           <DrawerHeader className="mt-1 rounded-lg border-b border-primary/20 bg-primary/5">
             <DrawerTitle className="flex items-center gap-2">
@@ -594,12 +572,18 @@ export default function CreateItemForm() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="default" className="bg-primary hover:bg-primary/90" tabIndex={0}>
-          <Package className="mr-2 h-4 w-4" />
-          Create New Item
-        </Button>
+        {children ? (
+          // If children is provided, use it as the trigger
+          <div onClick={() => setOpen(true)}>{children}</div>
+        ) : (
+          <Button variant="default" className="bg-primary hover:bg-primary/90" tabIndex={0}>
+            <Package className="mr-2 h-4 w-4" />
+            Create New Item
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-hidden">
+
 
         <DialogHeader className="border-b border-primary/20 pb-4">
           <DialogTitle className="flex items-center gap-2">

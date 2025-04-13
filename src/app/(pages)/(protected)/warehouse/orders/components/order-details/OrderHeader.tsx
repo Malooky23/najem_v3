@@ -11,10 +11,9 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { StatusDropdown } from "./StatusDropdown";
-import { CreateOrderDialog } from "../order-form/create-order-dialog";
+import { CreateOrderDialog } from "../../../../../../../components/dialogs/OrderDialog/create-order-dialog";
 import { useSelectedOrderData } from "@/stores/orders-store";
 import { cn } from "@/lib/utils";
-import { OrderExpenseDialog } from "@/components/CreateOrderExpense/OrderExpenseDialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import {
@@ -25,6 +24,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Dialog } from "@/components/ui/dialog";
 import { EnrichedOrderSchemaType } from "@/types/orders";
+import { OrderExpenseDialog } from "@/components/dialogs/ExpenseDialog/OrderExpenseDialog";
 
 interface OrderHeaderProps {
   handleClose: () => void;

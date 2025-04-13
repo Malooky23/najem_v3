@@ -1,7 +1,5 @@
 
 "use client"
-
-import { OrderExpenseDialog } from "@/components/CreateOrderExpense/OrderExpenseDialog"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
@@ -10,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Edit, EditIcon, Home } from "lucide-react"
 import { z } from "zod"
 import { orderExpenseWithName, orderExpenseWithNameType } from '@/types/expense'
+import { OrderExpenseDialog } from "@/components/dialogs/ExpenseDialog/OrderExpenseDialog"
 
 
 
