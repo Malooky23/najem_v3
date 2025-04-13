@@ -30,14 +30,14 @@ export default function RootLayout({
         <Providers>
           <div className="h-full flex flex-col">
             <div className="flex-1">
-              {/* <Suspense fallback={
-                <div className="flex items-center justify-center w-full h-full">
+              <Suspense fallback={
+                <div className="flex items-center bg-red-500 justify-center w-full h-full">
                   <Loading />
                 </div>
-              }> */}
+              }>
                 {children}
                 <SpeedInsights />
-              {/* </Suspense> */}
+              </Suspense>
             </div>
             <Toaster />
             <Sonner richColors />
