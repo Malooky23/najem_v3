@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useEffect, useState, useCallback, memo } from "react"
+import { memo } from "react"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import { cn } from "@/lib/utils"
 import { useOrdersStore } from "@/stores/orders-store"
@@ -22,7 +22,6 @@ interface PageHeaderProps {
 
 
 function PageHeader({ isLoading, isMobile }: PageHeaderProps) {
-
   return (
     <div className="flex justify-between mt-2 pb-2 gap-1 max-w-full">
       <h1 className="text-2xl font-bold text-gray-900 text-nowrap pb-0 pr-2 flex items-end">
@@ -64,19 +63,6 @@ export default function OrdersPageWrapper() {
   // Media query for responsive design
   const isMobile = useMediaQuery("(max-width: 768px)")
 
-  // Loading state with debounce to prevent flashing
-  // const [ isPageLoading, setIsPageLoading ] = useState(true)
-  // const handleLoadingChange = useCallback((loading: boolean) => {
-  //   // Small delay to prevent loading flash
-  //   if (loading) {
-  //     setIsPageLoading(true)
-  //   } else {
-  //     const timer = setTimeout(() => setIsPageLoading(false), 100)
-  //     return () => clearTimeout(timer)
-  //   }
-  // }, [])
-
-  // Get store state
   const store = useOrdersStore()
 
   // Setup URL synchronization
@@ -84,13 +70,6 @@ export default function OrdersPageWrapper() {
     syncedKeys: [ 'page', 'pageSize', 'sortField', 'sortDirection', 'status', 'customerId', 'movement', 'dateFrom', 'dateTo' ]
   });
 
-  // Reset loading state after initial render
-  // useEffect(() => {
-  //   const timer = setTimeout(() => setIsPageLoading(false), 0)
-  //   return () => clearTimeout(timer)
-  // }, [])
-
-  const {isLoading} = useOrdersQuery()
 
   return (
     <div className="px-4 h-[100vh] flex flex-col overflow-hidden ">
