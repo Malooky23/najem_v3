@@ -35,9 +35,10 @@ export default function RootLayout({
                   <Loading />
                 </div>
               }> */}
+              <Suspense >
                 {children}
                 <SpeedInsights />
-              {/* </Suspense> */}
+              </Suspense>
             </div>
             <Toaster />
             <Sonner richColors />

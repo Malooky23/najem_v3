@@ -33,9 +33,11 @@ export default async function ProtectedLayout({
         {/* **CRITICAL: flex-1, overflow-y-auto** */}
           <main className="flex-1 overflow-y-auto bg-gradient-to-tr from-orange-100/50 to-blue-200/50"> 
             <SidebarTrigger className="block sm:hidden fixed"/>
-            {/* <Suspense fallback={<div className="w-full h-full bg-yellow-300" />}> */}
+            {/* <Suspense fallback={<div className="w-full h-full bg-yellow-300 text-center items-center justify-center flex"><h1>(protected layout)</h1></div>}> */}
+          <Suspense >
+
               {children}
-            {/* </Suspense> */}
+            </Suspense>
           </main>
         {/* </SidebarInset> */}
       </SidebarProvider>
