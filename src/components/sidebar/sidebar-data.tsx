@@ -1,27 +1,17 @@
 import {
     ArrowRightLeft,
-    AudioWaveform,
     Beaker,
     BookOpen,
-    Bot,
     Box,
-    Command,
     DollarSign,
-    FlaskConical,
-    Frame,
-    GalleryVerticalEnd,
-    Map,
     MenuSquare,
-    PieChart,
     PlusCircle,
     Settings2,
     Ship,
-    SquareTerminal,
-    User,
     UsersRound,
     Warehouse,
 } from "lucide-react"
-import test from "node:test"
+
 
 
 const warehouse = {
@@ -46,11 +36,11 @@ const warehouse = {
             icon: ArrowRightLeft,
         },
         {
-            title: "Test",
-            url: "/test",
-            icon: FlaskConical,
+            title: "Order Expenses",
+            url: "/warehouse/expenses",
+            icon: DollarSign,
         },
-        
+
     ],
 }
 const shipments = {
@@ -60,35 +50,21 @@ const shipments = {
     isActive: false,
     items: [
         {
-            title: "Orders",
+            title: "Orders-Coming Soon",
             url: "/coming-soon",
             icon: MenuSquare
         },
         {
-            title: "Payments",
+            title: "Payments-Coming Soon",
             url: "/coming-soon",
             icon: DollarSign
         },
-        {
-            title: "Settings",
-            url: "/coming-soon",
-            icon: Settings2,
-        },
         // {
-        //     title: "Orders",
-        //     url: "/shipments/orders",
-        //     icon: MenuSquare
-        // },
-        // {
-        //     title: "Payments",
-        //     url: "/shipments/payments",
-        //     icon: DollarSign
-        // },
-        // {
-        //     title: "Settings",
-        //     url: "/shipments/settings",
+        //     title: "Settings-Coming Soon",
+        //     url: "/coming-soon",
         //     icon: Settings2,
         // },
+
     ],
 }
 const customers = {
@@ -110,7 +86,7 @@ const customers = {
     ],
 }
 
-            
+
 
 export const data = {
     navMain: [
@@ -124,8 +100,8 @@ export const data = {
             icon: UsersRound
         },
         {
-            name: "Experiments",
-            url: "/experiments",
+            name: "Testing",
+            url: "/test",
             icon: Beaker
         }
     ]

@@ -149,11 +149,11 @@ const FormSchema = z.object({
 import { ComboboxForm as ComboboxFormComponent } from "@/components/ui/combobox"
 import { set } from "date-fns"
 import testAction from "./action"
-import CreateItemFormGemini from "./test-item/upgades"
+
 import { CreateCustomerDialog } from "./customers/CreateCustomerForm"
 import Link from "next/link"
 import { DropdownDialogDemo } from "./DropdownDialogDemo"
-import { OrderDetailsContainer } from "../warehouse/orders/components/order-details/OrderDetailsContainer"
+import { OrderDetailsContainer } from "../../warehouse/orders/components/order-details/OrderDetailsContainer"
 
 
 export function ComboboxForm() {
@@ -223,16 +223,14 @@ export function ComboboxForm() {
 
 export default function ExperimentsPage() {
   return (
-    <div className=" bg-red-50/50  gap-4 flex flex-col justify-center h-full items-center ">
+    <div className=" bg-red-50/50  gap-4 flex flex-col justify-center h-[100%] m-4  items-center ">
       <h1 className="text-2xl font-bold mb-4"> Test Page</h1>
       {/* <ComboboxForm /> */}
 
-      <CreateItemFormGemini />
+
 
       <CreateCustomerDialog />
-      <Link href="/orders">
-        <Button>Orders</Button>
-      </Link>
+
       <div className="flex ">
         <div className="flex">
           <h1>Dropdown with Dialog </h1>
