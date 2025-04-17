@@ -24,6 +24,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
+import Link from "next/link"
 
 export function NavProjects({
   projects,
@@ -49,10 +50,10 @@ export function NavProjects({
         {projects.map((item) => (
           <SidebarMenuItem key={item.name} className="">
             <SidebarMenuButton asChild>
-              <a href={item.url} onClick={handleLinkClick}>
+              <Link href={item.url} onClick={handleLinkClick}>
                 <item.icon />
                 <span>{item.name}</span>
-              </a>
+              </Link>
             </SidebarMenuButton>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

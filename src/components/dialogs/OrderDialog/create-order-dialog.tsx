@@ -80,7 +80,7 @@ function CreateOrderDialogComponent({
   }, [])
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+    <Dialog  open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         {children ? (
           // If children is provided, use it as the trigger
@@ -96,7 +96,7 @@ function CreateOrderDialogComponent({
         )}
       </DialogTrigger>
 
-      <DialogContentNoXButton className="max-w-full sm:max-w-[95%] md:max-w-[90%] lg:max-w-[80%] xl:max-w-[1100px] h-[90vh] sm:h-[85vh] p-0 overflow-hidden flex-row">
+      <DialogContentNoXButton  className="max-w-full sm:max-w-[95%] md:max-w-[90%] lg:max-w-[80%] xl:max-w-[1100px] h-[90vh] sm:h-[85vh] p-0 overflow-hidden flex-row">
         <DialogHeader className="px-6 border-b ">
           <DialogTitle className="text-xl font-semibold my-auto">
             {isEditMode

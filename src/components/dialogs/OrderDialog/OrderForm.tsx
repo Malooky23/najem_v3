@@ -84,17 +84,13 @@ const SelectTriggerStatusColors: Record<OrderStatus, string> = {
 
 
 export const OrderForm = ({ onClose, initialData, isEditMode = false }: OrderFormProps) => {
-    const { data: customerList, isLoading: isCustomersLoading, isError: isCustomersError } = useCustomers();
     const { data: itemsList, isLoading: isItemsLoading, isError: isItemsError } = useItemsQuery();
     const queryClient = useQueryClient();
     const isMobile = useIsMobileTEST();
     const { showErrorDialog, ErrorDialogComponent } = useErrorDialog();
     const orderStore = useOrdersStore()
-    // Removed useTransition - formState.isSubmitting will handle this
 
-    const customersWithItems = customerList?.filter(customer =>
-        itemsList?.some(item => item.customerId === customer.customerId)
-    ) ?? [];
+
     const [ hasErrors, setHasErrors ] = useState(false);
 
 
@@ -137,12 +133,6 @@ export const OrderForm = ({ onClose, initialData, isEditMode = false }: OrderFor
         name: "items",
     });
 
-
-
-    const printField = (): Promise<boolean> => {
-        console.log("Form Fields:", fields)
-        return Promise.resolve(true);
-    }
 
     const watchedItems = useWatch({ control: form.control, name: "items" });
     const selectedItemIds = useMemo(() => {
@@ -234,7 +224,7 @@ export const OrderForm = ({ onClose, initialData, isEditMode = false }: OrderFor
 
 
     const LoadingOverlay = () => {
-        if (isCustomersError || isItemsError) { // Combine error checks
+        if (isItemsError) { // Combine error checks
             return (
                 <div className="absolute p-12 inset-0 bg-gray-100/70 backdrop-blur-[1px] z-40 flex justify-center items-center rounded-lg">
                     <div className="p-12  rounded-md border border-red-200 bg-red-50 text-red-700 flex-col justify-center items-center">
@@ -244,7 +234,7 @@ export const OrderForm = ({ onClose, initialData, isEditMode = false }: OrderFor
                 </div>
             );
         }
-        if (isCustomersLoading || isItemsLoading) {
+        if (isItemsLoading) {
             return (
                 <div className="absolute inset-0 bg-gray-100/50 backdrop-blur-[1px] z-40 flex justify-center items-center rounded-lg">
                     <LoadingSpinner />
@@ -324,7 +314,7 @@ export const OrderForm = ({ onClose, initialData, isEditMode = false }: OrderFor
                                                     <FormLabel className="font-medium text-gray-700">Customer {formState.errors.customerId?.message}</FormLabel>
                                                     <FormControl>
                                                         <CustomerSelector
-                                                            customersInput={customersWithItems}
+                                                            // customersInput={customersWithItems}
                                                             value={field.value}
                                                             isRequired={true} // Schema handles validation message
                                                             isModal={true}

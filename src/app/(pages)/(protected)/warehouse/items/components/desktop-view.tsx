@@ -26,7 +26,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import type { ItemSchemaType } from "@/types/items"
+import type { FilterState, ItemSchemaType } from "@/types/items"
 import { FilterControls } from "./filter-controls"
 import { ActiveFilters } from "./active-filters"
 
@@ -40,7 +40,7 @@ import {
 } from "@/components/ui/resizable"
 import CreateItemForm from "@/components/dialogs/ItemDialog/CreateItem"
 import { Skeleton } from "@/components/ui/skeleton"
-import { FilterState } from "../page"
+
 
 interface DesktopViewProps {
   table: Table<ItemSchemaType>

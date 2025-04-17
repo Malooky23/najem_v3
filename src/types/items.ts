@@ -7,7 +7,11 @@ import { is } from "drizzle-orm";
 export const emptyStringToNull = z.string().optional().nullable().nullish().transform((val) => val === '' ? null : val);
 
 
-
+export type FilterState = {
+  types: string[]
+  customers: string[]
+  selectedItems: string[]
+}
 
 export const itemStock = z.object({
   itemId: z.string(),

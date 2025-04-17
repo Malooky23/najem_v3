@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { StatusDropdown } from "./StatusDropdown";
-import { CreateOrderDialog } from "../../../../../../../components/dialogs/OrderDialog/create-order-dialog";
+import { CreateOrderDialog } from "@/components/dialogs/OrderDialog/create-order-dialog"
 import { useSelectedOrderData } from "@/stores/orders-store";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";

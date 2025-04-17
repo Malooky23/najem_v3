@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "next dev --port 3333 --turbopack",
-    "build": "next build",
+    "build": "next build --turbopack",
     "start": "next start ",
-    "go": "next build && next start",
+    "go": "next build --turbopack && next start",
     "studio": "npx drizzle-kit studio",
     "push": "npx drizzle-kit push",
     "lint": "next lint",

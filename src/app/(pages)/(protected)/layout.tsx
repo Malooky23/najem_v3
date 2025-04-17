@@ -5,6 +5,7 @@ import Loading from "@/components/ui/loading";
 import { AppSidebar } from "@/components/sidebar/app-sidebar";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { cookies } from "next/headers";
+import { Providers } from "@/lib/providers";
 
 
 
@@ -24,23 +25,26 @@ export default async function ProtectedLayout({
 
   return (
     <div className="flex h-full w-full overflow-hidden"> {/* **CRITICAL: flex, h-full, w-full, overflow-hidden** */}
+
+
       <SidebarProvider defaultOpen={defaultOpen}>
         {/* <AppSidebar variant="inset" session={session} /> */}
         {/* <AppSidebar variant="floating" session={session} /> */}
-        <AppSidebar variant="sidebar" session={session} className=""/>
+        <AppSidebar variant="sidebar" session={session} className="" />
         {/* <SidebarInset> */}
-          {/* <Header/> */}
+        {/* <Header/> */}
         {/* **CRITICAL: flex-1, overflow-y-auto** */}
-          <main className="flex-1 overflow-y-auto bg-gradient-to-tr from-orange-100/50 to-blue-200/50"> 
-            <SidebarTrigger className="block sm:hidden fixed"/>
-            {/* <Suspense fallback={<div className="w-full h-full bg-yellow-300 text-center items-center justify-center flex"><h1>(protected layout)</h1></div>}> */}
+        <main className="flex-1 overflow-y-auto bg-gradient-to-tr from-orange-100/50 to-blue-200/50">
+          <SidebarTrigger className="block sm:hidden fixed" />
+          {/* <Suspense fallback={<div className="w-full h-full bg-yellow-300 text-center items-center justify-center flex"><h1>(protected layout)</h1></div>}> */}
           <Suspense >
-
-              {children}
-            </Suspense>
-          </main>
+            {children}
+          </Suspense>
+        </main>
         {/* </SidebarInset> */}
       </SidebarProvider>
+
+
     </div>
   );
 }

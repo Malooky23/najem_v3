@@ -3,8 +3,9 @@
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { X } from "lucide-react"
-import type { FilterState } from "../page"
-import { ItemSchemaType } from "@/types/items"
+
+import { FilterState, ItemSchemaType } from "@/types/items"
+
 
 interface ActiveFiltersProps {
   globalFilter: string

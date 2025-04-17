@@ -6,7 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
-import type { FilterState } from "./items-page-wrapper"
+import { FilterState } from "../page"
 import type { ItemSchemaType } from "@/types/items"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useState } from "react"

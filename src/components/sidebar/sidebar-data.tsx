@@ -7,6 +7,7 @@ import {
     Box,
     Command,
     DollarSign,
+    FlaskConical,
     Frame,
     GalleryVerticalEnd,
     Map,
@@ -16,6 +17,7 @@ import {
     Settings2,
     Ship,
     SquareTerminal,
+    User,
     UsersRound,
     Warehouse,
 } from "lucide-react"
@@ -43,6 +45,12 @@ const warehouse = {
             url: "/warehouse/tx",
             icon: ArrowRightLeft,
         },
+        {
+            title: "Test",
+            url: "/test",
+            icon: FlaskConical,
+        },
+        
     ],
 }
 const shipments = {

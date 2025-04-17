@@ -5,7 +5,7 @@ import type React from "react"
 import type { Table } from "@tanstack/react-table"
 import { useRef, useState, useEffect } from "react"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import type { ItemSchemaType } from "@/types/items"
+import type { FilterState, ItemSchemaType } from "@/types/items"
 import { MobileHeader } from "./mobile/mobile-header"
 import { MobileTabs } from "./mobile/mobile-tabs"
 import { MobileItemCard } from "./mobile/mobile-item-card"
@@ -19,7 +19,7 @@ import { ArrowDown, Filter, X } from "lucide-react"
 import { Item } from "@radix-ui/react-radio-group"
 import { DetailsPanel } from "./DetailsPanel"
 import { useItemsStore } from "@/stores/items-store"
-import { FilterState } from "../page"
+
 
 interface MobileViewProps {
   table: Table<ItemSchemaType>

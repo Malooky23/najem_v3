@@ -14,8 +14,8 @@ import {
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
-import type { FilterState } from "../items-page-wrapper"
-import type { ItemSchemaType } from "@/types/items"
+
+import type { FilterState, ItemSchemaType } from "@/types/items"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useState } from "react"
 import { Input } from "@/components/ui/input"

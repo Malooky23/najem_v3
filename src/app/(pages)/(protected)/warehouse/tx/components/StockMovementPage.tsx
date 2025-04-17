@@ -8,17 +8,19 @@ import { MovementsTable } from "./MovementsTable"
 import { DetailsPanel } from "./details/DetailsPanel"
 import { useUrlSync } from "@/hooks/useUrlSync"
 import { DropDownMenuButton } from "@/components/drop-down-menu-button"
+import { OrderDetailsContainer } from "../../orders/components/order-details/OrderDetailsContainer"
+import { useOrdersStore } from "@/stores/orders-store"
 
 interface PageHeaderProps {
   isLoading: boolean;
 }
 
-const createOptions = [
-  { id: "1", label: "Create" },
-  { id: "2", label: "Import" },
-  { id: "3", label: "Export" },
-  { id: "4", label: "Print" },
-];
+// const createOptions = [
+//   { id: "1", label: "Create" },
+//   { id: "2", label: "Import" },
+//   { id: "3", label: "Export" },
+//   { id: "4", label: "Print" },
+// ];
 
 
 function PageHeader({ isLoading }: PageHeaderProps) {
@@ -27,12 +29,12 @@ function PageHeader({ isLoading }: PageHeaderProps) {
       <h1 className="text-2xl font-bold text-gray-900 text-nowrap pr-2">
         Item Movements
       </h1>
-      <div className="">
+      <div className="pl-16">
         <SearchPanel isLoading={isLoading} />
       </div>
-      <div className="pr-2">
+      {/* <div className="pr-2">
         <DropDownMenuButton MENU_ITEMS={createOptions} />
-      </div>
+      </div> */}
     </div>
   );
 }
@@ -84,11 +86,11 @@ export function StockMovementPage() {
     const [temp, setTemp] = useState(false);
 
   // Reset loading state after initial render
-  useEffect(() => {
-    const timer = setTimeout(() => setIsPageLoading(false), 0)
-      setTemp(t => !t); // force re-render
-    return () => clearTimeout(timer)
-  }, [])
+  // useEffect(() => {
+  //   const timer = setTimeout(() => setIsPageLoading(false), 0)
+  //     setTemp(t => !t); // force re-render
+  //   return () => clearTimeout(timer)
+  // }, [])
 
   return (
     // <div className="px-4 h-full flex flex-col overflow-hidden"> {/* Add overflow-hidden */}

@@ -18,7 +18,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { useIsMobileTEST } from "@/hooks/use-media-query";
-import { OrderItemsTable } from "@/app/(pages)/(protected)/warehouse/orders/components/order-details/OrderItemsTable";
+// import { OrderItemsTable } from "@/app/(pages)/(protected)/(test)/warehouse/orders/components/order-details/OrderItemsTable";
 import { useSelectedOrderData } from "@/stores/orders-store";
 import { OrderInfoCard } from "./OrderInfoCard";
 import { createOrderExpenseSchema, createOrderExpenseSchemaType, selectExpenseSchemaType } from "@/types/expense";
@@ -32,6 +32,7 @@ import { useExpenseItems } from "@/hooks/data/useExpenses";
 import { Spinner } from "@heroui/spinner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { OrderItemsTable } from "@/app/(pages)/(protected)/warehouse/orders/components/order-details/OrderItemsTable";
 
 // --- Types ---
 type CreateOrderExpenseItem = z.infer<typeof createOrderExpenseSchema.element>;

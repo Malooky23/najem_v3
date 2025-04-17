@@ -84,7 +84,7 @@ export function useOrdersQuery({
     staleTime: 10 * 60 * 1000, // 10 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
     placeholderData: keepPreviousData, // Keep previous data while fetching new page/filters
-    refetchOnWindowFocus: true, // Optional: Adjust as needed
+    refetchOnWindowFocus: false, // Optional: Adjust as needed
   });
 }
 

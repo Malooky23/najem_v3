@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { format } from "date-fns"
-import { ITEM_TYPES, ItemSchemaType } from "@/types/items"
+import {  ItemSchemaType } from "@/types/items"
 import {
   Package2,
   Barcode,
