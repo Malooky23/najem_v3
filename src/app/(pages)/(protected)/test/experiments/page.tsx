@@ -153,7 +153,7 @@ import testAction from "./action"
 import { CreateCustomerDialog } from "./customers/CreateCustomerForm"
 import Link from "next/link"
 import { DropdownDialogDemo } from "./DropdownDialogDemo"
-import { OrderDetailsContainer } from "../../warehouse/orders/components/order-details/OrderDetailsContainer"
+import { OrderDetailsContainer } from "@/components/order-details/OrderDetailsContainer"
 
 
 export function ComboboxForm() {
