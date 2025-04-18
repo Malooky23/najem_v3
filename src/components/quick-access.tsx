@@ -1,3 +1,4 @@
+'use client'
 import React from "react" // Import React if needed
 import {
     UserPlus,
