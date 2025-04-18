@@ -1,4 +1,4 @@
-import { FlaskConical, HardHat, Home, MoveLeft, Pen, PenBox, Table } from "lucide-react";
+import { FlaskConical, Home, MoveLeft, Table } from "lucide-react";
 import Link from "next/link";
 
 
@@ -13,7 +13,6 @@ export default async function ProtectedLayout({
                 <Link className="bg-slate-300  flex p-2 w-[200px]" href='/test/'><Home /> <FlaskConical />Test Page</Link>
                 <Link className="bg-slate-300  flex p-2 w-[200px]" href='/test/experiments'><FlaskConical />Experiments Page</Link>
                 <Link className="bg-slate-300  flex p-2 w-[200px]" href='/test/table-page'><Table />Test Table Page</Link>
-                <Link className="bg-slate-300  flex p-2 w-[200px]" href='/test/expense-items'><HardHat />expense-items</Link>
             </div>
             <div className="w-full h-full">
 

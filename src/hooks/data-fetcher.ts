@@ -11,7 +11,7 @@ import { getStockMovements } from "@/server/actions/getStockMovements";
 import { useMemo, useCallback, useEffect, useState, useRef } from "react";
 import { useOrdersStore } from "@/stores/orders-store";
 import { z } from "zod";
-import { fetchCustomers } from "@/server/queries/customers-queries";
+import { fetchCustomers } from "@/server/DB-Queries/customers-queries";
 
 
 export interface OrdersQueryParams {

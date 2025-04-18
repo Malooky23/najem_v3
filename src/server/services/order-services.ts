@@ -4,7 +4,7 @@ import { createOrderExpenseSchemaType, orderExpenseSchemaType } from '@/types/ex
 import { EnrichedOrderSchemaType } from '@/types/orders';
 import { withAuth } from './auth-check';
 import { User } from 'next-auth';
-import { createOrderExpenseInDb } from '../queries/orders-queries';
+import { createOrderExpenseInDb } from '../DB-Queries/orders-queries';
 
 
 

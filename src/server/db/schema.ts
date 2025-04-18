@@ -20,7 +20,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { sql, eq } from "drizzle-orm";
 import { relations } from 'drizzle-orm';
-import { z } from 'zod'
+import { number, z } from 'zod'
 import { createInsertSchema } from "drizzle-zod";
 
 
@@ -438,11 +438,17 @@ export const expenseItems = pgTable("expense_items", {
 
 })
 
+export const orderExpenseStatusTypes = pgEnum("order_expense_status_types",[
+  "PENDING", "DONE", "CANCELLED"
+])
+export const orderExpenseStatusTypesSchema = z.enum(orderExpenseStatusTypes.enumValues)
+
 export const orderExpenses = pgTable("order_expenses", {
   orderExpenseId: uuid("order_expense_id").defaultRandom().primaryKey(),
   orderId: uuid("order_id").notNull().references(() => orders.orderId),
   expenseItemId: uuid("expense_item_id").notNull().references(() => expenseItems.expenseItemId),
   expenseItemQuantity: integer("expense_item_quantity").notNull(),
+  status: orderExpenseStatusTypes("status").default("PENDING"),
   notes: text(),
   createdBy: uuid("created_by").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
@@ -719,3 +725,33 @@ export const stockMovementsView = pgMaterializedView("stock_movements_view", {
   `);
 
 export type StockMovementsView = typeof stockMovementsView.$inferSelect;
+
+
+export const enrichedOrderExpenseView = pgView("enriched_order_expense_view") // Name the view in the database
+  .as((qb) => // Define the query builder function
+    qb
+      .select({ // Select the columns for the view
+        // Columns from orderExpenses (matching orderExpenseSchema)
+        orderExpenseId: orderExpenses.orderExpenseId,
+        orderId: orderExpenses.orderId,
+        expenseItemId: orderExpenses.expenseItemId,
+        expenseItemQuantity: orderExpenses.expenseItemQuantity,
+        notes: orderExpenses.notes,
+        status: orderExpenses.status,
+        createdBy: orderExpenses.createdBy,
+        createdAt: orderExpenses.createdAt,
+        updatedAt: orderExpenses.updatedAt,
+
+        // Enriched columns
+        orderNumber: orders.orderNumber,
+        customerId: orders.customerId,
+        customerName: customers.displayName, // Drizzle might automatically handle aliasing here if the target name matches the original name, but explicit is safer if different. Let's stick with the direct name first. If it needs aliasing: customers.displayName.as('customerName')
+        expenseItemName: expenseItems.expenseName,
+        expenseItemCategory: expenseItems.expenseCategory,
+        expenseItemPrice: expenseItems.expensePrice
+      })
+      .from(orderExpenses)
+      .innerJoin(expenseItems, eq(orderExpenses.expenseItemId, expenseItems.expenseItemId)) // Join orderExpenses -> orders
+      .innerJoin(orders, eq(orderExpenses.orderId, orders.orderId)) // Join orderExpenses -> orders
+      .innerJoin(customers, eq(orders.customerId, customers.customerId)) // Join orders -> customers
+  )

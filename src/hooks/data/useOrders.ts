@@ -12,7 +12,7 @@ import { Pagination, ApiResponse } from "@/types/common";
 import { useMutation, useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 // TODO: Replace these direct imports with service layer functions (e.g., from '@/server/services/orders-services')
 //       similar to how useItems uses NEW-items-services.
-import { fetchOrders, fetchOrderById, createOrderInDb, updateOrderInDb } from "@/server/queries/orders-queries";
+import { fetchOrders, fetchOrderById, createOrderInDb, updateOrderInDb } from "@/server/DB-Queries/orders-queries";
 import { createOrderExpenseSchemaType, orderExpenseSchemaType } from "@/types/expense";
 import { createOrderExpense } from "@/server/services/order-services";
 
@@ -148,7 +148,12 @@ export function useCreateOrderExpense(){
   return useMutationFactory<createOrderExpenseSchemaType, orderExpenseSchemaType>(
     createOrderExpense,
       {
-        invalidateQueries: (data) => [ [ 'orders', [ 'order', data[0].orderId ] ]]
+        invalidateQueries: (data) => [ 
+          [ 'orders', [ 'order', data[0].orderId ] ],
+          ['orderExpenses']
+      
+      ],
+
       }
     );
   }

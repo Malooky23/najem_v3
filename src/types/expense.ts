@@ -1,5 +1,34 @@
-import { expenseCategoryTypeSchema} from "@/server/db/schema";
+import { expenseCategoryTypeSchema, orderExpenseStatusTypes, orderExpenseStatusTypesSchema } from "@/server/db/schema";
 import { z } from "zod";
+
+
+export interface ExpenseFilters {
+    orderNumber?: string
+    customerId?: string;
+    dateRange?: {
+        from: Date;
+        to: Date;
+    };
+    expenseItemName?: string
+    expenseItemCategory?: string
+    search?: string;
+}
+
+export type ExpenseSortFields = 'orderNumber' | 'createdAt' | 'customerName' | 'status';
+
+export interface ExpenseSort {
+    field: ExpenseSortFields;
+    direction: 'asc' | 'desc';
+}
+
+export interface UseExpensesParams {
+    page?: number;
+    pageSize?: number;
+    filters?: ExpenseFilters;
+    sort?: ExpenseSort;
+
+}
+
 
 // LIST OF AVAILABLE EXPENSES
 export const expenseItemsSchema = z.object({
@@ -26,6 +55,7 @@ export const orderExpenseSchema = z.object({
     orderId: z.string().uuid(),
     expenseItemId: z.string().uuid(),
     expenseItemQuantity: z.number(),
+    status: orderExpenseStatusTypesSchema,
     notes: z.string().optional().nullish(),
     createdBy: z.string().uuid(),
     createdAt: z.coerce.date(),
@@ -33,13 +63,22 @@ export const orderExpenseSchema = z.object({
 })
 export type orderExpenseSchemaType = z.infer<typeof orderExpenseSchema>
 
+export const EnrichedOrderExpenseSchema = orderExpenseSchema.extend({
+    expenseItemName: z.string(),
+    expenseItemPrice: z.coerce.number().nonnegative(),
+    expenseItemCategory: expenseCategoryTypeSchema.nullable(),
+    orderNumber: z.number().optional(),
+    customerId: z.string().uuid().optional(),
+    customerName: z.string().optional(),
+
+})
+export type EnrichedOrderExpenseSchemaType = z.infer<typeof EnrichedOrderExpenseSchema>
+
 export const orderExpenseWithName = orderExpenseSchema.extend({
     expenseName: z.string(),
     expensePrice: z.number().nonnegative(),
 })
 export type orderExpenseWithNameType = z.infer<typeof orderExpenseWithName>
-
-
 
 export const createOrderExpenseSchema = z.array(orderExpenseSchema.omit({
     // orderExpenseId: true,

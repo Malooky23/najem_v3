@@ -263,6 +263,7 @@ export async function fetchOrderById(orderId: string): Promise<ApiResponse<Enric
                             'expenseItemId', ${expenseItems}.expense_item_id,
                             'expenseItemQuantity', ${orderExpenses}.expense_item_quantity,
                             'notes', ${orderExpenses}.notes,
+                            'status', ${orderExpenses}.status,
                             'createdBy', ${orderExpenses}.created_by,
                             'createdAt', ${orderExpenses}.created_at,
                             'updatedAt', ${orderExpenses}.updated_at,
@@ -330,6 +331,7 @@ export async function fetchOrderById(orderId: string): Promise<ApiResponse<Enric
                     expenseItemId: expense.expenseItemId,
                     expenseItemQuantity: Number(expense.expenseItemQuantity) || 0,
                     notes: expense.notes || null,
+                    status: expense.status,
                     createdBy: expense.createdBy || null, // Assuming createdBy can be null
                     createdAt: expense.createdAt ? new Date(expense.createdAt.toString()) : new Date(),
                     updatedAt: expense.updatedAt ? new Date(expense.updatedAt.toString()) : null,

@@ -18,7 +18,6 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { useIsMobileTEST } from "@/hooks/use-media-query";
-// import { OrderItemsTable } from "@/app/(pages)/(protected)/(test)/warehouse/orders/components/order-details/OrderItemsTable";
 import { useSelectedOrderData } from "@/stores/orders-store";
 import { OrderInfoCard } from "./OrderInfoCard";
 import { createOrderExpenseSchema, createOrderExpenseSchemaType, selectExpenseSchemaType } from "@/types/expense";

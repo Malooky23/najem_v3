@@ -1,7 +1,7 @@
 'use server'
 
 import { auth } from "@/lib/auth/auth"
-import { createItemInDb, fetchItems } from "@/server/queries/items-queries";
+import { createItemInDb, fetchItems } from "@/server/DB-Queries/items-queries";
 import { CreateItemsSchemaType, ItemResponse, ItemSchemaType } from "@/types/items";
 import { withAuth } from "./auth-check";
 import { User } from "next-auth";

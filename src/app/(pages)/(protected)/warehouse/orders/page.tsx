@@ -11,7 +11,6 @@ import { OrderDetailsContainer } from "./components/order-details/OrderDetailsCo
 import { useUrlSync } from "@/hooks/useUrlSync"
 import { QuickAccess } from "@/components/quick-access"
 import { CreateOrderDialog } from "@/components/dialogs/OrderDialog/create-order-dialog"
-import { useOrdersQuery } from "@/hooks/data/useOrders"
 
 
 interface PageHeaderProps {
@@ -85,6 +84,7 @@ export default function OrdersPageWrapper() {
             isMobile={isMobile}
             // onLoadingChange={handleLoadingChange}
           />
+
         </ContentLayout>
 
 

@@ -9,6 +9,7 @@ import ExampleURLParams from "./ExampleURLParams";
 import Customers from "./Customers";
 import Link from "next/link";
 import { FlaskConical } from "lucide-react";
+import { QuickAccess } from "@/components/quick-access";
 
 export default async function TestPage() {
     // const { data: itemsList, isLoading: isItemsLoading, isError: isItemsError } = useItemsQuery();
@@ -17,6 +18,7 @@ export default async function TestPage() {
 
             <div className="p-4 flex-col">
                 <h1 className="text-center text-lg font-bold">TEST PAGE</h1>
+                <QuickAccess/>
                 <div className="grid grid-cols-6">
 
                     <Suspense fallback={<div>
