@@ -46,7 +46,7 @@ export type selectExpenseSchemaType = z.infer<typeof expenseItemsSchema>
 export const createExpenseItemsSchema = z.array(expenseItemsSchema.omit({
     expenseItemId: true,
     createdAt: true,
-    updatedAt: true
+    updatedAt: true,
 }))
 
 // EXPENSES RELATING TO ORDERS
@@ -83,7 +83,8 @@ export type orderExpenseWithNameType = z.infer<typeof orderExpenseWithName>
 export const createOrderExpenseSchema = z.array(orderExpenseSchema.omit({
     // orderExpenseId: true,
     createdAt: true,
-    updatedAt: true
+    updatedAt: true,
+    status:true
 }))
 export type createOrderExpenseSchemaType = z.infer<typeof createOrderExpenseSchema>
 
