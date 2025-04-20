@@ -31,7 +31,7 @@ import { useExpenseItems } from "@/hooks/data/useExpenses";
 import { Spinner } from "@heroui/spinner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { OrderItemsTable } from "@/app/(pages)/(protected)/warehouse/orders/components/_order-details/OrderItemsTable";
+import { OrderItemsTable } from "@/components/order-details/OrderItemsTable";
 
 // --- Types ---
 type CreateOrderExpenseItem = z.infer<typeof createOrderExpenseSchema.element>;
