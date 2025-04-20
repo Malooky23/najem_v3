@@ -15,33 +15,45 @@ export function useExpenseItems() {
     });
 }
 
-
-
-
 export function useOrderExpenses({
     page = 1,
-    pageSize = 20, // Default page size
+    pageSize = 20,
     filters = {},
-    sort = { field: 'createdAt', direction: 'desc' }, // Default sort
+    sort = { field: 'createdAt', direction: 'desc' },
+}: UseExpensesParams = {}) { // Accept parameters object
 
-}: UseExpensesParams = {}) {
+    // Construct a stable query key using primitive values from the destructured params
+    // IMPORTANT: Ensure this uses the debounced search value passed in via filters.search
+    const queryKey = [
+        'orderExpenses',
+        {
+            page,
+            pageSize,
+            // Destructure filters to ensure key stability
+            search: filters?.search, // This should be the debounced value from the caller
+            status: filters?.status,
+            dateFrom: filters?.dateRange?.from?.toISOString(),
+            dateTo: filters?.dateRange?.to?.toISOString(),
+            // Add other specific filter values here if they exist
+            // Destructure sort
+            sortField: sort?.field,
+            sortDirection: sort?.direction,
+        }
+    ];
 
-    const queryKey = [ 'orderExpenses', page, pageSize, filters, sort ];
     return useQuery({
-        queryKey: queryKey,
-        queryFn: async () =>  {
+        queryKey: queryKey, // Use the stable key
+        queryFn: async () => {
+            // Pass the original params object to the actual fetch function
             const response = await getOrderExpenses(page, pageSize, filters, sort)
-            if(!response.success){
-                throw new Error(response.error?? "An Error occurred while fetching expenses. E483")
+            if (!response.success) {
+                throw new Error(response.error ?? "An Error occurred while fetching expenses. E483")
             }
             return response
         },
-        staleTime: 10 * 60 * 1000, // 10 minutes
-        gcTime: 10 * 60 * 1000, // 10 minutes
-        placeholderData: keepPreviousData, // Keep previous data while fetching new page/filters
-        refetchOnWindowFocus: false, // Optional: Adjust as needed
+        staleTime: 10 * 60 * 1000,
+        gcTime: 10 * 60 * 1000,
+        placeholderData: keepPreviousData,
+        refetchOnWindowFocus: false,
     });
 }
-
-
-

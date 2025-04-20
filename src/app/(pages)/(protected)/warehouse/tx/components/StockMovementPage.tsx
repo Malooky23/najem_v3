@@ -1,25 +1,17 @@
 "use client"
-import { useEffect, useState, useCallback, memo } from "react"
-import { useIsMobileTEST, useMediaQuery } from "@/hooks/use-media-query"
+import { useState, useCallback, memo } from "react"
+import { useMediaQuery } from "@/hooks/use-media-query"
 import { cn } from "@/lib/utils"
 import { useStockMovementStore } from "@/stores/stock-movement-store"
 import { SearchPanel } from "./SearchPanel"
 import { MovementsTable } from "./MovementsTable"
 import { DetailsPanel } from "./details/DetailsPanel"
 import { useUrlSync } from "@/hooks/useUrlSync"
-import { DropDownMenuButton } from "@/components/drop-down-menu-button"
-import { useOrdersStore } from "@/stores/orders-store"
 
 interface PageHeaderProps {
   isLoading: boolean;
 }
 
-// const createOptions = [
-//   { id: "1", label: "Create" },
-//   { id: "2", label: "Import" },
-//   { id: "3", label: "Export" },
-//   { id: "4", label: "Print" },
-// ];
 
 
 function PageHeader({ isLoading }: PageHeaderProps) {
@@ -63,7 +55,7 @@ export function StockMovementPage() {
 
 
   // Loading state with debounce to prevent flashing
-  const [isPageLoading, setIsPageLoading] = useState(true)
+  const [ isPageLoading, setIsPageLoading ] = useState(true)
   const handleLoadingChange = useCallback((loading: boolean) => {
     // Small delay to prevent loading flash
     if (loading) {
@@ -78,9 +70,9 @@ export function StockMovementPage() {
   const store = useStockMovementStore()
 
   // Setup URL synchronization
-    useUrlSync(useStockMovementStore, {
-        syncedKeys: ['page', 'pageSize', 'sortField', 'sortDirection', 'search', 'movement', 'itemName', 'customerDisplayName', 'dateFrom', 'dateTo']
-    });
+  useUrlSync(useStockMovementStore, {
+    syncedKeys: [ 'page', 'pageSize', 'sortField', 'sortDirection', 'search', 'movement', 'itemName', 'customerDisplayName', 'dateFrom', 'dateTo' ]
+  });
 
   return (
     // <div className="px-4 h-full flex flex-col overflow-hidden"> {/* Add overflow-hidden */}
