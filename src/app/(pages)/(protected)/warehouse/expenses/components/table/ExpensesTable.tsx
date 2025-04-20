@@ -1,17 +1,15 @@
-// src/components/my-orders-page.tsx
+// src/app/(pages)/(protected)/warehouse/expenses/components/table/ExpensesTable.tsx
 'use client';
 import React, { useState, useEffect, useMemo } from 'react';
-import { useSearchParams } from 'next/navigation'; // Keep for initial read
-import { useQueryClient, useQuery } from '@tanstack/react-query';
-import { ColumnDef, PaginationState, SortingState } from '@tanstack/react-table';
-import { useOrdersQuery } from '@/hooks/data/useOrders';
-import { DataTable } from '@/components/ui/data-table';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
+import { PaginationState, SortingState } from '@tanstack/react-table';
+import { DataTable } from '@/components/ui/data-table1';
 import { expenseColumns } from './columns';
-import { EnrichedOrderExpenseSchemaType, ExpenseFilters, ExpenseSort, ExpenseSortFields } from '@/types/expense';
+import { EnrichedOrderExpenseSchemaType, ExpenseFilterFields, ExpenseFilters, ExpenseSort, ExpenseSortFields } from '@/types/expense';
 import { useOrderExpenses } from '@/hooks/data/useExpenses';
-import { Input } from '@/components/ui/input';
-import { useDebounce } from '@/hooks/useDebounce'; // Assuming you have a debounce hook
-import { Router } from 'lucide-react';
+import { useDebounce } from '@/hooks/useDebounce';
+import { orderExpenseStatusTypesSchema } from '@/server/db/schema';
 
 // --- URL Parameter Names (Constants) ---
 const PAGE_PARAM = 'page';
@@ -19,24 +17,24 @@ const PAGE_SIZE_PARAM = 'pageSize';
 const SORT_FIELD_PARAM = 'sortField';
 const SORT_DIR_PARAM = 'sortDirection';
 const SEARCH_PARAM = 'search';
-// Add other filter params if needed
+const STATUS_PARAM = 'status';
+const DATE_FROM_PARAM = 'dateFrom';
+const DATE_TO_PARAM = 'dateTo';
 
 // --- Helper Functions ---
 const safeParseInt = (val: string | null | undefined, defaultVal: number): number => {
     if (val === null || val === undefined) return defaultVal;
     const parsed = parseInt(val, 10);
-    return isNaN(parsed) || parsed < 1 ? defaultVal : parsed; // Ensure page >= 1
+    return isNaN(parsed) || parsed < 1 ? defaultVal : parsed;
 };
 
-// Helper to parse sorting param
 const parseSortingParams = (
     fieldParam: string | null,
-    dirParam: string | null | undefined // Can be null or undefined
+    dirParam: string | null | undefined
 ): SortingState => {
     if (!fieldParam) {
-        return []; // No sort field specified
+        return [];
     }
-    // Default direction is descending if field exists but direction doesn't
     const isDesc = dirParam !== 'asc';
     return [ { id: fieldParam, desc: isDesc } ];
 };
@@ -45,145 +43,223 @@ const parseSortingParams = (
 export function ExpensesTable() {
     const searchParams = useSearchParams();
     const queryClient = useQueryClient();
-    // Define URL parameter names (could also be props if needed elsewhere)
-    const pageParamName = 'page';
-    const pageSizeParamName = 'pageSize';
-    const sortFieldParamName = 'sortField'; // New name
-    const sortDirParamName = 'sortDirection'; // New name
+    const router = useRouter();
+    const pathname = usePathname();
 
-    // === Local State ===
-    // Initialize state ONCE from URL
+    // Define URL parameter names (consistent with constants)
+    const pageParamName = PAGE_PARAM;
+    const pageSizeParamName = PAGE_SIZE_PARAM;
+    const sortFieldParamName = SORT_FIELD_PARAM;
+    const sortDirParamName = SORT_DIR_PARAM;
+    const searchParamName = SEARCH_PARAM;
+
+    // === State ===
+    // Initialize state ONCE from URL parameters
+
+    // --- Pagination State ---
     const [ pagination, setPagination ] = useState<PaginationState>(() => {
         const page = safeParseInt(searchParams.get(pageParamName), 1);
         const pageSize = safeParseInt(searchParams.get(pageSizeParamName), 10);
         return { pageIndex: page - 1, pageSize };
     });
 
+    // --- Sorting State ---
     const [ sorting, setSorting ] = useState<SortingState>(() =>
-        // Use the updated parsing helper
         parseSortingParams(
             searchParams.get(sortFieldParamName),
             searchParams.get(sortDirParamName)
         )
     );
 
-    // Add local state for filters/search if applicable
-    const [ filters, setFilters ] = useState({});
-    const [ search, setSearch ] = useState(searchParams.get('search') || '');
-
-    useEffect(()=>{
-
-        setSearchInput(searchParams.get('search') || '')
-
-    }, [ searchParams.get('search') ])
+    // --- Search State (for debouncing) ---
+    const [ searchInput, setSearchInput ] = useState(searchParams.get(searchParamName) || '');
+    const debouncedSearch = useDebounce(searchInput, 300);
 
 
+    // --- Effect to Sync Pagination State FROM URL ---
+    useEffect(() => {
+        const page = safeParseInt(searchParams.get(pageParamName), 1);
+        const pageSize = safeParseInt(searchParams.get(pageSizeParamName), 10);
+        const newPageIndex = page - 1;
 
-    // const queryParams = useMemo(() => {
-    //     let sortString: ExpenseSort
-    //     if (sorting.length > 0) {
-    //         // API might expect a different format, adjust if necessary
-    //         // For now, let's create a format consistent with our internal state
-    //         // sortString = `sort${sorting[ 0 ].id}:${sorting[ 0 ].desc ? 'desc' : 'asc'}`;
-    //         sortString = {
-    //             field: sorting[ 0 ].id as ExpenseSortFields,
-    //             direction: sorting[ 0 ].desc ? 'desc' : 'asc'
-    //         }
+        // *** CRITICAL: Check if state actually needs updating ***
+        setPagination(currentPagination => {
+            if (currentPagination.pageIndex !== newPageIndex || currentPagination.pageSize !== pageSize) {
+                console.log("Syncing Pagination FROM URL:", { newPageIndex, pageSize }); // Debug log
+                return { pageIndex: newPageIndex, pageSize };
+            }
+            // If no change, return the existing state object to prevent re-render trigger
+            return currentPagination;
+        });
+    }, [ searchParams, pageParamName, pageSizeParamName ]); // Depend only on URL params
 
-    //     }
-    //     return {
-    //         page: pagination.pageIndex + 1,
-    //         pageSize: pagination.pageSize,
-    //         sort: sortString,
-    //         filters: { "search": search }
-    //     };
-    // }, [ pagination, sorting, filters, search ]);
+    // --- Effect to Sync Sorting State FROM URL ---
+    useEffect(() => {
+        const newSorting = parseSortingParams(
+            searchParams.get(sortFieldParamName),
+            searchParams.get(sortDirParamName)
+        );
 
+        // *** CRITICAL: Check if state actually needs updating (deep compare needed for arrays/objects) ***
+        setSorting(currentSorting => {
+            // Simple JSON compare works for this structure, but consider a deep-equal library for complex states
+            if (JSON.stringify(currentSorting) !== JSON.stringify(newSorting)) {
+                console.log("Syncing Sorting FROM URL:", newSorting); // Debug log
+                return newSorting;
+            }
+            // If no change, return the existing state object
+            return currentSorting;
+        });
+    }, [ searchParams, sortFieldParamName, sortDirParamName ]); // Depend only on URL params
 
-    // // Use Tanstack Query based on local state
-    // const queryResult = useOrderExpenses(queryParams)
-
-    const getSortParamsForApi = (sorting: SortingState): ExpenseSort | undefined => {
-        if (!sorting || sorting.length === 0) {
-            // Return default sort or undefined if API handles default
-            return { field: 'createdAt', direction: 'desc' };
+    // --- Effect to Sync Search Input State FROM URL ---
+    useEffect(() => {
+        const currentSearch = searchParams.get(searchParamName) || '';
+        // Only update if the URL value differs from the input's current value
+        // This prevents the URL change (e.g., from DataTable clearing search) from overriding user typing
+        if (searchInput !== currentSearch) {
+            console.log("Syncing Search Input FROM URL:", currentSearch); // Debug log
+            // Check if debounced search also matches - might indicate an external clear vs user typing
+            // This logic might need refinement depending on exact desired behavior on external clears
+            // For now, simply sync if different:
+            setSearchInput(currentSearch);
         }
-        // Adapt if API expects a different format
+        // DO NOT add searchInput to dependencies here - it causes loops when typing.
+    }, [ searchParams, searchParamName ]);
+
+
+    // --- Parsed Filters (Derived directly from searchParams) ---
+    const parsedFilters = useMemo<ExpenseFilters>(() => {
+        const filters: ExpenseFilters = {};
+        // console.log("Recalculating parsedFilters because searchParams changed:", searchParams.toString()); // Debug log
+
+        // Status Filter
+        const statusValue = searchParams.get(STATUS_PARAM);
+        if (statusValue) {
+            const validationResult = orderExpenseStatusTypesSchema.safeParse(statusValue);
+            if (validationResult.success) {
+                filters.status = validationResult.data;
+            } else {
+                console.warn(`Invalid status value found in URL: ${statusValue}`);
+            }
+        } else {
+            filters.status = undefined;
+        }
+
+        // Other String Filters (Example)
+        ExpenseFilterFields.options.forEach(key => {
+            const value = searchParams.get(key);
+            if (value === STATUS_PARAM || value === 'dateRange' || value === SEARCH_PARAM || value === DATE_FROM_PARAM || value === DATE_TO_PARAM) return;
+            if (value !== null && value !== undefined) {
+                type OtherFilterKey = Exclude<keyof ExpenseFilters, 'status' | 'dateRange' | 'search'>;
+                filters[ key as OtherFilterKey ] = value;
+            }
+        });
+
+        // Date Range Filter
+        const dateFromStr = searchParams.get(DATE_FROM_PARAM);
+        const dateToStr = searchParams.get(DATE_TO_PARAM);
+        filters.dateRange = undefined;
+        if (dateFromStr && dateToStr) {
+            const fromDate = new Date(dateFromStr);
+            const toDate = new Date(dateToStr);
+            if (!isNaN(fromDate.getTime()) && !isNaN(toDate.getTime()) && fromDate <= toDate) {
+                filters.dateRange = { from: fromDate, to: toDate };
+            } else {
+                console.warn("Invalid date range in URL parameters.");
+                // Maybe clear invalid params here?
+                // const newParams = new URLSearchParams(searchParams);
+                // newParams.delete(DATE_FROM_PARAM);
+                // newParams.delete(DATE_TO_PARAM);
+                // router.replace(`${pathname}?${newParams.toString()}`);
+            }
+        }
+
+        // console.log("Calculated Filters:", filters); // Debug log
+        return filters;
+    }, [ searchParams ]);
+
+
+    // --- API Sort Parameters ---
+    const getSortParamsForApi = (currentSorting: SortingState): ExpenseSort | undefined => {
+        if (!currentSorting || currentSorting.length === 0) {
+            return { field: 'createdAt', direction: 'desc' }; // Default sort
+        }
         return {
-            field: sorting[ 0 ].id as ExpenseSortFields, // Ensure id matches ExpenseSortFields
-            direction: sorting[ 0 ].desc ? 'desc' : 'asc'
+            field: currentSorting[ 0 ].id as ExpenseSortFields,
+            direction: currentSorting[ 0 ].desc ? 'desc' : 'asc'
         };
     };
 
-    const currentSearch = useMemo(() => searchParams.get(SEARCH_PARAM) || '', [ searchParams ]);
-        // Add derivation for other filters if needed
-    
-        // --- Local state ONLY for debouncing input ---
-        const [ searchInput, setSearchInput ] = useState(currentSearch);
-        const debouncedSearch = useDebounce(searchInput, 300); // 300ms debounce
-    
-        // === API Query Parameters ===
-        // Memoize the params passed to useOrderExpenses based on derived state
-        const apiQueryParams = useMemo(() => {
-            const sortForApi = getSortParamsForApi(sorting);
-            const filters: ExpenseFilters = {};
-            if (debouncedSearch) { // Use debounced search for API query
-                filters.search = debouncedSearch;
-            }
-            // Add other derived filters here
-            // if (derivedFilterValue) filters.someFilter = derivedFilterValue;
-    
-            return {
-                page: pagination.pageIndex + 1, // API expects 1-based page
-                pageSize: pagination.pageSize,
-                sort: sortForApi,
-                filters: filters,
-            };
-        }, [ pagination, sorting, debouncedSearch ]); // Use debouncedSearch here
-    
-        // === TanStack Query ===
-        const queryResult = useOrderExpenses(apiQueryParams);
+    // --- API Query Parameters ---
+    const apiQueryParams = useMemo(() => {
+        const sortForApi = getSortParamsForApi(sorting); // Use state 'sorting'
+        let filtersForApi: ExpenseFilters = { ...parsedFilters }; // Start with URL filters
+
+        // Add debounced search term
+        if (debouncedSearch) {
+            filtersForApi.search = debouncedSearch;
+        } else {
+            filtersForApi.search = undefined;
+        }
+
+        // console.log("API Query Params:", { // Debug log
+        //     page: pagination.pageIndex + 1,
+        //     pageSize: pagination.pageSize,
+        //     sort: sortForApi,
+        //     filters: filtersForApi,
+        // });
+
+        return {
+            page: pagination.pageIndex + 1, // Use state 'pagination'
+            pageSize: pagination.pageSize, // Use state 'pagination'
+            sort: sortForApi,
+            filters: filtersForApi,
+        };
+    }, [ pagination, sorting, debouncedSearch, parsedFilters ]); // Correct dependencies
+
+    // === TanStack Query ===
+    const queryResult = useOrderExpenses(apiQueryParams);
 
 
     const handleRowClick = (order: EnrichedOrderExpenseSchemaType) => {
-        console.log("Row clicked in parent:", order);
-        // Navigate or perform other actions if needed, URL 'view' param is handled by DataTable
+        // console.log("Row clicked in parent:", order);
     };
 
     return (
-        // Ensure parent provides height context
-        // <div className="container mx-auto py-6 flex flex-col h-[calc(100vh-100px)]">
-
-
-        <div className="flex-grow min-h-0"> {/* Ensure DataTable's container can grow */}
-            <DataTable
-                columns={expenseColumns}
-                // Pass derived data and state
-                data={queryResult.data?.data?.data ?? []}
-                pageCount={queryResult.data?.data?.pagination?.totalPages ?? -1}
-                rowCount={queryResult.data?.data?.pagination?.total ?? 0}
-                pagination={pagination}
-                sorting={sorting}
-                // Pass state updaters
-                onPaginationChange={setPagination}
-                onSortingChange={setSorting}
-                // Pass loading states
-                isLoading={queryResult.isLoading}
-                isFetching={queryResult.isFetching}
-                isError={queryResult.isError}
-                error={queryResult.error}
-                // Other props
-                rowIdKey="orderExpenseId"
-                onRowClick={handleRowClick}
-                // *** Pass the specific URL param names ***
-                pageParamName={pageParamName}
-                pageSizeParamName={pageSizeParamName}
-                sortFieldParamName={sortFieldParamName} // New prop
-                sortDirParamName={sortDirParamName}   // New prop
-                selectParamName="selected" // Keep others if needed
-                viewParamName="view"
-            />
-        </div>
+        // <div className="flex flex-col flex-grow min-h-0"> {/* Ensure container allows growth */}
+            <div className="flex-grow min-h-0"> {/* DataTable container */}
+                <DataTable
+                    columns={expenseColumns}
+                    data={queryResult.data?.data?.data ?? []}
+                    pageCount={queryResult.data?.data?.pagination?.totalPages ?? -1}
+                    rowCount={queryResult.data?.data?.pagination?.total ?? 0}
+                    // Pass state derived from URL/useEffect
+                    pagination={pagination}
+                    sorting={sorting}
+                    // Pass state updaters (these will trigger URL updates via DataTable's internal effect)
+                    onPaginationChange={setPagination} // DataTable calls this, then updates URL
+                    onSortingChange={setSorting}     // DataTable calls this, then updates URL
+                    // Pass loading states
+                    isLoading={queryResult.isLoading}
+                    // Refined isFetching logic: Show fetching unless it's only due to typing in search
+                    isFetching={queryResult.isFetching && (searchInput === debouncedSearch)}
+                    isError={queryResult.isError}
+                    error={queryResult.error}
+                    // Other props
+                    rowIdKey="orderExpenseId"
+                    onRowClick={handleRowClick}
+                    // Pass the specific URL param names for DataTable's internal URL updates
+                    pageParamName={pageParamName}
+                    pageSizeParamName={pageSizeParamName}
+                    sortFieldParamName={sortFieldParamName}
+                    sortDirParamName={sortDirParamName}
+                    // If DataTable handles search input/clearing, pass the param name
+                    // searchParamName={searchParamName} // Uncomment if DataTable needs it
+                    selectParamName="selected"
+                    viewParamName="view"
+                />
+            </div>
         // </div>
     );
 }

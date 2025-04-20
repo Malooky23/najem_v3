@@ -1,6 +1,8 @@
 import { expenseCategoryTypeSchema, orderExpenseStatusTypes, orderExpenseStatusTypesSchema } from "@/server/db/schema";
-import { z } from "zod";
+import { TypeOf, z } from "zod";
 
+export const ExpenseFilterFields = z.enum([ 'orderNumber' , 'customerId' , 'expenseItemName' , 'expenseItemCategory' , 'status' ])
+export type ExpenseFilterFieldsType = z.infer<typeof ExpenseFilterFields>
 
 export interface ExpenseFilters {
     orderNumber?: string
@@ -11,8 +13,9 @@ export interface ExpenseFilters {
     };
     expenseItemName?: string
     expenseItemCategory?: string
+    status?: z.infer<typeof orderExpenseStatusTypesSchema>
     search?: string;
-}
+} 
 
 export type ExpenseSortFields = 'orderNumber' | 'createdAt' | 'customerName' | 'status';
 

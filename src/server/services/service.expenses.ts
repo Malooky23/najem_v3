@@ -32,6 +32,9 @@ function applyFilters(
 ): QueryBuilder<typeof enrichedOrderExpenseView> {
     return (qb) => {
         let conditions: SQL[] = [];
+        console.log("here 1")
+        console.log("filter?: ",filters)
+        console.log("session?: ",session)
 
         if (session.user.userType === 'CUSTOMER' && session.user.customerId) {
             conditions.push(eq(enrichedOrderExpenseView.customerId, session.user.customerId));
@@ -41,22 +44,34 @@ function applyFilters(
             conditions.push(eq(enrichedOrderExpenseView.customerId, filters.customerId));
         }
         if (filters.orderNumber) {
+            console.log("here 2", filters.orderNumber)
             const orderNum = parseInt(filters.orderNumber, 10);
             if (!isNaN(orderNum)) {
                 conditions.push(eq(enrichedOrderExpenseView.orderNumber, orderNum));
+                console.log("order number pushed")
             }
         }
         if (filters.expenseItemName) {
             conditions.push(eq(enrichedOrderExpenseView.expenseItemName, filters.expenseItemName))
         }
+        if (filters.status) {
+            conditions.push(eq(enrichedOrderExpenseView.status, filters.status))
+        }
         if (filters.expenseItemCategory) {
             conditions.push(eq(enrichedOrderExpenseView.expenseItemCategory, filters.expenseItemCategory as z.infer<typeof expenseCategoryTypeSchema>));
         }
         if (filters.dateRange?.from && filters.dateRange?.to) {
+            const fromDate = filters.dateRange.from;
+            const toDateOriginal = filters.dateRange.to;
+
+            // --- Adjust toDate to the very end of the day ---
+            const toDateEndOfDay = new Date(toDateOriginal);
+            toDateEndOfDay.setHours(23, 59, 59, 999);
+            // --- End adjustment ---
             conditions.push(
                 and(
-                    gte(enrichedOrderExpenseView.createdAt, filters.dateRange.from),
-                    lte(enrichedOrderExpenseView.createdAt, filters.dateRange.to)
+                    gte(enrichedOrderExpenseView.createdAt, fromDate),
+                    lte(enrichedOrderExpenseView.createdAt, toDateEndOfDay)
                 )! // Use non-null assertion if confident 'and' won't return undefined here
             );
         }
@@ -127,7 +142,9 @@ export async function getOrderExpenses(
         }
 
         // --- 1. Build and Execute Count Query ---
+
         const filterQueryPart = applyFilters(filters, session);
+        console.log(JSON.stringify(filters,null,2))
 
         const { total, results } = await db.transaction(async (tx) => {
             // --- 1. Build and Execute Count Query (using tx) ---

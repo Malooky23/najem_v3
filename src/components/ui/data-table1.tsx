@@ -1,6 +1,6 @@
 // src/components/data-table.tsx
 'use client';
-import React, { useEffect, useState, useTransition, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useTransition, useCallback, useMemo, useRef } from 'react';
 import {
     ColumnDef,
     SortingState,
@@ -32,17 +32,15 @@ import PaginationControls from '@/components/ui/pagination-controls';
 
 // --- Props Interface Update ---
 interface DataTableProps<TData, TValue> {
-    // ... (data, columns, pageCount, rowCount, pagination, onPaginationChange props remain) ...
+    // ... existing props ...
     columns: ColumnDef<TData, TValue>[];
     data: TData[];
     pageCount: number;
     rowCount: number;
     pagination: PaginationState;
-    sorting: SortingState; // Still receive the standard SortingState object
+    sorting: SortingState;
     onPaginationChange: OnChangeFn<PaginationState>;
-    onSortingChange: OnChangeFn<SortingState>; // Still receive standard updates
-
-    // ... (selection, loading, error, row handling props remain) ...
+    onSortingChange: OnChangeFn<SortingState>;
     initialRowSelection?: RowSelectionState;
     onRowSelectionChange?: OnChangeFn<RowSelectionState>;
     isLoading: boolean;
@@ -51,14 +49,12 @@ interface DataTableProps<TData, TValue> {
     error?: Error | null;
     rowIdKey: keyof TData;
     onRowClick?: (row: TData) => void;
-
-    // *** UPDATED: Specific URL Sync parameters ***
     viewParamName?: string;
     selectParamName?: string;
     pageParamName?: string;
     pageSizeParamName?: string;
-    sortFieldParamName?: string; // New: Name for the field parameter
-    sortDirParamName?: string;   // New: Name for the direction parameter
+    sortFieldParamName?: string;
+    sortDirParamName?: string;
 }
 
 export function DataTable<TData, TValue>({
@@ -66,8 +62,8 @@ export function DataTable<TData, TValue>({
     data,
     pageCount,
     rowCount,
-    pagination,
-    sorting, // Receive standard SortingState [{ id: 'field', desc: true/false }]
+    pagination, // Current pagination state from parent
+    sorting,    // Current sorting state from parent
     onPaginationChange,
     onSortingChange, // Receive standard state update function
     initialRowSelection = {},
@@ -92,7 +88,7 @@ export function DataTable<TData, TValue>({
     const [ isPendingUrlUpdate, startUrlUpdateTransition ] = useTransition();
 
     // Store previous searchParams to detect external changes
-
+    const prevSearchParamsRef = useRef<URLSearchParams>(searchParams);
 
 
     const [ rowSelection, setRowSelection ] = useState<RowSelectionState>(initialRowSelection);
@@ -100,8 +96,9 @@ export function DataTable<TData, TValue>({
 
     const viewParam = searchParams.get(viewParamName);
 
-    // --- Tanstack Table Instance (no major change needed here) ---
+    // --- Tanstack Table Instance (no change) ---
     const table = useReactTable({
+        // ... configuration ...
         data,
         columns,
         pageCount,
@@ -118,13 +115,11 @@ export function DataTable<TData, TValue>({
         getSortedRowModel: getSortedRowModel(),
         manualPagination: true,
         manualSorting: true,
-        enableRowSelection: true,
-        getRowId: (row) => String(row[ rowIdKey ]),
     });
 
-    // --- URL Update Logic (no change needed) ---
+    // --- URL Update Logic (no change) ---
     const updateSearchParams = useCallback((newParams: Record<string, string | number | null>, options?: { replace?: boolean }) => {
-        // ... (same as before, uses startUrlUpdateTransition) ...
+        // ... same logic using startUrlUpdateTransition ...
         const current = new URLSearchParams(Array.from(searchParams.entries()));
         Object.entries(newParams).forEach(([ key, value ]) => {
             if (value === null || value === undefined || value === '') {
@@ -137,15 +132,9 @@ export function DataTable<TData, TValue>({
         const query = search ? `?${search}` : '';
         const url = `${pathname}${query}`;
 
-        // Use transition for URL updates
         startUrlUpdateTransition(() => {
-            if (options?.replace) {
-                router.replace(url, { scroll: false });
-            } else {
-                // Generally prefer replace for table state updates to avoid excessive history
-                router.replace(url, { scroll: false });
-                // router.push(url, { scroll: false }); // Use push only if specific history entry is desired
-            }
+            // Prefer replace for table state updates to avoid excessive history
+            router.replace(url, { scroll: false });
         });
     }, [ searchParams, pathname, router ]);
 
@@ -154,50 +143,104 @@ export function DataTable<TData, TValue>({
     useEffect(() => {
         const paramsToUpdate: Record<string, string | null> = {};
         let needsUpdate = false;
+        let forcePageReset = false; // Flag to indicate reset needed
 
-        // --- Pagination Sync (same as before) ---
+        // --- Detect External Filter/Sort Changes ---
+        // Compare current searchParams with the previous ones stored in ref
+        // We only care if params *other than* pagination/selection/view changed externally
+        const currentParamsString = searchParams.toString();
+        const prevParamsString = prevSearchParamsRef.current.toString();
+
+        if (currentParamsString !== prevParamsString) {
+            const currentKeys = new Set(searchParams.keys());
+            const prevKeys = new Set(prevSearchParamsRef.current.keys());
+
+            // Check for changes in keys *not* managed directly by this effect's state dependencies
+            // (i.e., ignore changes purely in page, pageSize, sortField, sortDir, select, view for this check)
+            const managedKeys = new Set([
+                pageParamName, pageSizeParamName, sortFieldParamName, sortDirParamName, selectParamName, viewParamName
+            ]);
+
+            let externalChangeDetected = false;
+            // Check added/removed keys (excluding managed ones)
+            for (const key of currentKeys) {
+                if (!managedKeys.has(key) && !prevKeys.has(key)) {
+                    externalChangeDetected = true; break;
+                }
+            }
+            if (!externalChangeDetected) {
+                for (const key of prevKeys) {
+                    if (!managedKeys.has(key) && !currentKeys.has(key)) {
+                        externalChangeDetected = true; break;
+                    }
+                }
+            }
+            // Check changed values for existing keys (excluding managed ones)
+            if (!externalChangeDetected) {
+                for (const key of currentKeys) {
+                    if (!managedKeys.has(key) && prevKeys.has(key) && searchParams.get(key) !== prevSearchParamsRef.current.get(key)) {
+                        externalChangeDetected = true; break;
+                    }
+                }
+            }
+
+            if (externalChangeDetected) {
+                console.log("DataTable detected external param change, forcing page reset."); // Debug log
+                forcePageReset = true;
+            }
+
+            // Update the ref *after* comparison for the next render
+            prevSearchParamsRef.current = new URLSearchParams(searchParams.toString());
+        }
+
+
+        // --- Pagination Sync ---
         const currentPageInUrl = searchParams.get(pageParamName) ?? '1';
-        const desiredPage = String(pagination.pageIndex + 1);
+        // Use '1' if forcePageReset is true, otherwise use the component's state
+        const desiredPage = forcePageReset ? '1' : String(pagination.pageIndex + 1);
+
         if (currentPageInUrl !== desiredPage) {
             paramsToUpdate[ pageParamName ] = desiredPage;
             needsUpdate = true;
         }
+
         const currentSizeInUrl = searchParams.get(pageSizeParamName) ?? '10';
         const desiredSize = String(pagination.pageSize);
         if (currentSizeInUrl !== desiredSize) {
             paramsToUpdate[ pageSizeParamName ] = desiredSize;
-            if (desiredPage !== '1') paramsToUpdate[ pageParamName ] = '1';
+            // If size changes, *always* reset page unless already forced
+            if (!forcePageReset && desiredPage !== '1') {
+                paramsToUpdate[ pageParamName ] = '1';
+                console.log("DataTable detected page size change, forcing page reset."); // Debug log
+            }
             needsUpdate = true;
         }
 
-        // --- Sorting Sync (Updated Logic) ---
+        // --- Sorting Sync ---
         const currentFieldInUrl = searchParams.get(sortFieldParamName);
         const currentDirInUrl = searchParams.get(sortDirParamName);
-
         const desiredField = sorting.length > 0 ? sorting[ 0 ].id : null;
-        const desiredIsDesc = sorting.length > 0 ? sorting[ 0 ].desc : null; // null if no sort
-
-        // Update field if necessary
-        if (currentFieldInUrl !== desiredField) {
-            paramsToUpdate[ sortFieldParamName ] = desiredField; // Use null to delete if desiredField is null
-            needsUpdate = true;
-        }
-
-        // Update direction based on field and desired direction
+        const desiredIsDesc = sorting.length > 0 ? sorting[ 0 ].desc : null;
         let desiredDirParamValue: string | null = null;
-        if (desiredField !== null) { // Only set direction if field exists
-            if (desiredIsDesc === false) { // Explicitly ascending
-                desiredDirParamValue = 'asc';
-            }
-            // If desiredIsDesc is true (descending) or null (no sort), direction param should be absent (null)
+        if (desiredField !== null) {
+            desiredDirParamValue = desiredIsDesc === false ? 'asc' : null; // Only set 'asc', null implies desc or no sort
         }
 
-        if (currentDirInUrl !== desiredDirParamValue) {
-            paramsToUpdate[ sortDirParamName ] = desiredDirParamValue; // Use null to delete
+        // Check if sorting *state* differs from URL
+        const sortChanged = currentFieldInUrl !== desiredField || currentDirInUrl !== desiredDirParamValue;
+
+        if (sortChanged) {
+            paramsToUpdate[ sortFieldParamName ] = desiredField;
+            paramsToUpdate[ sortDirParamName ] = desiredDirParamValue;
+            // If sorting changes, *always* reset page unless already forced
+            if (!forcePageReset && desiredPage !== '1') {
+                paramsToUpdate[ pageParamName ] = '1';
+                console.log("DataTable detected sort change, forcing page reset."); // Debug log
+            }
             needsUpdate = true;
         }
 
-        // --- Selection & View Sync (same as before) ---
+        // --- Selection & View Sync (no change needed here) ---
         const currentSelectionInUrl = searchParams.get(selectParamName);
         const selectedIds = Object.keys(rowSelection).filter(id => rowSelection[ id ]);
         const desiredSelection = selectedIds.join(',');
@@ -214,42 +257,28 @@ export function DataTable<TData, TValue>({
 
         // --- Update URL if needed ---
         if (needsUpdate) {
-            // Preserve existing params not actively being changed
+            // Preserve existing params not actively being changed (simplified)
             const existingUnchanged: Record<string, string | null> = {};
             searchParams.forEach((value, key) => {
-                // Check against *all* param names managed by this component
-                if (!(key in paramsToUpdate) &&
-                    key !== pageParamName &&
-                    key !== pageSizeParamName &&
-                    key !== sortFieldParamName &&
-                    key !== sortDirParamName &&
-                    key !== selectParamName &&
-                    key !== viewParamName
-                ) {
+                if (!(key in paramsToUpdate)) {
                     existingUnchanged[ key ] = value;
                 }
             });
-            // Re-add params being managed if they aren't in the current update batch
-            if (!(pageParamName in paramsToUpdate) && searchParams.has(pageParamName)) existingUnchanged[ pageParamName ] = searchParams.get(pageParamName);
-            if (!(pageSizeParamName in paramsToUpdate) && searchParams.has(pageSizeParamName)) existingUnchanged[ pageSizeParamName ] = searchParams.get(pageSizeParamName);
-            if (!(sortFieldParamName in paramsToUpdate) && searchParams.has(sortFieldParamName)) existingUnchanged[ sortFieldParamName ] = searchParams.get(sortFieldParamName);
-            if (!(sortDirParamName in paramsToUpdate) && searchParams.has(sortDirParamName)) existingUnchanged[ sortDirParamName ] = searchParams.get(sortDirParamName);
-            if (!(selectParamName in paramsToUpdate) && searchParams.has(selectParamName)) existingUnchanged[ selectParamName ] = searchParams.get(selectParamName);
-            if (!(viewParamName in paramsToUpdate) && searchParams.has(viewParamName)) {
-                // Special check: only preserve view if it wasn't cleared by multi-select
-                if (paramsToUpdate[ viewParamName ] !== null) {
-                    existingUnchanged[ viewParamName ] = searchParams.get(viewParamName);
-                }
+
+            // Ensure view param isn't wrongly preserved if cleared by multi-select
+            if (paramsToUpdate[ viewParamName ] === null && viewParamName in existingUnchanged) {
+                delete existingUnchanged[ viewParamName ];
             }
 
-
+            console.log("DataTable updating URL with:", { ...existingUnchanged, ...paramsToUpdate }); // Debug log
             updateSearchParams({ ...existingUnchanged, ...paramsToUpdate }, { replace: true });
         }
 
     }, [
         pagination, sorting, rowSelection, // Watch controlled and local state
-        searchParams, updateSearchParams, // URL deps
-        pageParamName, pageSizeParamName, sortFieldParamName, sortDirParamName, // Use new names
+        searchParams, // Watch current searchParams for comparison trigger
+        updateSearchParams,
+        pageParamName, pageSizeParamName, sortFieldParamName, sortDirParamName,
         selectParamName, viewParamName
     ]);
 
@@ -371,6 +400,7 @@ export function DataTable<TData, TValue>({
                     </Table>
                 </div>
             </div>
+            {/* ... Pagination Controls Component ... */}
             <div className="p-2 flex w-full justify-center min-w-0">
                 <PaginationControls<TData>
                     currentPage={table.getState().pagination.pageIndex + 1}
@@ -382,68 +412,6 @@ export function DataTable<TData, TValue>({
                     isLoading={isLoading}
                 />
             </div>
-            {/* Pagination Controls */}
         </div>
-    )
+    );
 }
-
-            // <div className={cn(
-            //     "flex-shrink-0 flex items-center justify-between space-x-2 py-3 px-4 border-t",
-            //     isPendingUrlUpdate && "opacity-75 cursor-wait" // Indicate URL update pending
-            // )}>
-            //     {/* Left Side - Row Count */}
-            //     <div className="flex-1 text-sm text-muted-foreground whitespace-nowrap overflow-hidden text-ellipsis pr-2">
-            //         {table.getFilteredSelectedRowModel().rows.length > 0
-            //             ? `${table.getFilteredSelectedRowModel().rows.length} selected`
-            //             : rowCount != null // Use rowCount prop
-            //                 ? `${rowCount.toLocaleString()} total rows`
-            //                 : 'X'
-            //         }
-            //     </div>
-            //     {/* Right Side - Controls */}
-            //     <div className="flex items-center space-x-4 lg:space-x-6">
-            //         {/* Column Visibility */}
-            //         <DropdownMenu>
-            //             <DropdownMenuTrigger asChild><Button variant="outline" size="sm" className="hidden lg:flex"><MoreHorizontal className="h-4 w-4 mr-1" /> Columns</Button></DropdownMenuTrigger>
-            //             <DropdownMenuContent align="end">
-            //                 {/* ... Column toggles ... */}
-            //                 <DropdownMenuLabel>Toggle columns</DropdownMenuLabel><DropdownMenuSeparator />
-            //                 {table.getAllColumns().filter(c => c.getCanHide()).map(c => <DropdownMenuCheckboxItem key={c.id} className="capitalize" checked={c.getIsVisible()} onCheckedChange={(v) => c.toggleVisibility(!!v)}>{/* ... header text ... */}</DropdownMenuCheckboxItem>)}
-            //             </DropdownMenuContent>
-            //         </DropdownMenu>
-            //         {/* Page Size Selector */}
-            //         <div className="flex items-center space-x-2">
-            //             <span className="text-sm font-medium hidden xl:inline">Rows</span>
-            //             <Select
-            //                 value={`${table.getState().pagination.pageSize}`}
-            //                 onValueChange={(value) => {
-            //                     // Call parent's updater
-            //                     table.setPageSize(Number(value)); // This triggers onPaginationChange
-            //                 }}
-            //             >
-            //                 <SelectTrigger className="h-8 w-[75px]"><SelectValue placeholder={table.getState().pagination.pageSize} /></SelectTrigger>
-            //                 <SelectContent side="top">{[ 5, 10, 20, 50, 100 ].map(s => <SelectItem key={s} value={`${s}`}>{s}</SelectItem>)}</SelectContent>
-            //             </Select>
-            //         </div>
-            //         {/* Page Indicator */}
-            //         <div className="flex w-[100px] items-center justify-center text-sm font-medium">
-            //             {/* Use pageCount prop */}
-            //             Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount() > 0 ? table.getPageCount() : 1}
-            //         </div>
-            //         {/* Navigation Buttons */}
-            //         <div className="flex items-center space-x-1">
-            //             <Button variant="outline" size="icon" className="h-8 w-8 hidden lg:flex" onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}> {/* Use table methods */}
-            //                 <span className="sr-only">First</span><ChevronsLeft className="h-4 w-4" />
-            //             </Button>
-            //             <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}> {/* Use table methods */}
-            //                 <span className="sr-only">Prev</span><ChevronLeft className="h-4 w-4" />
-            //             </Button>
-            //             <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}> {/* Use table methods */}
-            //                 <span className="sr-only">Next</span><ChevronRight className="h-4 w-4" />
-            //             </Button>
-            //             <Button variant="outline" size="icon" className="h-8 w-8 hidden lg:flex" onClick={() => table.setPageIndex(table.getPageCount() - 1)} disabled={!table.getCanNextPage()}> {/* Use table methods */}
-            //                 <span className="sr-only">Last</span><ChevronsRight className="h-4 w-4" />
-            //             </Button>
-            //         </div>
-            //     </div>
-            // </div>
