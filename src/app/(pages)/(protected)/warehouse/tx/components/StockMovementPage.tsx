@@ -8,7 +8,6 @@ import { MovementsTable } from "./MovementsTable"
 import { DetailsPanel } from "./details/DetailsPanel"
 import { useUrlSync } from "@/hooks/useUrlSync"
 import { DropDownMenuButton } from "@/components/drop-down-menu-button"
-import { OrderDetailsContainer } from "../../orders/components/_order-details/OrderDetailsContainer"
 import { useOrdersStore } from "@/stores/orders-store"
 
 interface PageHeaderProps {
@@ -82,15 +81,6 @@ export function StockMovementPage() {
     useUrlSync(useStockMovementStore, {
         syncedKeys: ['page', 'pageSize', 'sortField', 'sortDirection', 'search', 'movement', 'itemName', 'customerDisplayName', 'dateFrom', 'dateTo']
     });
-
-    const [temp, setTemp] = useState(false);
-
-  // Reset loading state after initial render
-  // useEffect(() => {
-  //   const timer = setTimeout(() => setIsPageLoading(false), 0)
-  //     setTemp(t => !t); // force re-render
-  //   return () => clearTimeout(timer)
-  // }, [])
 
   return (
     // <div className="px-4 h-full flex flex-col overflow-hidden"> {/* Add overflow-hidden */}

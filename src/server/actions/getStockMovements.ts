@@ -58,17 +58,32 @@ function withFilters<T extends PgSelect>(
         query = query.where(ilike(stockMovementsView.customerDisplayName, `%${filters.customerDisplayName}%`));
     }
 
-    // Improved search handling - make sure it works with any value
+
     if (filters.search !== undefined && filters.search !== null) {
         console.log("Applying search filter:", filters.search);
-        query = query.where(
-            or(
-                ilike(stockMovementsView.itemName, `%${filters.search}%`),
-                ilike(stockMovementsView.customerDisplayName, `%${filters.search}%`),
-                ilike(sql`${stockMovementsView.movementNumber}::text`, `%${filters.search}%`),
-                ilike(sql`${stockMovementsView.quantity}::text`, `%${filters.search}%`)
-            )
-        );
+        if (session.user.userType === 'EMPLOYEE') {
+            query = query.where(
+                or(
+                    ilike(stockMovementsView.itemName, `%${filters.search}%`),
+                    ilike(stockMovementsView.customerDisplayName, `%${filters.search}%`),
+                    ilike(sql`${stockMovementsView.movementNumber}::text`, `%${filters.search}%`),
+                    ilike(sql`${stockMovementsView.quantity}::text`, `%${filters.search}%`)
+                )
+            );
+        } else if (session.user.userType === 'CUSTOMER' && session.user.customerId) {
+            query = query.where(
+                and(
+                    eq(stockMovementsView.customerId, session.user.customerId),
+
+                    or(
+                        ilike(stockMovementsView.itemName, `%${filters.search}%`),
+                        ilike(stockMovementsView.customerDisplayName, `%${filters.search}%`),
+                        ilike(sql`${stockMovementsView.movementNumber}::text`, `%${filters.search}%`),
+                        ilike(sql`${stockMovementsView.quantity}::text`, `%${filters.search}%`)
+                    )
+                )
+            );
+        }
     }
 
     return query;
@@ -91,29 +106,27 @@ function withSort<T extends PgSelect>(
 
     return freshQuery.orderBy(
         sort.direction === 'desc'
-            ? desc(stockMovementsView[sort.field])
-            : asc(stockMovementsView[sort.field])
+            ? desc(stockMovementsView[ sort.field ])
+            : asc(stockMovementsView[ sort.field ])
     );
 }
 
 
 export async function getStockMovements(
     page: number = 1,
-    pageSize: number = 100,
+    pageSize: number = 20,
     filters: StockMovementFilters = {},
     sort: StockMovementSort = { field: 'movementNumber', direction: 'desc' }
 ): Promise<GetStockMovementsResponse> {
     try {
         const session = await auth();
+        let customer
         if (!session) {
             return { success: false, error: "Unauthorized: Please Login." };
         }
+        if (session.user.userType === 'CUSTOMER' && !session.user.customerId)
+            return { success: false, error: "Unauthorized: Customer ID not assigned to user." };
 
-        // Debug incoming params
-        // console.log("Server action called with page:", page, "pageSize:", pageSize);
-        // console.log("Server action filters:", JSON.stringify(filters));
-
-        // Build base query and make it dynamic
         let query = db.select(
             {
                 movementId: stockMovementsView.movementId,
@@ -139,22 +152,17 @@ export async function getStockMovements(
 
 
 
+
         // Apply filters, pagination and sorting
         query = withFilters(query, filters, session);
         query = withSort(query, sort);
         query = withPagination(query, page, pageSize);
 
+
         // Execute main query
         const results = await query;
 
-        // Build and execute count query
-        // let countQuery = db.select({count: sql<number>`count(*)::integer`}).from(stockMovementsView).$dynamic();
-        // countQuery = withFilters(countQuery, filters, session);
-        // const countResult = await countQuery;
-        // const totalCount = countResult[0].count;
-
-        // Get total count from first row (or 0 if no results)
-        const totalCount = results.length > 0 ? results[0].totalCount : 0;
+        const totalCount = results.length > 0 ? results[ 0 ].totalCount : 0;
 
         // Remove totalCount from result objects
         const data = results.map(({ totalCount: _, ...rest }) => rest);

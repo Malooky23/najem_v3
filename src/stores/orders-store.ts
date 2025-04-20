@@ -60,7 +60,7 @@ type StoreWithSubscribe = StateCreator<
 const createOrdersStore: StoreWithSubscribe = (set, get) => ({
   // Default state
   page: 1,
-  pageSize: 50,
+  pageSize: 20,
   sortField: 'createdAt',
   sortDirection: 'desc',
   status: null,
@@ -174,7 +174,7 @@ const createOrdersStore: StoreWithSubscribe = (set, get) => ({
   syncWithUrl: (searchParams) => {
     try {
       const page = Number(searchParams.get('page')) || 1;
-      const pageSize = Number(searchParams.get('pageSize')) || 50;
+      const pageSize = Number(searchParams.get('pageSize')) || 20;
       const sortField = (searchParams.get('sortField') || 'createdAt') as OrderSortField;
       const sortDirection = (searchParams.get('sortDirection') || 'desc') as 'asc' | 'desc';
       const status = searchParams.get('status') as OrderStatus | null;

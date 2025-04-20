@@ -162,7 +162,7 @@ export const OrdersTable = memo<OrdersTableProps>(function OrdersTable({
     filters,
     sort
   });
-  console.log(data?.pagination)
+
 
   // Create prefetch function for next page
   // const prefetchNextPage = usePrefetchOrders({

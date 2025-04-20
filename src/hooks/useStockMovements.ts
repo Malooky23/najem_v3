@@ -27,7 +27,7 @@ export function useStockMovements(
 ) {
   // Default values
   const page = params.page || 1;
-  const pageSize = params.pageSize || 50;
+  const pageSize = params.pageSize || 20;
   const filters = params.filters || {};
   const sort = params.sort || { field: 'createdAt', direction: 'desc' };
 

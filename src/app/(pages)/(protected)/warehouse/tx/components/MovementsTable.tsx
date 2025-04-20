@@ -5,9 +5,7 @@ import { stockMovementColumns } from "./table/columns"
 import { useStockMovements, usePrefetchStockMovements } from "@/hooks/useStockMovements"
 import { useStockMovementStore } from "@/stores/stock-movement-store"
 import { PaginationControls } from "@/components/ui/pagination-controls"
-import { RowSelectionState } from "@tanstack/react-table"
 import { EnrichedStockMovementView, StockMovementSortFields } from "@/types/stockMovement"
-import { useQuery, useQueryClient } from "@tanstack/react-query"
 
 interface MovementsTableProps {
   isMobile: boolean;

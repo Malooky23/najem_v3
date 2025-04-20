@@ -1,7 +1,7 @@
 'use server'
 import { EnrichedOrderExpenseSchemaType, ExpenseFilters, ExpenseSort } from "@/types/expense";
-import { enrichedOrderExpenseView, expenseCategoryType, expenseCategoryTypeSchema } from "../db/schema";
-import { and, asc, count, desc, eq, gte, ilike, lte, or, sql, SQL } from "drizzle-orm";
+import { enrichedOrderExpenseView, expenseCategoryTypeSchema } from "../db/schema";
+import { and, asc,  desc, eq, getViewSelectedFields, gte, ilike, lte, or, sql, SQL } from "drizzle-orm";
 import { z } from "zod";
 import { auth } from "@/lib/auth/auth";
 import { db } from "../db";
@@ -32,9 +32,6 @@ function applyFilters(
 ): QueryBuilder<typeof enrichedOrderExpenseView> {
     return (qb) => {
         let conditions: SQL[] = [];
-        console.log("here 1")
-        console.log("filter?: ",filters)
-        console.log("session?: ",session)
 
         if (session.user.userType === 'CUSTOMER' && session.user.customerId) {
             conditions.push(eq(enrichedOrderExpenseView.customerId, session.user.customerId));
@@ -144,40 +141,23 @@ export async function getOrderExpenses(
         // --- 1. Build and Execute Count Query ---
 
         const filterQueryPart = applyFilters(filters, session);
-        console.log(JSON.stringify(filters,null,2))
 
-        const { total, results } = await db.transaction(async (tx) => {
-            // --- 1. Build and Execute Count Query (using tx) ---
-            const countQuery = tx
-                .select({ value: count() })
-                .from(enrichedOrderExpenseView)
-                .$dynamic();
-            const finalCountQuery = filterQueryPart(countQuery); // Apply filters
-            const countPromise = finalCountQuery; // Don't await yet
-
-            // --- 2. Build Data Query (using tx) ---
-            const dataQuery = tx
-                .select()
-                .from(enrichedOrderExpenseView)
-                .$dynamic();
-            const sortedQuery = applySort(sort)(filterQueryPart(dataQuery)); // Apply filters & sort
-            const paginatedQuery = applyPagination(page, pageSize)(sortedQuery); // Apply pagination
-            const dataPromise = paginatedQuery; 
-
-            // --- 3. Execute both queries concurrently within the transaction ---
-            const [ countResult, dataResult ] = await Promise.all([
-                countPromise,
-                dataPromise,
-            ]);
-
-            const currentTotal = countResult?.[ 0 ]?.value ?? 0;
-
-            return { total: currentTotal, results: dataResult };
-        }); // End of transaction
-        
+        const dataQuery = db.select({
+            ...getViewSelectedFields(enrichedOrderExpenseView),
+            value: sql<number>`count(*) over()::integer`
+        })
+            .from(enrichedOrderExpenseView)
+            .$dynamic();
+        const sortedQuery = applySort(sort)(filterQueryPart(dataQuery)); // Apply filters & sort
+        const paginatedQuery = applyPagination(page, pageSize)(sortedQuery); // Apply pagination
+        const queryResponse = await paginatedQuery
 
 
-        if (total === 0) {
+        const currentTotal = queryResponse.length > 0 ? queryResponse?.[ 0 ]?.value : 0 
+
+
+
+        if (currentTotal === 0) {
             return {
                 success: true,
                 data: {
@@ -192,14 +172,14 @@ export async function getOrderExpenses(
             };
         }
 
-        const totalPages = Math.ceil(total / pageSize);
+        const totalPages = Math.ceil(currentTotal / pageSize);
 
         return {
             success: true,
             data: {
-                data: results, // Drizzle returns the correctly typed results
+                data: queryResponse, // Drizzle returns the correctly typed results
                 pagination: {
-                    total,
+                    total: currentTotal,
                     pageSize,
                     currentPage: page,
                     totalPages,

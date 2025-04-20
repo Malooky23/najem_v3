@@ -187,7 +187,7 @@ const createStockMovementStore: StoreWithSubscribe = (set, get) => ({
   syncWithUrl: (searchParams) => {
     try {
       const page = Number(searchParams.get('page')) || 1;
-      const pageSize = Number(searchParams.get('pageSize')) || 10;
+      const pageSize = Number(searchParams.get('pageSize')) || 20;
       const sortField = (searchParams.get('sort') || 'createdAt') as StockMovementSortFields;
       const sortDirection = (searchParams.get('direction') || 'desc') as 'asc' | 'desc';
       const search = searchParams.get('search');

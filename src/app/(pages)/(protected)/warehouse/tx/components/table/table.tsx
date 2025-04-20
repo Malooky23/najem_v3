@@ -149,7 +149,7 @@ export function StockMovementTable({
         columnWidths={columnWidths}
         onRowSelectionChange={onRowSelectionChange}
         onRowClick={handleRowClick}
-        pageSize={100}
+        pageSize={20}
         rowClassName={getRowClassName}
       />
     }</div>
