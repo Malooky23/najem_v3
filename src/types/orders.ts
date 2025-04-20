@@ -30,7 +30,7 @@ export const OrderTable = z.object({
     addressId: z.string().uuid().nullable(),
     fulfilledAt: z.date().nullable().nullish().optional(),
     notes: z.string().nullable(),
-    orderMark: z.string().max(20,"Mark too long, Max 20 characters.").nullable().optional(),
+    orderMark: z.string().max(20, "Mark too long, Max 20 characters.").nullable().optional(),
     createdBy: z.string(),
     createdAt: z.date(),
     updatedAt: z.date().nullable().nullish().optional(),
@@ -52,7 +52,7 @@ export const EnrichedOrders = OrderTable.extend({
             quantity: z.number().positive(),
             itemLocationId: z.string().uuid()
         }))
-        // })).min(1, 'At least one item is required'),
+    // })).min(1, 'At least one item is required'),
 });
 export type EnrichedOrders = z.infer<typeof EnrichedOrders>;
 
@@ -66,14 +66,14 @@ export const createOrderSchema = z.object({
     status: orderStatusSchema.default('PENDING'),
     addressId: z.string().uuid().optional().nullable(),
     notes: z.string().optional().nullable(),
-    orderMark: z.string().max(20,"Mark too long, Max 20 characters.").optional().nullable(),
+    orderMark: z.string().max(20, "Mark too long, Max 20 characters.").optional().nullable(),
     items: z.array(
-             z.object({
-                itemId: z.string().uuid(),
-                quantity: z.number().positive(),
-                itemLocationId: z.string().uuid()
-            })
-        ).min(1, 'At least one item is required'),
+        z.object({
+            itemId: z.string().uuid(),
+            quantity: z.number().positive(),
+            itemLocationId: z.string().uuid()
+        })
+    ).min(1, 'At least one item is required'),
     createdBy: z.string().uuid()
 });
 
@@ -146,7 +146,7 @@ export const CreateOrderSchema = CreateOrderSchemaWithoutItems.extend({
 })
 export type CreateOrderSchemaType = z.infer<typeof CreateOrderSchema>
 
-export const UpdateOrderSchemaWithoutItems = createUpdateSchema(orders,{
+export const UpdateOrderSchemaWithoutItems = createUpdateSchema(orders, {
     orderId: z.string().uuid()
 })
 // export const UpdateOrderSchema = UpdateOrderSchemaWithoutItems.extend({
@@ -177,6 +177,8 @@ export const UpdateOrderSchema = UpdateOrderSchemaWithoutItems.extend({
 export type UpdateOrderSchemaType = z.infer<typeof UpdateOrderSchema>
 
 export const EnrichedOrderSchema1 = OrderSchema.extend({
+    zohoInvoiceID: z.string().optional().nullable(),
+    zohoInvoiceNumber: z.string().optional().nullish(),
     customerName: z.string(),
     creator: z.object({
         userId: z.string().uuid(),
@@ -197,7 +199,7 @@ export const EnrichedOrderSchema = EnrichedOrderSchema1.partial({
     fulfilledAt: true
 
 })
-    
+
 export type EnrichedOrderSchemaType = z.infer<typeof EnrichedOrderSchema>;
 
 export const dummyOrderData = {

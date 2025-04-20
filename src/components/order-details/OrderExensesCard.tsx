@@ -9,6 +9,7 @@ import { Edit, EditIcon, Home } from "lucide-react"
 import { z } from "zod"
 import { orderExpenseWithName, orderExpenseWithNameType } from '@/types/expense'
 import { OrderExpenseDialog } from "@/components/dialogs/ExpenseDialog/OrderExpenseDialog"
+import { useSession } from "next-auth/react"
 
 
 
@@ -18,7 +19,8 @@ interface OrderItemsTableProps {
 }
 
 export function OrderExensesCard({ orderExpenses, isLoading }: OrderItemsTableProps) {
-
+  const { data: session } = useSession()
+  console.log("HERE", session?.user.userType)
   if (isLoading) {
     return (
       <Card className="mt-6 bg-white/70 shadow-md hover:shadow-lg transition-shadow">
@@ -40,11 +42,13 @@ export function OrderExensesCard({ orderExpenses, isLoading }: OrderItemsTablePr
         </CardHeader>
         <CardContent>
           <p className="text-center text-gray-500 py-4">No expense in this order</p>
-          <OrderExpenseDialog>
-            <div className="flex justify-center">
-            <Button className="w-full">Add Expense</Button>
-            </div>
-          </OrderExpenseDialog>
+          {session?.user.userType === 'EMPLOYEE' &&
+            <OrderExpenseDialog>
+              <div className="flex justify-center">
+                <Button className="w-full">Add Expense</Button>
+              </div>
+            </OrderExpenseDialog>
+          }
         </CardContent>
       </Card>
     )
@@ -58,12 +62,14 @@ export function OrderExensesCard({ orderExpenses, isLoading }: OrderItemsTablePr
       <CardHeader className="p-4 ">
         <CardTitle className="text-lg text-gray-700 flex justify-between">
           <p>Order Expenses</p>
+          {session?.user.userType === 'EMPLOYEE' &&
 
-        <OrderExpenseDialog>
-          <button>
-            <Edit className="hover:cursor-pointer! stroke-cyan-400" />
-          </button>
-        </OrderExpenseDialog>
+            <OrderExpenseDialog>
+              <button>
+                <Edit className="hover:cursor-pointer! stroke-cyan-400" />
+              </button>
+            </OrderExpenseDialog>
+          }
         </CardTitle>
       </CardHeader>
       <CardContent className="p-0">

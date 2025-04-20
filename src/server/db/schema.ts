@@ -22,6 +22,7 @@ import { sql, eq } from "drizzle-orm";
 import { relations } from 'drizzle-orm';
 import { number, z } from 'zod'
 import { createInsertSchema } from "drizzle-zod";
+import { tax_id } from "@/types/types.zoho";
 
 
 export const userType = pgEnum("user_type", [ "EMPLOYEE", "CUSTOMER", "DEMO" ])
@@ -320,6 +321,8 @@ export const orders = pgTable("orders", {
   updatedAt: timestamp("updated_at", { withTimezone: true }),
   isDeleted: boolean("is_deleted").default(false),
 
+  zohoInvoiceID: text("zoho_invoice_id"),
+  zohoInvoiceNumber: text("zoho_invoice_number"),
 },
   (table) => [
     foreignKey({
@@ -426,6 +429,9 @@ export const orderHistoryRelations = relations(orderHistory, ({ one }) => ({
 export const expenseCategoryType = pgEnum("expense_category_type", [ "LABOUR", "FORKLIFT", "PACKING" ])
 export const expenseCategoryTypeSchema = z.enum(expenseCategoryType.enumValues)
 
+export const zohoTaxType = pgEnum("zoho_tax_type", [ tax_id.five, tax_id.zero ])
+export const zohoTaxTypeSchema = z.enum(zohoTaxType.enumValues)
+
 export const expenseItems = pgTable("expense_items", {
   expenseItemId: uuid("expense_item_id").defaultRandom().primaryKey(),
   expenseName: text("expense_name").notNull(),
@@ -436,9 +442,11 @@ export const expenseItems = pgTable("expense_items", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }),
 
+  zohoItemId: text("zoho_item_id"),
+  zohoTaxId: zohoTaxType().default(tax_id.five),
 })
 
-export const orderExpenseStatusTypes = pgEnum("order_expense_status_types",[
+export const orderExpenseStatusTypes = pgEnum("order_expense_status_types", [
   "PENDING", "DONE", "CANCELLED"
 ])
 export const orderExpenseStatusTypesSchema = z.enum(orderExpenseStatusTypes.enumValues)

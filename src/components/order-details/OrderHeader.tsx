@@ -25,6 +25,7 @@ import {
 import { Dialog } from "@/components/ui/dialog";
 import { EnrichedOrderSchemaType } from "@/types/orders";
 import { OrderExpenseDialog } from "@/components/dialogs/ExpenseDialog/OrderExpenseDialog";
+import { useSession } from "next-auth/react";
 
 interface OrderHeaderProps {
   handleClose: () => void;
@@ -100,6 +101,9 @@ export function OrderHeader({
   const { createdAt, orderNumber } = order;
   const formattedDate = format(new Date(createdAt), 'MMM d, yyyy');
 
+  const { data: session } = useSession()
+
+
   const actionButtons = (
     <>
       <Button
@@ -108,26 +112,31 @@ export function OrderHeader({
       >
         <Printer className="w-4 h-4" />
       </Button>
-      <OrderExpenseDialog>
-        <Button
-          className="gap-2 bg-blue-500 hover:bg-blue-600 transition-colors"
-          size="sm"
-        >
-          <DollarSignIcon className="w-4 h-4" />
-        </Button>
-      </OrderExpenseDialog>
+      {session?.user.userType === 'EMPLOYEE' &&
 
-      <CreateOrderDialog
-        isEditMode={true}
-        initialData={order}
-      >
-        <Button
-          className="gap-2 bg-purple-500 hover:bg-purple-600 transition-colors"
-          size="sm"
+        <OrderExpenseDialog>
+          <Button
+            className="gap-2 bg-blue-500 hover:bg-blue-600 transition-colors"
+            size="sm"
+          >
+            <DollarSignIcon className="w-4 h-4" />
+          </Button>
+        </OrderExpenseDialog>
+      }
+      {session?.user.userType === 'EMPLOYEE' &&
+
+        <CreateOrderDialog
+          isEditMode={true}
+          initialData={order}
         >
-          <Edit className="w-4 h-4" />
-        </Button>
-      </CreateOrderDialog>
+          <Button
+            className="gap-2 bg-purple-500 hover:bg-purple-600 transition-colors"
+            size="sm"
+          >
+            <Edit className="w-4 h-4" />
+          </Button>
+        </CreateOrderDialog>
+      }
     </>
   );
 

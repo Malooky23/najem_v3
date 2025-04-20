@@ -31,7 +31,7 @@ import { useExpenseItems } from "@/hooks/data/useExpenses";
 import { Spinner } from "@heroui/spinner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { OrderItemsTable } from "@/app/(pages)/(protected)/warehouse/orders/components/order-details/OrderItemsTable";
+import { OrderItemsTable } from "@/app/(pages)/(protected)/warehouse/orders/components/_order-details/OrderItemsTable";
 
 // --- Types ---
 type CreateOrderExpenseItem = z.infer<typeof createOrderExpenseSchema.element>;
@@ -107,7 +107,7 @@ const ExpenseItemRow = React.memo(({
                 {!isExiting ? index : ''}
             </div>
 
-            {/* Category Select */}
+            {/* Expense Select */}
             <div className="col-span-4">
                 <Select
                     value={expense.expenseItemId}
@@ -116,7 +116,7 @@ const ExpenseItemRow = React.memo(({
                     disabled={isExiting || isPending || isMarkedForDeletion}
                 >
                     <SelectTrigger className={cn("h-8 text-sm", isMarkedForDeletion && "border-dashed border-destructive/50")}>
-                        <SelectValue placeholder="Select category" />
+                        <SelectValue placeholder="Select Expense" />
                     </SelectTrigger>
                     <SelectContent>
                         {expenseItemsData?.map((item) => (
@@ -144,7 +144,7 @@ const ExpenseItemRow = React.memo(({
             {/* Price Display */}
             <div className="col-span-2">
                 <div className="relative">
-                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">AED </span>
                     <Input
                         type="number"
                         className="pl-4 pr-1 h-8 text-sm text-center"
@@ -161,7 +161,7 @@ const ExpenseItemRow = React.memo(({
                     "bg-muted/80 px-2 py-1 rounded-md text-sm h-8 flex items-center justify-center font-medium",
                     (isExiting || isMarkedForDeletion) && "opacity-50" // Fade out total if row is exiting or deleted
                 )}>
-                    ${total.toFixed(2)}
+                    AED {total.toFixed(2)}
                 </div>
             </div>
 
@@ -311,7 +311,7 @@ export function OrderExpenseDialog({ children }: OrderExpenseDialogProps) {
         const newExpense: OrderExpenseWithClient = {
             clientId: nextClientId,
             orderId: orderData.orderId,
-            expenseItemId: defaultExpenseItem.expenseItemId,
+            expenseItemId: "",
             expenseItemQuantity: 1,
             notes: undefined,
             createdBy: session.user.id ?? "undefined", // Safe assert based on canAddExpense
@@ -575,7 +575,7 @@ export function OrderExpenseDialog({ children }: OrderExpenseDialogProps) {
                                         <div className="grid grid-cols-12 gap-2 font-medium text-xs text-muted-foreground px-4 py-2 sticky top-0 bg-gray-100 z-10 border-b flex-shrink-0">
                                             {/* ... header columns ... */}
                                             <div className="col-span-1">#</div>
-                                            <div className="col-span-4">CATEGORY</div>
+                                            <div className="col-span-4">EXPENSE</div>
                                             <div className="col-span-2 text-center">QTY</div>
                                             <div className="col-span-2 text-center">PRICE</div>
                                             <div className="col-span-2 text-center">TOTAL</div>
@@ -618,7 +618,7 @@ export function OrderExpenseDialog({ children }: OrderExpenseDialogProps) {
                                         {/* Shared Notes Area */}
                                         <div className="px-4 pt-3 pb-1 mt-auto flex-shrink-0 border-t bg-gray-50/50">
                                             {/* ... Textarea ... */}
-                                            <label htmlFor="expense-notes" className="block text-sm font-medium text-muted-foreground mb-1">Order Notes (Shared)</label>
+                                            <label htmlFor="expense-notes" className="block text-sm font-medium text-muted-foreground mb-1">Expense Notes</label>
                                             <Textarea
                                                 id="expense-notes"
                                                 placeholder="Add general notes for the order..."
@@ -645,7 +645,7 @@ export function OrderExpenseDialog({ children }: OrderExpenseDialogProps) {
                                         </div>
                                         <div className="flex justify-between items-center font-medium">
                                             <span>Total Active Expense Cost:</span>
-                                            <span className="text-lg">${totalExpenseCost.toFixed(2)}</span>
+                                            <span className="text-lg">AED {totalExpenseCost.toFixed(2)}</span>
                                         </div>
                                     </CardFooter>
                                 )}

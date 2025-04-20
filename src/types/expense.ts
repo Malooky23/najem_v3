@@ -1,5 +1,5 @@
-import { expenseCategoryTypeSchema, orderExpenseStatusTypes, orderExpenseStatusTypesSchema } from "@/server/db/schema";
-import { TypeOf, z } from "zod";
+import { expenseCategoryTypeSchema, orderExpenseStatusTypes, orderExpenseStatusTypesSchema, zohoTaxTypeSchema } from "@/server/db/schema";
+import { z } from "zod";
 
 export const ExpenseFilterFields = z.enum([ 'orderNumber' , 'customerId' , 'expenseItemName' , 'expenseItemCategory' , 'status' ])
 export type ExpenseFilterFieldsType = z.infer<typeof ExpenseFilterFields>
@@ -42,7 +42,10 @@ export const expenseItemsSchema = z.object({
     notes: z.string().optional().nullable(),
     createdBy: z.string().uuid().optional(),
     createdAt: z.date(),
-    updatedAt: z.date().nullable()
+    updatedAt: z.date().nullable(),
+
+    zohoItemId: z.string().optional().nullable(),
+    zohoTaxId: zohoTaxTypeSchema.optional().nullable()
 })
 export type selectExpenseSchemaType = z.infer<typeof expenseItemsSchema>
 

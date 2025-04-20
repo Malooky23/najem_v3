@@ -5,6 +5,7 @@ import { ArrowUpRight, Box, RailSymbol, Truck, UserCircle2 } from "lucide-react"
 import { orderTypeSchema, movementTypeSchema, packingTypeSchema, deliveryMethodSchema } from "@/server/db/schema";
 import { z } from "zod";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 
 interface OrderInfoCardProps {
   customerId: string;
@@ -13,9 +14,10 @@ interface OrderInfoCardProps {
   movement: z.infer<typeof movementTypeSchema>;
   packingType: z.infer<typeof packingTypeSchema>;
   deliveryMethod: z.infer<typeof deliveryMethodSchema>;
-  orderMark: string | undefined| null;
+  orderMark: string | undefined | null;
   isLoading: boolean;
   notes: string | null
+  status: string
 }
 
 export function OrderInfoCard({
@@ -25,7 +27,8 @@ export function OrderInfoCard({
   deliveryMethod,
   orderMark,
   isLoading,
-  notes
+  notes,
+  status
 }: OrderInfoCardProps) {
   // Helper function to format enum-like strings
   const formatLabel = (value: string) => {
@@ -33,6 +36,42 @@ export function OrderInfoCard({
       word.charAt(0) + word.slice(1).toLowerCase()
     ).join(' ');
   };
+  const { data: session } = useSession()
+
+  const StatusBadge = () => {
+    if (session?.user.userType === 'EMPLOYEE') {
+      return (<StatusDropdown className=" " />)
+    }
+    const getStatusStyles = (status: string) => {
+      const baseStyles = "px-2 py-1 rounded-full text-xs font-semibold w-24 text-center inline-block"
+      const statuses: { [ key: string ]: string } = {
+        "DRAFT": "bg-gray-500/20 text-gray-700",
+        "PENDING": "bg-yellow-500/20 text-yellow-700",
+        "PROCESSING": "bg-blue-500/20 text-blue-700",
+        "COMPLETED": "bg-green-500/20 text-green-700",
+        "READY": "bg-purple-500/20 text-purple-700",
+        "CANCELLED": "bg-red-500/20 text-red-700",
+      }
+      return `${baseStyles} ${statuses[ status ] || statuses[ "PENDING" ]}`
+    }
+    return (
+      <div className="flex items-center  w-full">
+        <span className={getStatusStyles(status)}>{status}</span>
+      </div>
+    )
+  }
+
+  const OrderStatus = () => {
+    if (session?.user.userType === 'EMPLOYEE') {
+      return (<StatusDropdown className=" " />)
+    }
+    return (
+      <div className="pt-[4px] flex items-center h-full text-end gap-2 text-sm font-medium text-gray-700 ">
+        <Badge className={cn(
+          status==="COMPLETED" && "bg-green-200 text-green-800")} >{status}</Badge>
+      </div>
+    )
+  }
 
   return (
     <Card className="bg-white/70 shadow-md hover:shadow-lg transition-shadow mt-2">
@@ -51,7 +90,7 @@ export function OrderInfoCard({
             {isLoading ? (
               <Skeleton className="h-4 w-24" />
             ) : (
-              <StatusDropdown className=" "/>
+                <StatusBadge   />
             )}
           </div>
 
@@ -61,8 +100,8 @@ export function OrderInfoCard({
             {isLoading ? (
               <Skeleton className="h-4 w-24" />
             ) : (
-                <div className="pt-[4px] flex items-center h-full text-end gap-2 text-sm font-medium text-gray-700 ">
-                  <ArrowUpRight className="w-4 h-4 text-blue-500" />
+              <div className="pt-[4px] flex items-center h-full text-end gap-2 text-sm font-medium text-gray-700 ">
+                <ArrowUpRight className="w-4 h-4 text-blue-500" />
                 <span className="text-end">{movement}</span>
               </div>
             )}
@@ -87,7 +126,7 @@ export function OrderInfoCard({
             {isLoading ? (
               <Skeleton className="h-4 w-24" />
             ) : (
-                <div className="pt-auto flex items-center gap-2 text-sm font-medium text-gray-700">
+              <div className="pt-auto flex items-center gap-2 text-sm font-medium text-gray-700">
                 <Box className="w-4 h-4 text-orange-500" />
                 <span>{formatLabel(packingType)}</span>
               </div>
@@ -153,6 +192,7 @@ import { useState, useRef, useEffect } from 'react';
 import { cn } from "@/lib/utils";
 import { ChevronDownIcon, ChevronUpIcon } from 'lucide-react';
 import { StatusDropdown } from "./StatusDropdown";
+import { useSession } from "next-auth/react";
 
 interface CollapsibleNotesProps {
   text: string;

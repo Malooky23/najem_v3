@@ -8,7 +8,7 @@ import { MovementsTable } from "./MovementsTable"
 import { DetailsPanel } from "./details/DetailsPanel"
 import { useUrlSync } from "@/hooks/useUrlSync"
 import { DropDownMenuButton } from "@/components/drop-down-menu-button"
-import { OrderDetailsContainer } from "../../orders/components/order-details/OrderDetailsContainer"
+import { OrderDetailsContainer } from "../../orders/components/_order-details/OrderDetailsContainer"
 import { useOrdersStore } from "@/stores/orders-store"
 
 interface PageHeaderProps {

@@ -310,6 +310,8 @@ export async function fetchOrderById(orderId: string): Promise<ApiResponse<Enric
             updatedAt: order.updated_at ? new Date(order.updated_at.toString()) : null,
             isDeleted: Boolean(order.is_deleted),
             customerName: order.displayName || 'Unknown Customer',
+            zohoInvoiceID: order.zoho_invoice_id || null,
+            zohoInvoiceNumber: order.zoho_invoice_number || null,
             creator: {
                 userId: order.created_by,
                 firstName: order.creatorFirstName || '',

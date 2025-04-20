@@ -177,6 +177,7 @@ export const OrderDetailsContainer = memo(function OrderDetailsContainer({
               deliveryMethod={displayData.deliveryMethod}
               orderMark={displayData.orderMark}
               notes={displayData.notes}
+              status={displayData.status}
               // Pass the specific loading state for basic info
               isLoading={showBasicInfoLoading}
             />
