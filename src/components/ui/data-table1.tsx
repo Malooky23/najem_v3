@@ -13,6 +13,7 @@ import {
     PaginationState,
     RowSelectionState,
     OnChangeFn,
+    RowSelection,
 } from '@tanstack/react-table';
 import {
     ArrowUpDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, MoreHorizontal,
@@ -51,6 +52,8 @@ interface DataTableProps<TData, TValue> {
     currentViewId?: string | null; // New: Controlled view state from parent
     onViewChange?: (viewId: string | null) => void; // New: Callback to change view state in parent
     // Removed URL param name props
+
+
 }
 
 export function DataTable<TData, TValue>({
@@ -72,6 +75,7 @@ export function DataTable<TData, TValue>({
     onRowClick,
     currentViewId, // Use prop
     onViewChange, // Use prop
+
 }: DataTableProps<TData, TValue>) {
 
     // Removed: router, pathname, searchParams, useTransition, updateSearchParams
@@ -95,6 +99,7 @@ export function DataTable<TData, TValue>({
             setRowSelection(newSelection);
             if (onRowSelectionChange) onRowSelectionChange(newSelection);
 
+
             // If selection changes (especially if > 1 selected), clear the view
             const selectedIds = Object.keys(newSelection).filter(id => newSelection[ id ]);
             if (selectedIds.length !== 1 && currentViewId && onViewChange) {
@@ -108,10 +113,10 @@ export function DataTable<TData, TValue>({
         manualPagination: true,
         manualSorting: true,
         // Provide a default getRowId if rowIdKey is used
-        getRowId: (row) => String(row[rowIdKey]),
+        getRowId: (row) => String(row[ rowIdKey ]),
     });
 
-    // Removed: useEffect hook for syncing state TO URL (lines 142-288 in original)
+
 
     // --- Handler for Row Click ---
     const handleRowClickInternal = (row: TData) => {
@@ -243,8 +248,8 @@ export function DataTable<TData, TValue>({
                     currentPage={table.getState().pagination.pageIndex + 1}
                     pageSize={table.getState().pagination.pageSize}
                     isLoading={isLoading || isFetching} // Combine loading states for controls
-                    // Removed direct page/size props if controls get them from table state
-                    // Removed onPageChange/onPageSizeChange if controls use table methods
+                // Removed direct page/size props if controls get them from table state
+                // Removed onPageChange/onPageSizeChange if controls use table methods
                 />
             </div>
         </div>

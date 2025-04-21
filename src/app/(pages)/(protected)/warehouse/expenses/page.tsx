@@ -5,7 +5,7 @@ import React, {
     useState, useEffect, useMemo, useCallback, Suspense,
 } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { type PaginationState, type SortingState } from '@tanstack/react-table';
+import { RowSelectionState, type PaginationState, type SortingState } from '@tanstack/react-table';
 import { z } from 'zod';
 import { useDebounce } from 'use-debounce';
 import { type DateRange } from 'react-day-picker';
@@ -380,6 +380,9 @@ export default function ExpensesPage() {
     // console.log("Rendering ExpensesPage. Current State for Table:", currentState);
     // console.log("Current URL Search Params:", searchParams.toString());
 
+    const [ rowSelection, setRowSelection ] = useState<RowSelectionState>({})
+    Object.keys(rowSelection).map((key, index) => console.log([ index, key ]))
+
     return (
         // Use a container that allows vertical scrolling if content exceeds viewport
         <div className="px-4 h-[100vh] flex flex-col overflow-clip ">
@@ -392,6 +395,8 @@ export default function ExpensesPage() {
                 onClearAll={handleClearAll}
                 currentState={currentState}
                 onFilterChange={handleFilterChange}
+                rowSelection={rowSelection}
+
             />
 
             {/* Table takes remaining space and scrolls internally if needed */}
@@ -425,6 +430,9 @@ export default function ExpensesPage() {
                 onPaginationChange={handlePaginationChange}
                 onSortingChange={handleSortingChange}
                 onViewChange={handleViewChange} // If table controls view
+                setRowSelection={setRowSelection}
+
+
             />
         </div>
     );

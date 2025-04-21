@@ -11,6 +11,8 @@ import { orderExpenseStatusTypesSchema } from '@/server/db/schema';
 import { z } from 'zod';
 import { ExpenseFilterPanel } from "./ExpenseFilterPanel"
 import { ExpenseFilters } from "@/types/expense"
+import { RowSelectionState } from "@tanstack/react-table"
+import CreateInvoiceDialog from "@/components/dialogs/ExpenseInvoiceDialog/InvoiceDialog"
 
 interface ExpenseHeaderProps {
   currentStatus: z.infer<typeof orderExpenseStatusTypesSchema> | null; // Controlled status from parent
@@ -20,6 +22,7 @@ interface ExpenseHeaderProps {
   onClearAll: () => void; // Optional: Handler for a global clear button
   currentState: ExpenseFilters
   onFilterChange: (filters: ExpenseFilters) => void;
+  rowSelection: RowSelectionState;
 }
 
 export default function ExpenseHeader({
@@ -29,7 +32,8 @@ export default function ExpenseHeader({
   onSearchChange,
   currentState,
   onFilterChange,
-  onClearAll // Use this prop if the clear button is meant to clear more than just search
+  onClearAll,
+  rowSelection
 }: ExpenseHeaderProps) {
 
   // Removed: router, pathname, searchParams, handleStatusChange
@@ -91,6 +95,10 @@ export default function ExpenseHeader({
       </div>
 
       <div className="flex items-center gap-2"> {/* Group actions */}
+        {Object.keys(rowSelection).length > 0 &&
+          <CreateInvoiceDialog selectedOrderIds={rowSelection} />
+
+        }
         <CreateExpenseButton />
         <QuickAccess />
       </div>

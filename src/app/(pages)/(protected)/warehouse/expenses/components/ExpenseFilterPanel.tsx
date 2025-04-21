@@ -49,7 +49,6 @@ export function ExpenseFilterPanel({
 }: ExpenseFilterPanelProps) {
     // Local state to manage UI responsiveness, synced with props
     // Explicitly type the status state
-    console.log("WTF  ", initialFilterValues.dateRange)
     const [ status, setStatus ] = useState<StatusType>(initialFilterValues.status || "")
     const [ orderNumber, setOrderNumber ] = useState(initialFilterValues.orderNumber || "")
     const [ dateRange, setDateRange ] = useState<DateRange | undefined>(initialFilterValues.dateRange)
