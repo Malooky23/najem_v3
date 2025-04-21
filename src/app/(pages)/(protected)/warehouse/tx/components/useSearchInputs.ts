@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { useDebounce } from './useDebounce';
+import { useDebounce } from 'use-debounce';
 import { useStockMovementStore } from '@/stores/stock-movement-store';
 
 interface SearchInputs {
@@ -17,7 +17,7 @@ export function useSearchInputs(debounceMs = 300) {
   });
 
   // Debounce all inputs together
-  const debouncedInputs = useDebounce(inputs, debounceMs);
+  const [debouncedInputs] = useDebounce(inputs, debounceMs);
 
   // Update store when debounced values change
   useEffect(() => {

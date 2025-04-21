@@ -1,10 +1,10 @@
 'use client'
 
-import { useDebounce } from "@/hooks/useDebounce"
 import Link from "next/link"
 import { usePathname, useSearchParams, useRouter } from "next/navigation"
 
 import { useCallback, useEffect, useState } from "react"
+import { useDebounce } from "use-debounce"
 
 
 
@@ -28,7 +28,7 @@ export default function ExampleURLParams() {
     const URLParams = () => {
         const URLState = useSearchParams();
         const [ params, setParams ] = useState<Record<string, string>>({});
-        const bouncedParams = useDebounce(params, 1000)
+        const [bouncedParams] = useDebounce(params, 1000)
         useEffect(() => {
             const paramsObject: Record<string, string> = {};
             URLState.forEach((value, key) => {
@@ -46,7 +46,6 @@ export default function ExampleURLParams() {
     };
 
     const Boo = () => {
-        const debounced = useDebounce(typed)
         // router.push(pathname + '?' + createQueryString('OG', typed))
         // useDebounce(router.push(pathname + '?' + createQueryString('Debounced', typed)))
 

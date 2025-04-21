@@ -1,8 +1,14 @@
 import { expenseCategoryTypeSchema, orderExpenseStatusTypes, orderExpenseStatusTypesSchema, zohoTaxTypeSchema } from "@/server/db/schema";
+import { DateRange } from "react-day-picker";
 import { z } from "zod";
 
 export const ExpenseFilterFields = z.enum([ 'orderNumber' , 'customerId' , 'expenseItemName' , 'expenseItemCategory' , 'status' ])
 export type ExpenseFilterFieldsType = z.infer<typeof ExpenseFilterFields>
+
+export const statusOptions = [ '', 'PENDING', 'DONE', 'CANCELLED' ] as const;
+// Derive the StatusType union from the options
+export type StatusType = typeof statusOptions[ number ]; // '' | 'PENDING' | 'DONE'
+
 
 export interface ExpenseFilters {
     orderNumber?: string
@@ -10,10 +16,10 @@ export interface ExpenseFilters {
     dateRange?: {
         from: Date;
         to: Date;
-    };
+    } | DateRange
     expenseItemName?: string
     expenseItemCategory?: string
-    status?: z.infer<typeof orderExpenseStatusTypesSchema>
+    status?: StatusType
     search?: string;
 } 
 

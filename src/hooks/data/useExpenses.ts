@@ -32,8 +32,12 @@ export function useOrderExpenses({
             // Destructure filters to ensure key stability
             search: filters?.search, // This should be the debounced value from the caller
             status: filters?.status,
-            dateFrom: filters?.dateRange?.from?.toISOString(),
-            dateTo: filters?.dateRange?.to?.toISOString(),
+            dateFrom: filters?.dateRange?.from && new Date(filters?.dateRange?.from),
+            dateTo: filters?.dateRange?.to && new Date(filters?.dateRange?.to),
+            customerId: filters?.customerId,
+            orderNumber: filters?.orderNumber,
+            expenseItemName: filters?.expenseItemName,
+            expenseItemCategory: filters?.expenseItemCategory,
             // Add other specific filter values here if they exist
             // Destructure sort
             sortField: sort?.field,

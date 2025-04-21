@@ -15,6 +15,7 @@ export default async function ProtectedLayout({
                 <Link className="bg-slate-300  flex p-2 w-[200px]" href='/test/table-page'><Table />Test Table Page</Link>
                 <Link className="bg-slate-300  flex p-2 w-[200px]" href='/test/expense-items'><HardHat />expense-items</Link>
                 <Link className="bg-slate-300  flex p-2 w-[200px]" href='/test/zoho'><HardHat />zoho</Link>
+                <Link className="bg-slate-300  flex p-2 w-[200px]" href='/test/debounce'><HardHat />debounce</Link>
             </div>
             <div className="w-full h-full">
 

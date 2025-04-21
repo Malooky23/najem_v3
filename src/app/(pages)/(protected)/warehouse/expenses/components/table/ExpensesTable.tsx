@@ -9,8 +9,9 @@ import { DataTable } from '@/components/ui/data-table1';
 import { expenseColumns } from './columns';
 import { EnrichedOrderExpenseSchemaType, ExpenseFilters, ExpenseSort, ExpenseSortFields } from '@/types/expense';
 import { useOrderExpenses } from '@/hooks/data/useExpenses';
-import { useDebounce } from '@/hooks/useDebounce';
 import { orderExpenseStatusTypesSchema } from '@/server/db/schema';
+import { DateRange } from 'react-day-picker';
+import { useDebounce } from 'use-debounce';
 
 interface ExpensesTableProps {
   pagination: PaginationState;
@@ -18,8 +19,8 @@ interface ExpensesTableProps {
   viewId: string | null;
   searchInput: string;
   statusFilter: z.infer<typeof orderExpenseStatusTypesSchema> | null;
-  // dateFilter?: { from: Date; to: Date } | null;
-
+  dateFilter?: DateRange | null;
+  currentState: ExpenseFilters;
   onPaginationChange: OnChangeFn<PaginationState>;
   onSortingChange: OnChangeFn<SortingState>;
   onViewChange: (viewId: string | null) => void;
@@ -31,29 +32,35 @@ export function ExpensesTable({
   viewId,
   searchInput,
   statusFilter,
-  // dateFilter,
+  dateFilter,
+  currentState,
   onPaginationChange,
   onSortingChange,
   onViewChange,
 }: ExpensesTableProps) {
 
   const queryClient = useQueryClient();
-  const debouncedSearch = useDebounce(searchInput, 300); // Debounce search input
+  // No longer need to debounce here, the prop `searchInput` is already debounced by the parent page
+const [debounceCurrentState] = useDebounce(currentState, 500);
 
   // === Prepare Filters and Sort for API ===
   const filtersForApi = useMemo<ExpenseFilters>(() => {
     const filters: ExpenseFilters = {};
     filters.status = statusFilter ?? undefined;
-    // filters.dateRange = dateFilter ?? undefined; // Add if needed
-
-    // Use the debounced search term for the API filter
-    if (debouncedSearch) {
-      filters.search = debouncedSearch;
+    if (dateFilter?.from && dateFilter?.to){
+      filters.dateRange = dateFilter
+    }
+    filters.orderNumber = currentState.orderNumber;
+    filters.customerId = currentState.customerId;
+    filters.expenseItemName = currentState.expenseItemName;
+    // Use the searchInput prop directly (it's already debounced)
+    if (searchInput) {
+      filters.search = searchInput;
     } else {
-      filters.search = undefined;
+      filters.search = undefined; // Ensure it's explicitly undefined if empty // Ensure it's explicitly undefined if empty
     }
     return filters;
-  }, [ statusFilter, debouncedSearch /*, dateFilter */ ]); // Depend on debouncedSearch
+  }, [ statusFilter, searchInput, debounceCurrentState ]); // Depend on searchInput prop now
 
   const sortForApi = useMemo<ExpenseSort>(() => ({
     field: (sorting.length > 0 ? sorting[0].id : 'createdAt') as ExpenseSortFields,
@@ -88,8 +95,8 @@ export function ExpensesTable({
         currentViewId={viewId}
         onViewChange={onViewChange}
         isLoading={queryResult.isLoading}
-        // Still hide fetching state during rapid typing for better UX
-        isFetching={queryResult.isFetching && (searchInput === debouncedSearch)}
+        // Show fetching state whenever the query is fetching (searchInput prop is debounced)
+        isFetching={queryResult.isFetching}
         isError={queryResult.isError}
         error={queryResult.error}
         rowIdKey="orderExpenseId"

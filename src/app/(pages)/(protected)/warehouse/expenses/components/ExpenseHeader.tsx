@@ -1,8 +1,6 @@
-// src/app/(pages)/(protected)/warehouse/expenses/components/ExpenseHeader.tsx
 'use client'
 
 import { QuickAccess } from "@/components/quick-access"
-// Removed: import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import CreateExpenseButton from "./CreateExpenseButton"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import SearchPanel from "./SearchPanel"
@@ -11,13 +9,17 @@ import { Button } from "@/components/ui/button" // Keep if clear button remains 
 // Removed: import { useCallback } from "react"
 import { orderExpenseStatusTypesSchema } from '@/server/db/schema';
 import { z } from 'zod';
+import { ExpenseFilterPanel } from "./ExpenseFilterPanel"
+import { ExpenseFilters } from "@/types/expense"
 
 interface ExpenseHeaderProps {
-    currentStatus: z.infer<typeof orderExpenseStatusTypesSchema> | null; // Controlled status from parent
-    onStatusChange: (status: z.infer<typeof orderExpenseStatusTypesSchema> | null) => void; // Callback to parent
+  currentStatus: z.infer<typeof orderExpenseStatusTypesSchema> | null; // Controlled status from parent
+  onStatusChange: (status: z.infer<typeof orderExpenseStatusTypesSchema> | null) => void; // Callback to parent
   currentSearch: string; // Pass search down to SearchPanel
   onSearchChange: (value: string) => void; // Pass search handler down
-  onClearAll?: () => void; // Optional: Handler for a global clear button
+  onClearAll: () => void; // Optional: Handler for a global clear button
+  currentState: ExpenseFilters
+  onFilterChange: (filters: ExpenseFilters) => void;
 }
 
 export default function ExpenseHeader({
@@ -25,6 +27,8 @@ export default function ExpenseHeader({
   onStatusChange,
   currentSearch,
   onSearchChange,
+  currentState,
+  onFilterChange,
   onClearAll // Use this prop if the clear button is meant to clear more than just search
 }: ExpenseHeaderProps) {
 
@@ -60,20 +64,30 @@ export default function ExpenseHeader({
         <SearchPanel
           initialValue={currentSearch} // Pass initial value down
           onSearchChange={onSearchChange} // Pass handler down
-          // The clear button inside SearchPanel should ideally only clear search
-          // If you need a button here to clear *all* filters/sorts, use onClearAll
+          initialFilterValues={currentState}
+          // customerOptions={ }
+          // expenseItemOptions={ }
+          onFilterChange={onFilterChange}
+          onClearAll={onClearAll}
         />
         {/* Optional: Global Clear Button */}
         {onClearAll && (
-            <Button
-                variant="outline"
-                size="icon"
-                onClick={onClearAll}
-                title="Clear all filters and sorting"
-            >
-                <Trash2Icon className="h-4 w-4" />
-            </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={onClearAll}
+            title="Clear all filters and sorting"
+          >
+            <Trash2Icon className="h-4 w-4" />
+          </Button>
         )}
+        {/* <ExpenseFilterPanel
+          initialFilterValues={currentState}
+          // customerOptions={ }
+          // expenseItemOptions={ }
+          onFilterChange={ onFilterChange }
+          onClearAll={onClearAll}
+        /> */}
       </div>
 
       <div className="flex items-center gap-2"> {/* Group actions */}

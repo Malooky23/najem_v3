@@ -13,7 +13,7 @@ import {
 import { MovementType } from "@/types/stockMovement"
 import { cn } from "@/lib/utils"
 import { useStockMovementStore } from "@/stores/stock-movement-store"
-import { useSearchInputs } from "@/hooks/useSearchInputs"
+import { useSearchInputs } from "@/app/(pages)/(protected)/warehouse/tx/components/useSearchInputs"
 
 interface SearchPanelProps {
   isLoading?: boolean
