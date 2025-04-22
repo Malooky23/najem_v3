@@ -4,8 +4,9 @@ import { EnrichedOrderExpenseSchema, EnrichedOrderExpenseSchemaType, expenseItem
 import { db } from "@/server/db"
 import { z } from "zod"
 import { enrichedOrderExpenseView } from '@/server/db/schema'
-import { eq, and } from "drizzle-orm"
+import { eq, and, inArray, desc } from "drizzle-orm"
 import { orders } from "../drizzle/schema"
+import { ApiResponse } from "@/types/common"
 
 export async function DBfetchExpenseItemsList(): Promise<selectExpenseSchemaType[]> {
     try {
@@ -27,16 +28,37 @@ export async function DBfetchExpenseItemsList(): Promise<selectExpenseSchemaType
         }
     }
 };
-export async function DBfetchExpenses(): Promise<EnrichedOrderExpenseSchemaType[]> {
-    try {
-        const whereConditions = []
-        whereConditions.push(eq(enrichedOrderExpenseView.orderNumber, 38))
-        const rawData = await db.select().from(enrichedOrderExpenseView).where(and(...whereConditions))
 
-        const parse = z.array(EnrichedOrderExpenseSchema).parse(rawData)
-        return parse;
-        // return rawData;
-        
+
+export type DBSearchExpensesParams = {
+    orderExpenseIds?: string[]
+    customerId?: string
+}
+
+export async function DBfetchExpensesByOrderExpenseIds(searchParams: DBSearchExpensesParams): Promise<ApiResponse<EnrichedOrderExpenseSchemaType[]>> {
+    try {
+        let rawData;
+
+        if (searchParams.orderExpenseIds) {
+            rawData = await db.select().from(enrichedOrderExpenseView)
+                .where(inArray(enrichedOrderExpenseView.orderExpenseId, searchParams.orderExpenseIds))
+                .orderBy(enrichedOrderExpenseView.createdAt);
+        } else if (searchParams.customerId) {
+            rawData = await db.select().from(enrichedOrderExpenseView)
+                .where(eq(enrichedOrderExpenseView.customerId, searchParams.customerId))
+                .orderBy(enrichedOrderExpenseView.createdAt);
+        } else {
+            return { success: true, data: [] }; // Return empty array if no search params are provided
+        }
+
+        console.log(rawData);
+        const parse = z.array(EnrichedOrderExpenseSchema).safeParse(rawData)
+        if (!parse.success) {
+            console.error("Data validation error");
+            return { success: false, message: "Invalid expense Items data structure received from database" }
+        }
+        return { success: true, data: parse.data }
+
     } catch (error) {
         if (error instanceof Error) {
             console.error("Error fetching expense Items:", error.message);
@@ -47,4 +69,3 @@ export async function DBfetchExpenses(): Promise<EnrichedOrderExpenseSchemaType[
         }
     }
 };
-

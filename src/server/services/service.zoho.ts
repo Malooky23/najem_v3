@@ -1,7 +1,7 @@
 'use server'; // Mark this module as containing Server Actions
 
 import {
-    OriginalInvoiceDataSchema,
+    CreateZohoInvoiceDataSchema,
     type OriginalInvoiceData,
     type ZohoCreatedInvoice,
     ZohoCreatedInvoiceSchema,
@@ -84,7 +84,7 @@ export async function createZohoInvoice(
     console.log('Server Action: createZohoInvoice invoked.');
 
     // 1. Validate Input Data using Zod
-    const validationResult = OriginalInvoiceDataSchema.safeParse(invoiceData);
+    const validationResult = CreateZohoInvoiceDataSchema.safeParse(invoiceData);
 
     if (!validationResult.success) {
         console.error('Input validation failed:', validationResult.error.flatten());

@@ -1,6 +1,6 @@
 'use client'
 
-import { DBfetchExpenseItemsList } from "@/server/DB-Queries/expense-queries";
+import { DBfetchExpenseItemsList, DBfetchExpensesByOrderExpenseIds, DBSearchExpensesParams } from "@/server/DB-Queries/expense-queries";
 import { getOrderExpenses } from "@/server/services/service.expenses";
 import { selectExpenseSchemaType, UseExpensesParams } from "@/types/expense";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
@@ -61,3 +61,20 @@ export function useOrderExpenses({
         refetchOnWindowFocus: false,
     });
 }
+
+
+export function useSearchOrderExpenses(expenseIds: DBSearchExpensesParams, options: {enabled: boolean}) {
+    return useQuery({
+        queryKey: [ "expenseItems", expenseIds ],
+        queryFn: async () => {
+            const response = await DBfetchExpensesByOrderExpenseIds(expenseIds)
+            if (response.success) {
+                return response.data
+            }
+            throw new Error(response.message ?? "An Error occurred while fetching expenses. E4322")
+        },
+        enabled: options.enabled,
+        staleTime: 50 * 600 * 1000,
+    });
+}
+

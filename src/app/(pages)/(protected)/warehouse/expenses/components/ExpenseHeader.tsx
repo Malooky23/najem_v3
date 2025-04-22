@@ -95,10 +95,10 @@ export default function ExpenseHeader({
       </div>
 
       <div className="flex items-center gap-2"> {/* Group actions */}
-        {Object.keys(rowSelection).length > 0 &&
+
           <CreateInvoiceDialog selectedOrderIds={rowSelection} />
 
-        }
+
         <CreateExpenseButton />
         <QuickAccess />
       </div>

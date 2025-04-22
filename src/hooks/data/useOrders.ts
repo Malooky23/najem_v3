@@ -1,18 +1,18 @@
 'use client'
 
 import {
-    OrderSchemaType,
-    CreateOrderSchemaType,
-    UpdateOrderSchemaType,
-    OrderFilters,
-    OrderSort,
-    EnrichedOrderSchemaType,
+  OrderSchemaType,
+  CreateOrderSchemaType,
+  UpdateOrderSchemaType,
+  OrderFilters,
+  OrderSort,
+  EnrichedOrderSchemaType,
 } from "@/types/orders";
 import { Pagination, ApiResponse } from "@/types/common";
 import { useMutation, useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 // TODO: Replace these direct imports with service layer functions (e.g., from '@/server/services/orders-services')
 //       similar to how useItems uses NEW-items-services.
-import { fetchOrders, fetchOrderById, createOrderInDb, updateOrderInDb } from "@/server/DB-Queries/orders-queries";
+import { fetchOrders, fetchOrderById, createOrderInDb, updateOrderInDb, DBSearchOrders } from "@/server/DB-Queries/orders-queries";
 import { createOrderExpenseSchemaType, orderExpenseSchemaType } from "@/types/expense";
 import { createOrderExpense } from "@/server/services/order-services";
 
@@ -42,7 +42,7 @@ function useMutationFactory<T, R>(
 
         queryKeysToInvalidate.forEach(queryKey => {
           // Ensure queryKey is treated as an array for invalidation
-          queryClient.invalidateQueries({ queryKey: Array.isArray(queryKey) ? queryKey : [queryKey] });
+          queryClient.invalidateQueries({ queryKey: Array.isArray(queryKey) ? queryKey : [ queryKey ] });
         });
       }
       // Optional: Add success toast/notification here
@@ -66,19 +66,19 @@ export interface UseOrdersQueryParams {
 }
 
 export function useOrdersQuery({
-    page = 1,
-    pageSize = 20, // Default page size
-    filters = {},
-    sort = { field: 'orderNumber', direction: 'desc' }, // Default sort
-    enabled = true, // Query is enabled by default
+  page = 1,
+  pageSize = 20, // Default page size
+  filters = {},
+  sort = { field: 'orderNumber', direction: 'desc' }, // Default sort
+  enabled = true, // Query is enabled by default
 }: UseOrdersQueryParams = {}) {
 
-  const queryKey = ['orders', page, pageSize, filters, sort];
+  const queryKey = [ 'orders', page, pageSize, filters, sort ];
   return useQuery({
     queryKey: queryKey,
-    queryFn: async () => { 
+    queryFn: async () => {
       const response = await fetchOrders(page, pageSize, filters, sort);
-      return response 
+      return response
     },
     enabled: enabled, // Control query execution
     staleTime: 10 * 60 * 1000, // 10 minutes
@@ -90,7 +90,7 @@ export function useOrdersQuery({
 
 // --- Query Hook for Single Order ---
 export function useOrderByIdQuery(orderId: string | null, options?: { enabled?: boolean }) {
-  const queryKey = ['order', orderId];
+  const queryKey = [ 'order', orderId ];
 
   return useQuery({
     queryKey: queryKey,
@@ -123,7 +123,7 @@ export function useCreateOrder() {
     {
       // Invalidate the base 'orders' query key and potentially specific filtered views
       // A simple invalidation of ['orders'] might suffice if detailed filtering isn't critical after creation
-      invalidateQueries:()=> [['orders']]
+      invalidateQueries: () => [ [ 'orders' ] ]
     }
   );
 }
@@ -134,7 +134,7 @@ export function useUpdateOrder() {
     {
       // Invalidate the base 'orders' query key.
       // Also consider invalidating specific order detail queries if they exist (e.g., ['order', orderId])
-      invalidateQueries: ()=> [['orders']]
+      invalidateQueries: () => [ [ 'orders' ] ]
       // TODO: Add optimistic updates if needed for better UX
     }
   );
@@ -143,17 +143,37 @@ export function useUpdateOrder() {
 // TODO: Add useDeleteOrder hook if needed
 
 
-export function useCreateOrderExpense(){
+export function useCreateOrderExpense() {
 
   return useMutationFactory<createOrderExpenseSchemaType, orderExpenseSchemaType>(
     createOrderExpense,
-      {
-        invalidateQueries: (data) => [ 
-          [ 'orders', [ 'order', data[0].orderId ] ],
-          ['orderExpenses']
-      
+    {
+      invalidateQueries: (data) => [
+        [ 'orders', [ 'order', data[ 0 ].orderId ] ],
+        [ 'orderExpenses' ]
+
       ],
 
+    }
+  );
+}
+
+export type DBSearchOrderParams = {
+  orderIds?: string[]
+  customerId?: string
+}
+
+export function useSearchOrders(expenseIds: DBSearchOrderParams, options: { enabled: boolean }) {
+  return useQuery({
+    queryKey: [ "expenseItems", expenseIds ],
+    queryFn: async () => {
+      const response = await DBSearchOrders(expenseIds)
+      if (response.success) {
+        return response.data
       }
-    );
-  }
+      throw new Error(response.message ?? "An Error occurred while fetching expenses. E4322")
+    },
+    enabled: options.enabled,
+    staleTime: 50 * 600 * 1000,
+  });
+}

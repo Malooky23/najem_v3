@@ -14,9 +14,12 @@ import {
     OrderSort,
     EnrichedOrderSchema,
     EnrichedOrderSchemaType,
+    OrderSchemaType,
+    OrderSchema,
 } from '@/types/orders';
 import { ApiResponse, Pagination } from '@/types/common';
 import { createOrderExpenseSchema, createOrderExpenseSchemaType, orderExpenseSchemaType, orderExpenseWithNameType } from '@/types/expense';
+import { DBSearchOrderParams } from '@/hooks/data/useOrders';
 
 // --- Helper Functions (Adapted from actions) ---
 
@@ -705,3 +708,36 @@ export async function createOrderExpenseInDb(inputData: createOrderExpenseSchema
         return { success: false, message: `Failed to update order expenses: ${message}` };
     }
 }
+
+export async function DBSearchOrders(searchParams: DBSearchOrderParams): Promise<ApiResponse<OrderSchemaType[]>> {
+    try {
+        let rawData;
+
+        if (searchParams.orderIds) {
+            rawData = await db.select().from(orders)
+                .where(inArray(orders.orderId, searchParams.orderIds))
+        } else if (searchParams.customerId) {
+            rawData = await db.select().from(orders)
+                .where(eq(orders.customerId, searchParams.customerId))
+        } else {
+            return { success: true, data: [] }; // Return empty array if no search params are provided
+        }
+
+        console.log(rawData);
+        const parse = z.array(OrderSchema).safeParse(rawData)
+        if (!parse.success) {
+            console.error("Data validation error");
+            return { success: false, message: "Invalid Order data structure received from database" }
+        }
+        return { success: true, data: parse.data }
+
+    } catch (error) {
+        if (error instanceof Error) {
+            console.error("Error fetching orders:", error.message);
+            return { success: false, message: "Error fetching orders" }
+        } else {
+            console.error("An unexpected error occurred:", error);
+            return { success: false, message: "An unexpected error occurred while fetching orders" }
+        }
+    }
+};

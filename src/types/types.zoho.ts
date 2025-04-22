@@ -21,7 +21,7 @@ export const OriginalLineItemSchema = z.object({
 });
 
 // Schema for the overall input data structure (representing the invoice to copy from)
-export const OriginalInvoiceDataSchema = z.object({
+export const CreateZohoInvoiceDataSchema = z.object({
     customer_id: z.string({ required_error: 'Customer ID is required' }).min(1, 'Customer ID cannot be empty'),
     line_items: z.array(OriginalLineItemSchema).min(1, 'Invoice must have at least one line item'),
     reference_number: z.string().optional(),
@@ -55,7 +55,7 @@ export const OriginalInvoiceDataSchema = z.object({
 });
 
 // Type inferred from the schema for type safety in our function
-export type OriginalInvoiceData = z.infer<typeof OriginalInvoiceDataSchema>;
+export type OriginalInvoiceData = z.infer<typeof CreateZohoInvoiceDataSchema>;
 
 // Schema for the expected successful response structure from Zoho Create Invoice API
 // Based on the Zoho response example you provided. Refine as needed.
@@ -93,3 +93,12 @@ export const tax_id = {
     zero: "5293485000000114033",
     five: "5293485000000114027"
 }
+
+export const ZOHO_ITEM_ID = {
+    "Sack Large": "5293485000000156106",
+    "Sack Small": "5293485000000156106",
+    "Forklift Offloading": "5293485000000589684",
+    "Forklift Loading": "5293485000000589697",
+    "Labour Full Day": "5293485000000177406"
+}
+
