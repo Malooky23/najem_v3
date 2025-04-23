@@ -105,6 +105,7 @@ export const customers = pgTable("customers", {
   customerNumber: serial("customer_number").notNull(),
   displayName: varchar("display_name", { length: 100 }).notNull(),
   customerType: customerType("customer_type").notNull(),
+  zohoCustomerId: text("zoho_customer_id"),
 
   notes: text(),
   country: text().notNull(), //we need to specify customer country irregardles of address table.
@@ -435,7 +436,7 @@ export const zohoTaxTypeSchema = z.enum(zohoTaxType.enumValues)
 export const expenseItems = pgTable("expense_items", {
   expenseItemId: uuid("expense_item_id").defaultRandom().primaryKey(),
   expenseName: text("expense_name").notNull(),
-  expensePrice: numeric("expense_price").notNull(),
+  defaultExpensePrice: numeric("default_expense_price").notNull(),
   expenseCategory: expenseCategoryType("expense_category"),
   notes: text(),
   createdBy: uuid("created_by"),
@@ -455,6 +456,7 @@ export const orderExpenses = pgTable("order_expenses", {
   orderExpenseId: uuid("order_expense_id").defaultRandom().primaryKey(),
   orderId: uuid("order_id").notNull().references(() => orders.orderId),
   expenseItemId: uuid("expense_item_id").notNull().references(() => expenseItems.expenseItemId),
+  expenseItemPrice: numeric("expense_item_price").notNull().default("0"),
   expenseItemQuantity: integer("expense_item_quantity").notNull(),
   status: orderExpenseStatusTypes("status").default("PENDING"),
   notes: text(),
@@ -470,9 +472,9 @@ export const orderExpenseDetailsMaterializedView = pgMaterializedView('order_exp
     expenseItemId: orderExpenses.expenseItemId,
     expenseItemQuantity: orderExpenses.expenseItemQuantity,
     expenseName: expenseItems.expenseName,
-    expensePrice: expenseItems.expensePrice,
+    expensePrice: orderExpenses.expenseItemPrice,
     expenseCategory: expenseItems.expenseCategory,
-    totalExpensePrice: sql<number>`${orderExpenses.expenseItemQuantity} * ${expenseItems.expensePrice}`.mapWith(Number).as('total_expense_price') // Give the calculated column an alias
+    totalExpensePrice: sql<number>`${orderExpenses.expenseItemQuantity} * ${orderExpenses.expenseItemPrice}`.mapWith(Number).as('total_expense_price') // Give the calculated column an alias
   })
     .from(orderExpenses)
     .innerJoin(expenseItems, eq(orderExpenses.expenseItemId, expenseItems.expenseItemId))
@@ -756,7 +758,7 @@ export const enrichedOrderExpenseView = pgView("enriched_order_expense_view") //
         customerName: customers.displayName, // Drizzle might automatically handle aliasing here if the target name matches the original name, but explicit is safer if different. Let's stick with the direct name first. If it needs aliasing: customers.displayName.as('customerName')
         expenseItemName: expenseItems.expenseName,
         expenseItemCategory: expenseItems.expenseCategory,
-        expenseItemPrice: expenseItems.expensePrice
+        expenseItemPrice: orderExpenses.expenseItemPrice
       })
       .from(orderExpenses)
       .innerJoin(expenseItems, eq(orderExpenses.expenseItemId, expenseItems.expenseItemId)) // Join orderExpenses -> orders

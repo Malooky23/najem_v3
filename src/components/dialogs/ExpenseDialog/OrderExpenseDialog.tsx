@@ -1,10 +1,8 @@
 "use client"
 
 import React, { ReactNode, useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
     Dialog,
     DialogClose,
@@ -32,16 +30,13 @@ import { Spinner } from "@heroui/spinner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { OrderItemsTable } from "@/components/order-details/OrderItemsTable";
+import { ExpenseItemRow, InitialExpenseData } from "./ExpenseItemRow";
 
 // --- Types ---
 type CreateOrderExpenseItem = z.infer<typeof createOrderExpenseSchema.element>;
 type OrderExpenseWithClient = CreateOrderExpenseItem & { clientId: number };
-
-// --- Constants ---
 const EXIT_ANIMATION_DURATION = 300;
 
-// --- Helper Components ---
-type InitialExpenseData = Omit<OrderExpenseWithClient, 'clientId'>;
 
 function isExpenseModified(
     initial: InitialExpenseData | undefined,
@@ -59,132 +54,11 @@ function isExpenseModified(
     return (
         initial.expenseItemId !== current.expenseItemId ||
         initial.expenseItemQuantity !== current.expenseItemQuantity ||
+        // Compare prices (treat null/undefined as 0 for comparison consistency)
+        (initial.expenseItemPrice ?? 0) !== (current.expenseItemPrice ?? 0) ||
         normalizeNotes(initial.notes) !== normalizeNotes(current.notes)
-        // Do not compare orderId, createdBy, orderExpenseId itself
     );
 }
-
-
-
-interface ExpenseItemRowProps {
-    expense: OrderExpenseWithClient;
-    index: number;
-    isExiting: boolean;
-    expenseItemsData: selectExpenseSchemaType[] | undefined;
-    isPending: boolean;
-    onUpdate: (clientId: number, field: keyof CreateOrderExpenseItem, value: any) => void;
-    onRemove: (clientId: number) => void;
-}
-
-const ExpenseItemRow = React.memo(({
-    expense,
-    index,
-    isExiting,
-    expenseItemsData,
-    isPending,
-    onUpdate,
-    onRemove
-}: ExpenseItemRowProps) => {
-    const currentExpenseItem = expenseItemsData?.find(item => item.expenseItemId === expense.expenseItemId);
-    const currentExpensePrice = currentExpenseItem?.expensePrice ?? 0;
-    const quantity = expense.expenseItemQuantity ?? 0; // Default/handle 0 quantity
-    const total = currentExpensePrice * quantity;
-    const isMarkedForDeletion = quantity === 0 && !!expense.orderExpenseId; // Visually indicate if marked for delete
-
-    return (
-        <div
-            key={expense.clientId}
-            className={cn(
-                "grid grid-cols-12 gap-x-2 gap-y-1 items-center py-1",
-                "expense-row",
-                isExiting && "expense-row-exiting",
-                isMarkedForDeletion && "opacity-60", // Style rows marked for deletion differently
-            )}
-            aria-hidden={isExiting}
-        >
-            {/* Row Index */}
-            <div className={cn("col-span-1 text-sm text-muted-foreground pl-1 font-medium", isMarkedForDeletion && "line-through")}>
-                {!isExiting ? index : ''}
-            </div>
-
-            {/* Expense Select */}
-            <div className="col-span-4">
-                <Select
-                    value={expense.expenseItemId}
-                    onValueChange={(value) => onUpdate(expense.clientId, "expenseItemId", value)}
-                    // Disable if exiting, saving, or marked for deletion (can't change category of item to be deleted)
-                    disabled={isExiting || isPending || isMarkedForDeletion}
-                >
-                    <SelectTrigger className={cn("h-8 text-sm", isMarkedForDeletion && "border-dashed border-destructive/50")}>
-                        <SelectValue placeholder="Select Expense" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {expenseItemsData?.map((item) => (
-                            <SelectItem key={item.expenseItemId} value={item.expenseItemId}>
-                                {item.expenseName}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-            </div>
-
-            {/* Quantity Input */}
-            <div className="col-span-2">
-                <Input
-                    type="number"
-                    // min="1" REMOVED: Allow 0 for visual representation after deletion
-                    className={cn("h-8 text-sm text-center", isMarkedForDeletion && "border-dashed border-destructive/50")}
-                    value={quantity} // Display 0 if quantity is 0
-                    onChange={(e) => onUpdate(expense.clientId, "expenseItemQuantity", e.target.value)}
-                    // Disable if exiting, saving, or marked for deletion (quantity is controlled by remove button)
-                    disabled={isExiting || isPending || isMarkedForDeletion}
-                />
-            </div>
-
-            {/* Price Display */}
-            <div className="col-span-2">
-                <div className="relative">
-                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">AED </span>
-                    <Input
-                        type="number"
-                        className="pl-4 pr-1 h-8 text-sm text-center"
-                        value={currentExpensePrice.toFixed(2)}
-                        readOnly
-                        disabled={isExiting || isPending} // Visually disable (price follows category)
-                    />
-                </div>
-            </div>
-
-            {/* Total Display */}
-            <div className="col-span-2">
-                <div className={cn(
-                    "bg-muted/80 px-2 py-1 rounded-md text-sm h-8 flex items-center justify-center font-medium",
-                    (isExiting || isMarkedForDeletion) && "opacity-50" // Fade out total if row is exiting or deleted
-                )}>
-                    AED {total.toFixed(2)}
-                </div>
-            </div>
-
-            {/* Remove Button */}
-            <div className="col-span-1 flex justify-center">
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-destructive hover:text-destructive/90 hover:bg-destructive/10 disabled:opacity-30"
-                    onClick={() => onRemove(expense.clientId)}
-                    // Disable if already exiting, saving, or marked for deletion (can't remove twice)
-                    disabled={isExiting || isPending || isMarkedForDeletion}
-                    aria-label="Remove expense"
-                >
-                    <Trash2 className="h-4 w-4" />
-                </Button>
-            </div>
-        </div>
-    );
-});
-ExpenseItemRow.displayName = "ExpenseItemRow";
-
-
 
 // --- Main Dialog Component ---
 interface OrderExpenseDialogProps {
@@ -231,24 +105,13 @@ export function OrderExpenseDialog({ children }: OrderExpenseDialogProps) {
             orderExpenseId: exp.orderExpenseId,
             orderId: exp.orderId,
             expenseItemId: exp.expenseItemId,
+            expenseItemPrice: exp.expenseItemPrice,
             expenseItemQuantity: exp.expenseItemQuantity,
             notes: exp.notes ?? undefined,
             createdBy: exp.createdBy,
         })) ?? [];
     }, [ orderData?.expenses, orderData?.orderId ]);
-
-    // Calculate total cost, excluding items exiting AND items marked with 0 quantity
-    const totalExpenseCost = useMemo(() => {
-        return expenses
-            .filter(exp => !exitingExpenseIds.has(exp.clientId) && exp.expenseItemQuantity > 0) // Exclude exiting and 0-qty items
-            .reduce((sum, orderExpense) => {
-                const expenseItem = expenseItemsData?.find(item => item.expenseItemId === orderExpense.expenseItemId);
-                const price = expenseItem?.expensePrice ?? 0;
-                const quantity = orderExpense.expenseItemQuantity; // Already filtered > 0
-                return sum + price * quantity;
-            }, 0);
-    }, [ expenses, expenseItemsData, exitingExpenseIds ]);
-
+    
     // Check if there are any expenses with quantity > 0 that are not exiting
     const hasActiveExpenses = useMemo(() =>
         expenses.some(exp => exp.expenseItemQuantity > 0 && !exitingExpenseIds.has(exp.clientId)),
@@ -304,24 +167,63 @@ export function OrderExpenseDialog({ children }: OrderExpenseDialogProps) {
 
     // --- Event Handlers (Memoized with useCallback) ---
 
-    const addExpense = useCallback(() => {
-        if (!canAddExpense || !orderData) return;
+    // const addExpense = useCallback(() => {
+    //     if (!canAddExpense || !orderData) return;
 
-        const defaultExpenseItem = expenseItemsData![ 0 ]; // Safe assert based on canAddExpense
-        const newExpense: OrderExpenseWithClient = {
-            clientId: nextClientId,
-            orderId: orderData.orderId,
-            expenseItemId: "",
-            expenseItemQuantity: 1,
-            notes: undefined,
-            createdBy: session.user.id ?? "undefined", // Safe assert based on canAddExpense
-        };
-        setExpenses(prevExpenses => [ ...prevExpenses, newExpense ]);
-        setNextClientId(prevId => prevId + 1);
-    }, [ canAddExpense, expenseItemsData, session?.user?.id, nextClientId, orderData ]);
+    //     const defaultExpenseItem = expenseItemsData![ 0 ]; // Safe assert based on canAddExpense
+    //     const newExpense: OrderExpenseWithClient = {
+    //         clientId: nextClientId,
+    //         orderId: orderData.orderId,
+    //         expenseItemId: "",
+    //         expenseItemPrice: 0,
+    //         expenseItemQuantity: 1,
+    //         notes: undefined,
+    //         createdBy: session.user.id ?? "undefined", // Safe assert based on canAddExpense
+    //     };
+    //     setExpenses(prevExpenses => [ ...prevExpenses, newExpense ]);
+    //     setNextClientId(prevId => prevId + 1);
+    // }, [ canAddExpense, expenseItemsData, session?.user?.id, nextClientId, orderData ]);
 
 
-    const updateExpense = useCallback((clientId: number, field: keyof CreateOrderExpenseItem, value: any) => {
+    // const updateExpense = useCallback((clientId: number, field: keyof CreateOrderExpenseItem, value: any) => {
+    //     if (field === 'orderId' || field === 'createdBy' || field === 'orderExpenseId') return;
+
+    //     setExpenses(prevExpenses =>
+    //         prevExpenses.map(expense => {
+    //             if (expense.clientId !== clientId) return expense;
+
+    //             // Prevent updating quantity if it's already 0 (item is marked for deletion)
+    //             if (field === "expenseItemQuantity" && expense.expenseItemQuantity === 0 && !!expense.orderExpenseId) {
+    //                 return expense;
+    //             }
+
+    //             let processedValue = value;
+    //             if (field === "expenseItemQuantity") {
+    //                 const numValue = Number.parseInt(String(value), 10);
+    //                 // Allow 0, but treat invalid/negative input as 1 (or keep existing?) Let's default to 1.
+    //                 processedValue = isNaN(numValue) || numValue < 0 ? 1 : numValue;
+    //             } else if (field === "expenseItemPrice") {
+    //                 // Handle direct price updates from the input
+    //                 const rawValue = String(value); // Ensure it's a string first
+    //                 const numValue = rawValue === '' ? 0 : parseFloat(rawValue);
+    //                 processedValue.expenseItemPrice = isNaN(numValue) ? 0 : numValue; // Default to 0 if NaN
+
+    //             }
+    //             else if (field === "notes") {
+    //                 processedValue = value === "" ? undefined : value;
+    //             }
+
+    //             return { ...expense, [ field ]: processedValue };
+    //         })
+    //     );
+    // }, []);
+
+
+    // MODIFIED: Set quantity to 0 instead of removing from state
+    
+
+    const updateExpense = useCallback((clientId: number, field: keyof CreateOrderExpenseItem | 'expenseItemPrice', value: any) => {
+        // Guard against updating immutable fields (adjust if needed)
         if (field === 'orderId' || field === 'createdBy' || field === 'orderExpenseId') return;
 
         setExpenses(prevExpenses =>
@@ -333,22 +235,70 @@ export function OrderExpenseDialog({ children }: OrderExpenseDialogProps) {
                     return expense;
                 }
 
-                let processedValue = value;
-                if (field === "expenseItemQuantity") {
-                    const numValue = Number.parseInt(String(value), 10);
-                    // Allow 0, but treat invalid/negative input as 1 (or keep existing?) Let's default to 1.
-                    processedValue = isNaN(numValue) || numValue < 0 ? 1 : numValue;
-                } else if (field === "notes") {
-                    processedValue = value === "" ? undefined : value;
-                }
+                let updatedExpense = { ...expense }; // Start with current expense
 
-                return { ...expense, [ field ]: processedValue };
+                if (field === "expenseItemId") {
+                    const newExpenseItemId = String(value); // Ensure it's a string
+                    updatedExpense.expenseItemId = newExpenseItemId;
+                    // *** IMPORTANT: Update price to default when item changes ***
+                    const selectedItem = expenseItemsData?.find(item => item.expenseItemId === newExpenseItemId);
+                    updatedExpense.expenseItemPrice = selectedItem?.defaultExpensePrice ?? 0; // Default to 0 if not found
+
+                } else if (field === "expenseItemQuantity") {
+                    const numValue = Number.parseInt(String(value), 10);
+                    // Allow 0, default invalid/negative to 1 (or keep existing?)
+                    updatedExpense.expenseItemQuantity = isNaN(numValue) || numValue < 0 ? 1 : numValue;
+
+                } else if (field === "expenseItemPrice") {
+                    // Handle direct price updates from the input
+                    const rawValue = String(value); // Ensure it's a string first
+                    const numValue = rawValue === '' ? 0 : parseFloat(rawValue);
+                    updatedExpense.expenseItemPrice = isNaN(numValue) ? 0 : numValue; // Default to 0 if NaN
+
+                } else if (field === "notes") {
+                    updatedExpense.notes = value === "" ? undefined : String(value);
+                }
+                // No else needed if CreateOrderExpenseItem only has these fields + immutable ones
+
+                return updatedExpense;
             })
         );
-    }, []);
+        // Add expenseItemsData as a dependency because it's used to find the default price
+    }, [ expenseItemsData ]);
 
 
-    // MODIFIED: Set quantity to 0 instead of removing from state
+    // 3. Modify totalExpenseCost calculation
+    const totalExpenseCost = useMemo(() => {
+        return expenses
+            .filter(exp => !exitingExpenseIds.has(exp.clientId) && exp.expenseItemQuantity > 0)
+            .reduce((sum, orderExpense) => {
+                // *** Use the price from the state ***
+                const price = orderExpense.expenseItemPrice ?? 0; // Use state price, default 0
+                const quantity = orderExpense.expenseItemQuantity;
+                return sum + price * quantity;
+            }, 0);
+        // Dependency is only on expenses and exiting IDs now
+    }, [ expenses, exitingExpenseIds ]);
+
+    // 4. Ensure addExpense initializes price (your current code does this with 0)
+    const addExpense = useCallback(() => {
+        if (!canAddExpense || !orderData) return;
+
+        // No expense item selected initially, so price should be 0
+        const newExpense: OrderExpenseWithClient = {
+            clientId: nextClientId,
+            orderId: orderData.orderId,
+            expenseItemId: "", // No item selected yet
+            expenseItemPrice: 0, // Initialize price to 0
+            expenseItemQuantity: 1,
+            notes: undefined,
+            createdBy: session.user.id ?? "undefined",
+        };
+        setExpenses(prevExpenses => [ ...prevExpenses, newExpense ]);
+        setNextClientId(prevId => prevId + 1);
+    }, [ canAddExpense, session?.user?.id, nextClientId, orderData ]); // Removed expenseItemsData dependency here
+
+
     const removeExpense = useCallback((clientId: number) => {
         if (exitingExpenseIds.has(clientId) || !timeoutsRef.current) return;
 
@@ -442,6 +392,7 @@ export function OrderExpenseDialog({ children }: OrderExpenseDialogProps) {
                 return;
             }
             const validatedValues = validationResult.data;
+            console.log("Data submitted: ", JSON.stringify(validatedValues,null,2))
 
             // Execute mutation with the delta payload
             await createOrderExpenseMutate(validatedValues);

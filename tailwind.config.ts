@@ -14,6 +14,9 @@ export default {
 			fontFamily: {
 				sans: ['Inter', 'system-ui', 'sans-serif'], // Example font stack
 			},
+			transitionDuration: {
+				'2000': '2000ms',
+			},
 			colors: {
 				background: 'hsl(var(--background))',
 				foreground: 'hsl(var(--foreground))',

@@ -368,8 +368,8 @@ export async function getOrderById(orderId: string): Promise<GetSingleOrderRespo
         const parsedOrder = EnrichedOrders.parse(enrichedOrder);
         return { success: true, data: parsedOrder };
     } catch (error) {
-        console.error('Error in getOrderById:', error);
-        return { success: false, error: 'Failed to fetch order' };
+        console.error('Error in getOrderById E231:', error);
+        return { success: false, error: 'Failed to fetch order' + error };
     }
 }
 

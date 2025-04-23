@@ -54,7 +54,7 @@ export function OrderExensesCard({ orderExpenses, isLoading }: OrderItemsTablePr
   }
 
   // Calculate total price
-  const totalPrice = orderExpenses.reduce((sum, expense) => sum + expense.expensePrice, 0)
+  const totalPrice = orderExpenses.reduce((sum, expense) => sum + expense.expenseItemPrice*expense.expenseItemQuantity, 0)
 
   return (
     <Card className="mt-6 bg-white/70 shadow-md hover:shadow-lg transition-shadow">
@@ -89,7 +89,7 @@ export function OrderExensesCard({ orderExpenses, isLoading }: OrderItemsTablePr
                 <TableCell>{index + 1}</TableCell>
                 <TableCell className="font-medium">{expense.expenseName}</TableCell>
                 <TableCell>{expense.expenseItemQuantity}</TableCell>
-                <TableCell>AED {expense.expensePrice}</TableCell>
+                <TableCell>AED {expense.expenseItemPrice}</TableCell>
               </TableRow>
             ))}
           </TableBody>

@@ -271,7 +271,7 @@ export async function fetchOrderById(orderId: string): Promise<ApiResponse<Enric
                             'createdAt', ${orderExpenses}.created_at,
                             'updatedAt', ${orderExpenses}.updated_at,
                             'expenseName', ${expenseItems}.expense_name,
-                            'expensePrice', ${expenseItems}.expense_price,
+                            'expenseItemPrice', ${orderExpenses}.expense_item_price,
                             'expenseCategory', ${expenseItems}.expense_category
                         )
                     END
@@ -330,7 +330,7 @@ export async function fetchOrderById(orderId: string): Promise<ApiResponse<Enric
                 })).filter(item => item.itemId && item.quantity > 0)
                 : [],
             expenses: Array.isArray(order.expenses)
-                ? order.expenses.map((expense: any) => ({
+                ? order.expenses.map((expense: orderExpenseWithNameType) => ({
                     orderId: orderId,
                     orderExpenseId: expense.orderExpenseId,
                     expenseItemId: expense.expenseItemId,
@@ -338,11 +338,11 @@ export async function fetchOrderById(orderId: string): Promise<ApiResponse<Enric
                     notes: expense.notes || null,
                     status: expense.status,
                     createdBy: expense.createdBy || null, // Assuming createdBy can be null
-                    createdAt: expense.createdAt ? new Date(expense.createdAt.toString()) : new Date(),
+                    createdAt: expense.createdAt ? new Date(expense.createdAt.toString()) : new Date("01-01-1990"),
                     updatedAt: expense.updatedAt ? new Date(expense.updatedAt.toString()) : null,
                     expenseName: expense.expenseName || '',
-                    expensePrice: Number(expense.expensePrice) || 0,
-                    expenseCategory: expense.expenseCategory || null,
+                    expenseItemPrice: Number(expense.expenseItemPrice) || 0,
+                    expenseCategory: expense.expenseItemPrice || null,
                 })).filter(expense => expense.expenseItemId)
                 : [],
         };
@@ -351,8 +351,8 @@ export async function fetchOrderById(orderId: string): Promise<ApiResponse<Enric
         const parsedOrder = EnrichedOrderSchema.parse(enrichedOrder);
         return { success: true, data: parsedOrder };
     } catch (error) {
-        console.error('Error in getOrderById:', error);
-        return { success: false, message: 'Failed to fetch order' };
+        console.error('Error in getOrderById E2881: ', error);
+        return { success: false, message: 'Failed to fetch order\n'+error };
     }
 }
 
@@ -657,10 +657,12 @@ export async function createOrderExpenseInDb(inputData: createOrderExpenseSchema
             if (itemsToUpsert.length > 0) {
                 const valuesToUpsert = itemsToUpsert.map(item => ({
                     ...item,
+                    expenseItemPrice: String(item.expenseItemPrice),
                     orderExpenseId: item.orderExpenseId ?? undefined, // Let DB handle default/null for new items
                     expenseItemQuantity: item.expenseItemQuantity, // Set quantity for existing/new
                 }));
 
+                console.log("Order Expenses Values to upsert: ", JSON.stringify(valuesToUpsert, null, 2))
                 await tx.insert(orderExpenses)
                     .values(valuesToUpsert)
                     .onConflictDoUpdate({
@@ -668,6 +670,7 @@ export async function createOrderExpenseInDb(inputData: createOrderExpenseSchema
                         set: { // Define updates for existing items
                             expenseItemId: sql`excluded.expense_item_id`,
                             expenseItemQuantity: sql`excluded.expense_item_quantity`,
+                            expenseItemPrice: sql`excluded.expense_item_price`,
                             notes: sql`excluded.notes`,
                             updatedAt: new Date(),
                             // Do NOT update orderId or createdBy on conflict

@@ -5,14 +5,14 @@ import { tax_id } from "./types.zoho";
 export const lineItemSchema = z.object({
     // Include fields needed for display/identification but maybe not editable
     orderExpenseId: z.string().optional(), // Keep original ID if exists
-    orderId: z.string(),
+    orderId: z.string().optional().nullish().nullable(),
     orderNumber: z.number().nullable().optional(),
-    expenseItemId: z.string(), // Keep original ID
+    expenseItemId: z.string().optional().nullable().nullish(), // Keep original ID
     expenseItemName: z.string().nullable().optional(), // For display
 
     // Editable fields
     description: z.string().optional(), // Will be dynamically generated/editable
-    quantity: z.number().min(0, "Quantity cannot be negative"), // Allow 0 for deletion marking? Or handle deletion separately. Let's use remove. Min 1?
+    quantity: z.coerce.number().min(0, "Quantity cannot be negative"), // Allow 0 for deletion marking? Or handle deletion separately. Let's use remove. Min 1?
     rate: z.number().min(0, "Rate cannot be negative"),
     tax: z.string() // Store the Zoho Tax ID string directly
         .optional()

@@ -202,7 +202,7 @@ export function MobileView({
     
     return (
       <div 
-        className="flex justify-center items-center transition-all duration-[2s] overflow-hidden"
+        className="flex justify-center items-center transition-all duration-2000 overflow-hidden"
         style={{ 
           height: `${Math.min(pullDistance, indicatorHeight)}px`,
           opacity: pullState === 'idle' ? 0 : opacity
@@ -213,17 +213,7 @@ export function MobileView({
             // Show spinner during refresh
             <div className="animate-spin h-6 w-6 mb-1 border-2 border-primary border-t-transparent rounded-full" />
           ) : (
-            // Show arrow that rotates based on pull progress
-            // <svg 
-            //   className={`h-6 w-6 mb-1 transition-transform duration-[1s] ${progress >= 1 ? 'rotate-180' : ''}`} 
-            //   viewBox="0 0 24 24"
-            //   fill="none"
-            //   stroke="currentColor"
-            //   strokeWidth="2"
-            // >
-            //   <path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-            // </svg>
-            <ArrowDown               className={`h-6 w-6 mb-1 transition-transform duration-[1s] ${progress >= 1 ? 'rotate-180' : ''}`} 
+            <ArrowDown               className={`h-6 w-6 mb-1 transition-transform duration-1000 ${progress >= 1 ? 'rotate-180' : ''}`} 
             />
           )}
           <span className="text-sm font-medium transition-opacity text-primary">

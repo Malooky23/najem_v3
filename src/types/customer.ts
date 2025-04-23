@@ -38,6 +38,7 @@ export const IndividualDataSchema = z.object({
   personalId: emptyStringToNull,
   address: CreateAddressSchema.optional().nullish(),
   contacts: z.array(CreateContactSchema).min(1, "At least one contact required"),
+  zohoCustomerId: z.string().optional().nullable().nullish()
 });
 
 export const BusinessDataSchema = z.object({
@@ -49,6 +50,7 @@ export const BusinessDataSchema = z.object({
   taxNumber: emptyStringToNull,
   address: CreateAddressSchema.optional().nullish(),
   contacts: z.array(CreateContactSchema).min(1, "At least one contact required"),
+  zohoCustomerId: z.string().optional().nullable().nullish()
 });
 
 export type IndividualData = z.infer<typeof IndividualDataSchema>;
@@ -71,6 +73,7 @@ export const customerSchema = z.object({
   updatedAt: z.coerce.date().nullable(),
   country: z.string(),
   displayName: z.string().max(100),
+  zohoCustomerId: z.string().optional().nullable().nullish(),
   individual: z.object({
     firstName: z.string(),
     middleName: z.string().nullable(),
@@ -95,6 +98,7 @@ export const customerList = z.object({
   customerId: z.string(),
   customerNumber: z.number(),
   displayName: z.string().max(100),
+  zohoCustomerId: z.string().optional().nullable().nullish()
 });
 
 export type EnrichedCustomer = z.infer<typeof customerSchema>;

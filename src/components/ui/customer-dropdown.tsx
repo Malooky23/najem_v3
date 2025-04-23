@@ -25,23 +25,26 @@ interface CustomerDropdownProps {
   // New interface
   selectedCustomerId?: string;
   onSelect?: (customerId: string) => void;
-  
-  // Old interface
+
   customersInput?: EnrichedCustomer[];
+  isLoading?: boolean
+  isError?: boolean
   value?: string | null;
   onChange?: (value: string | null) => void;
   isRequired?: boolean;
-  
+
   // Common props
   disabled?: boolean;
   isModal?: boolean;
-  className?:string
+  className?: string
 }
 
 export function CustomerDropdown({
   selectedCustomerId,
   onSelect,
   customersInput,
+  isLoading = false,
+  isError = false,
   value,
   onChange,
   isRequired,
@@ -49,24 +52,24 @@ export function CustomerDropdown({
   isModal = false,
   className
 }: CustomerDropdownProps) {
-  const [open, setOpen] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<EnrichedCustomer | null>(null);
-  
+  const [ open, setOpen ] = useState(false);
+  const [ selectedCustomer, setSelectedCustomer ] = useState<EnrichedCustomer | null>(null);
+
   // Only fetch customers if we don't have customersInput
   const shouldFetchCustomers = !customersInput;
-  const { data: fetchedCustomers = [], isLoading, isError } = useCustomers(shouldFetchCustomers);
+  const { data: fetchedCustomers = [], isLoading: isLoadingOG, isError: isErrorOG} = useCustomers(shouldFetchCustomers);
   // Memoize customers array to prevent unnecessary re-renders
-  const customers = useMemo(() => 
-    customersInput || fetchedCustomers || [], 
-    [customersInput, fetchedCustomers]
+  const customers = useMemo(() =>
+    customersInput || fetchedCustomers || [],
+    [ customersInput, fetchedCustomers ]
   );
-  
+
   // Memoize effective customer ID calculation
-  const effectiveCustomerId = useMemo(() => 
-    selectedCustomerId || value || null, 
-    [selectedCustomerId, value]
+  const effectiveCustomerId = useMemo(() =>
+    selectedCustomerId || value || null,
+    [ selectedCustomerId, value ]
   );
-  
+
   // Optimize the effect that updates the selected customer
   useEffect(() => {
     if (!effectiveCustomerId || customers.length === 0) {
@@ -75,26 +78,26 @@ export function CustomerDropdown({
       }
       return;
     }
-    
+
     const customer = customers.find(c => c.customerId === effectiveCustomerId);
-    
+
     if (customer && (!selectedCustomer || selectedCustomer.customerId !== customer.customerId)) {
       setSelectedCustomer(customer);
     }
-  }, [effectiveCustomerId, customers, selectedCustomer]);
+  }, [ effectiveCustomerId, customers, selectedCustomer ]);
 
   // Memoize the selection handler to prevent recreation on each render
   const handleSelect = useCallback((customer: EnrichedCustomer) => {
     setSelectedCustomer(customer);
-    
+
     if (onSelect) {
       onSelect(customer.customerId);
     } else if (onChange) {
       onChange(customer.customerId);
     }
-    
+
     setOpen(false);
-  }, [onSelect, onChange]);
+  }, [ onSelect, onChange ]);
 
   return (
     <Popover open={open} onOpenChange={setOpen} modal={isModal}>
@@ -119,12 +122,12 @@ export function CustomerDropdown({
           <CommandInput placeholder="Search customers..." />
           <CommandList>
             <CommandEmpty>No customers found</CommandEmpty>
-            {isLoading && !customersInput ? (
+            {isLoading || isLoadingOG && !customersInput ? (
               <div className="flex items-center justify-center p-4">
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
                 <span>Loading customers...</span>
               </div>
-            ) : isError && !customersInput ? (
+            ) : isError || isErrorOG && !customersInput ? (
               <div className="flex items-center justify-center p-4 text-red-500">
                 Error loading customers
               </div>
@@ -150,7 +153,7 @@ export function CustomerDropdown({
           </CommandList>
         </Command>
       </PopoverContent>
-      
+
       {/* Hidden input for form data */}
       {isRequired !== undefined && (
         <input

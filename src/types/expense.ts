@@ -43,7 +43,7 @@ export interface UseExpensesParams {
 export const expenseItemsSchema = z.object({
     expenseItemId: z.string().uuid(),
     expenseName: z.string(),
-    expensePrice: z.coerce.number().nonnegative(),
+    defaultExpensePrice: z.coerce.number().nonnegative(),
     expenseCategory: expenseCategoryTypeSchema.nullable(),
     notes: z.string().optional().nullable(),
     createdBy: z.string().uuid().optional(),
@@ -66,6 +66,7 @@ export const orderExpenseSchema = z.object({
     orderExpenseId: z.string().uuid().optional(),
     orderId: z.string().uuid(),
     expenseItemId: z.string().uuid(),
+    expenseItemPrice: z.coerce.number().nonnegative(),
     expenseItemQuantity: z.number(),
     status: orderExpenseStatusTypesSchema,
     notes: z.string().optional().nullish(),
@@ -77,7 +78,6 @@ export type orderExpenseSchemaType = z.infer<typeof orderExpenseSchema>
 
 export const EnrichedOrderExpenseSchema = orderExpenseSchema.extend({
     expenseItemName: z.string(),
-    expenseItemPrice: z.coerce.number().nonnegative(),
     expenseItemCategory: expenseCategoryTypeSchema.nullable(),
     orderNumber: z.number().optional(),
     customerId: z.string().uuid().optional(),
@@ -88,7 +88,7 @@ export type EnrichedOrderExpenseSchemaType = z.infer<typeof EnrichedOrderExpense
 
 export const orderExpenseWithName = orderExpenseSchema.extend({
     expenseName: z.string(),
-    expensePrice: z.number().nonnegative(),
+    expenseItemPrice: z.number().nonnegative(),
 })
 export type orderExpenseWithNameType = z.infer<typeof orderExpenseWithName>
 
