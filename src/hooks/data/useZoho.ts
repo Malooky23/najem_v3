@@ -52,10 +52,6 @@ export function useCreateZohoInvoice(options?: UseCreateZohoInvoiceOptions) {
         },
         onError: (error, variables) => {
             console.error('Mutation failed:', error);
-            // The 'error' object here is the CreateInvoiceError we threw
-            console.error('Error details:', error.details);
-
-            // Call the onError callback provided in options, if any
             options?.onError?.(error);
 
             // Optional: Show an error toast notification here

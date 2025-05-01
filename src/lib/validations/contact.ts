@@ -1,6 +1,6 @@
+import { contactTypeSchema } from '@/server/db/schema'
 import { z } from 'zod'
 
-export const contactTypeSchema = z.enum(['email', 'phone'])
 
 export const contactSchema = z.object({
   data: z.string()

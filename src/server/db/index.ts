@@ -2,7 +2,7 @@ import * as schema from "./schema";
 import { config } from "dotenv";
 config({ path: ".env" }); // or .env.local
 import { drizzle } from "drizzle-orm/node-postgres";
-import { Pool } from "pg";
+import pg from "pg"; // Use default import
 import { drizzle as drizzleNeon } from 'drizzle-orm/neon-serverless';
 
 // Determine if we're in production or local environment
@@ -14,7 +14,7 @@ function createLocalDb() {
     throw new Error("process.env.DATABASE_URL_LOCAL NOT AVAILABLE");
   }
   
-  const pool = new Pool({
+  const pool = new pg.Pool({ // Access Pool as a property
     connectionString: process.env.DATABASE_URL_LOCAL,
   });
   

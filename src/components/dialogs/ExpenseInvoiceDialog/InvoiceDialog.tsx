@@ -33,6 +33,8 @@ import { format } from "date-fns";
 import { InvoiceFormData, invoiceFormSchema, LineItemFormData } from "@/types/type.invoice";
 import { useCustomers } from "@/hooks/data-fetcher";
 import { generateInitialDescription } from "./InvoiceHelper";
+import { useCreateZohoInvoice } from "@/hooks/data/useZoho";
+import { toast } from "sonner";
 
 
 interface CreateInvoiceDialogProps {
@@ -82,6 +84,7 @@ export const CreateInvoiceDialog = ({ selectedOrderIds }: CreateInvoiceDialogPro
     const [ customerOptions, setCustomerOptions ] = useState<{ id: string; name: string }[]>([]);
     const [ chosenCustomerId, setChosenCustomerId ] = useState<string | null>(null);
     const {data: fetchedCustomers, isLoading: isCustomersLoading, isError: isCustomersError} = useCustomers()
+    const CreateZohoInvoice = useCreateZohoInvoice()
 
     const initialExpenseIds = useMemo(() => {
         const keys = Object.keys(selectedOrderIds);
@@ -234,11 +237,11 @@ export const CreateInvoiceDialog = ({ selectedOrderIds }: CreateInvoiceDialogPro
         setIsOpen(open);
         if (!open) {
             // Reset local state AND form state on close
-            setSelectedCustomerForNewInvoice(null);
-            setMultipleCustomersDetected(false);
-            setCustomerOptions([]);
-            setChosenCustomerId(null);
-            reset({ lineItems: [] }); // Reset RHF
+            // setSelectedCustomerForNewInvoice(null);
+            // setMultipleCustomersDetected(false);
+            // setCustomerOptions([]);
+            // setChosenCustomerId(null);
+            // reset({ lineItems: [] }); // Reset RHF
         }
     };
 
@@ -362,13 +365,24 @@ export const CreateInvoiceDialog = ({ selectedOrderIds }: CreateInvoiceDialogPro
         console.log(validationResult.data);
 
         // --- Replace console.log with your actual API mutation call using validationResult.data ---
-        // e.g., createZohoInvoiceMutation.mutate(validationResult.data);
+        CreateZohoInvoice.mutate(validationResult.data);
+
+        if (CreateZohoInvoice.isSuccess){
+            setSelectedCustomerForNewInvoice(null);
+            setMultipleCustomersDetected(false);
+            setCustomerOptions([]);
+            setChosenCustomerId(null);
+            reset({ lineItems: [] });
+            // setIsOpen(false)
+            handleOpenChange
+        }
+
 
         // Simulate API call duration
-        return new Promise(resolve => setTimeout(() => {
-            console.log("--- Submission Complete (Simulated) ---");
-            resolve(undefined);
-        }, 1500));
+        // return new Promise(resolve => setTimeout(() => {
+        //     console.log("--- Submission Complete (Simulated) ---");
+        //     resolve(undefined);
+        // }, 1500));
     };
 
 

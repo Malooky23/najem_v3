@@ -35,6 +35,7 @@ export const IndividualDataSchema = z.object({
   displayName: z.string().max(100, "Display name must be at most 100 characters"),
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
+  middleName: z.string().optional().nullable(), // Add middleName
   personalId: emptyStringToNull,
   address: CreateAddressSchema.optional().nullish(),
   contacts: z.array(CreateContactSchema).min(1, "At least one contact required"),
@@ -66,6 +67,7 @@ export type CreateCustomerResponse = {
 // Enriched customer type
 export const customerSchema = z.object({
   customerId: z.string(),
+  isDeleted: z.boolean().default(false).optional(),
   customerNumber: z.number(),
   customerType: customerTypes,
   notes: z.string().nullable().optional(),
@@ -83,7 +85,7 @@ export const customerSchema = z.object({
   business: z.object({
     businessName: z.string(),
     isTaxRegistered: z.boolean(),
-    taxNumber: z.string().nullable()
+    taxNumber: z.string().nullable().nullish().optional()
   }).nullable(),
   contacts: z.array(z.object({
     contactDetail: z.any()

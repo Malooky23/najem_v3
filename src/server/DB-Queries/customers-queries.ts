@@ -22,6 +22,7 @@ export async function fetchCustomers(customerId?: string): Promise<EnrichedCusto
             whereConditions.push(eq(customers.customerId, customerId));
 
         }
+        whereConditions.push(eq(customers.isDeleted, false));
         const response = await db.query.customers.findMany({
             with: {
                 individual: {

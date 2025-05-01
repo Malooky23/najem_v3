@@ -114,6 +114,7 @@ export const customers = pgTable("customers", {
     .defaultNow()
     .notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }),
+  isDeleted: boolean("is_deleted").default(false)
 });
 
 // export const customersRelations =  relations(customers, ({one}) => ({
@@ -225,13 +226,14 @@ export const locations = pgTable("locations", {
 
 // Item table
 
-export const itemTypes = pgEnum("item_type", [ "SACK", "PALLET", "CARTON", "OTHER", "BOX", "EQUIPMENT", "CAR" ])
+export const itemTypes = pgEnum("item_type", [ "SACK", "PALLET", "CARTON", "OTHER", "BOX", "EQUIPMENT", "CAR" ]);
 export const itemTypesSchema = z.enum(itemTypes.enumValues);
 
 export const items = pgTable("items", {
   itemId: uuid("item_id").defaultRandom().primaryKey().notNull(),
   itemNumber: serial("item_number").notNull(),
   itemName: text("item_name").notNull().unique(),
+  // itemType: text("item_type").default("OTHER").notNull(),
   itemType: itemTypes("item_type").default("OTHER").notNull(),
   itemBrand: text("item_brand"),
   itemModel: text("item_model"),

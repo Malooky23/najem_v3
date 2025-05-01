@@ -5,7 +5,13 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-export function LoginForm() {
+// Define props for the component
+interface LoginFormProps {
+  callbackUrl?: string;
+}
+
+// Accept callbackUrl as a prop
+export function LoginForm({ callbackUrl }: LoginFormProps) {
   const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -23,7 +29,7 @@ export function LoginForm() {
       const result = await signIn("credentials", {
         email,
         password,
-        redirect: false,
+        redirectTo: callbackUrl,
       });
 
       if (result?.error) {

@@ -105,99 +105,123 @@ export async function createZohoInvoice(
     }
 
     try {
-        // 2. Get Access Token and API Domain
-        const { accessToken, apiDomain } = await getZohoAccessToken();
+        //     // 2. Get Access Token and API Domain
+        //     const { accessToken, apiDomain } = await getZohoAccessToken();
 
-        // 3. Prepare the payload for the new invoice
-        const newInvoicePayload: Record<string, any> = {}; // Use a generic object first
+        //     // 3. Prepare the payload for the new invoice
+        //     const newInvoicePayload: Record<string, any> = {}; // Use a generic object first
 
-        // Copy required and optional fields defined in the schema
-        newInvoicePayload.customer_id = validatedData.customer_id;
+        //     // Copy required and optional fields defined in the schema
+        //     newInvoicePayload.customer_id = validatedData.customer_id;
 
-        // Add other optional fields IF they exist in the validated input
-        const optionalFields: (keyof OriginalInvoiceData)[] = [
-            'due_date', 
-            'template_id', 
-            'reference_number', 
-            //other options
-            'currency_id', 
-            'place_of_supply', 
-            'date',
-            'payment_terms', 
-            'payment_terms_label', 
-            'discount',
-            'is_discount_before_tax', 
-            'discount_type', 
-            'is_inclusive_tax', 
-            'exchange_rate',
-            'salesperson_name', 
-            'notes', 
-            'terms', 
-            'shipping_charge', 
-            'adjustment',
-            'adjustment_description', 
-        ];
+        //     // Add other optional fields IF they exist in the validated input
+        //     const optionalFields: (keyof OriginalInvoiceData)[] = [
+        //         'due_date', 
+        //         'template_id', 
+        //         'reference_number', 
+        //         //other options
+        //         'currency_id', 
+        //         'place_of_supply', 
+        //         'date',
+        //         'payment_terms', 
+        //         'payment_terms_label', 
+        //         'discount',
+        //         'is_discount_before_tax', 
+        //         'discount_type', 
+        //         'is_inclusive_tax', 
+        //         'exchange_rate',
+        //         'salesperson_name', 
+        //         'notes', 
+        //         'terms', 
+        //         'shipping_charge', 
+        //         'adjustment',
+        //         'adjustment_description', 
+        //     ];
 
-        optionalFields.forEach(field => {
-            if (validatedData[ field ] !== undefined && validatedData[ field ] !== null) {
-                newInvoicePayload[ field ] = validatedData[ field ];
-            }
-        });
+        //     optionalFields.forEach(field => {
+        //         if (validatedData[ field ] !== undefined && validatedData[ field ] !== null) {
+        //             newInvoicePayload[ field ] = validatedData[ field ];
+        //         }
+        //     });
 
-        newInvoicePayload.line_items = validatedData.line_items.map(item => {
-            const newLineItem: Record<string, any> = {
-                item_id: item.item_id,
-                quantity: item.quantity,
-                rate: item.rate,
-                description: item.description || '', // Ensure description is always a string
-            };
-            if (item.tax_id) newLineItem.tax_id = item.tax_id;
-            
-            return newLineItem;
-        });
+        //     newInvoicePayload.line_items = validatedData.line_items.map(item => {
+        //         const newLineItem: Record<string, any> = {
+        //             item_id: item.item_id,
+        //             quantity: item.quantity,
+        //             rate: item.rate,
+        //             description: item.description || '', // Ensure description is always a string
+        //         };
+        //         if (item.tax_id) newLineItem.tax_id = item.tax_id;
 
-        // 4. Make the API Call to Create Invoice
-        const createInvoiceUrl = `${apiDomain}/books/v3/invoices`;
-        const headers = {
-            'Authorization': `Zoho-oauthtoken ${accessToken}`,
-            'Content-Type': 'application/json',
-        };
-        const params = new URLSearchParams({ organization_id: organizationId });
-        // Add query params like 'send=true' if needed: params.append('send', 'true');
+        //         return newLineItem;
+        //     });
 
-        // console.log(`POST request to ${createInvoiceUrl}?${params.toString()}`);
-        // console.log("Payload:", JSON.stringify(newInvoicePayload, null, 2)); // Debug: Log payload
+        //     // 4. Make the API Call to Create Invoice
+        //     const createInvoiceUrl = `${apiDomain}/books/v3/invoices`;
+        //     const headers = {
+        //         'Authorization': `Zoho-oauthtoken ${accessToken}`,
+        //         'Content-Type': 'application/json',
+        //     };
+        //     const params = new URLSearchParams({ organization_id: organizationId });
+        //     // Add query params like 'send=true' if needed: params.append('send', 'true');
 
-        const response = await fetch(`${createInvoiceUrl}?${params.toString()}`, {
-            method: 'POST',
-            headers: headers,
-            body: JSON.stringify(newInvoicePayload),
-        });
+        //     // console.log(`POST request to ${createInvoiceUrl}?${params.toString()}`);
+        //     // console.log("Payload:", JSON.stringify(newInvoicePayload, null, 2)); // Debug: Log payload
 
-        const responseData = await response.json();
+        //     const response = await fetch(`${createInvoiceUrl}?${params.toString()}`, {
+        //         method: 'POST',
+        //         headers: headers,
+        //         body: JSON.stringify(newInvoicePayload),
+        //     });
 
-        // 5. Handle Zoho's Response
-        if (!response.ok || responseData.code !== 0) {
-            console.error(`Zoho API Error (${response.status}):`, responseData);
-            return {
-                success: false,
-                error: `Failed to create Zoho invoice: ${responseData.message || response.statusText || 'Unknown API error'}`,
-                details: responseData, // Include full Zoho error details if available
-            };
+        //     const responseData = await response.json();
+
+        //     // 5. Handle Zoho's Response
+        //     if (!response.ok || responseData.code !== 0) {
+        //         console.error(`Zoho API Error (${response.status}):`, responseData);
+        //         return {
+        //             success: false,
+        //             error: `Failed to create Zoho invoice: ${responseData.message || response.statusText || 'Unknown API error'}`,
+        //             details: responseData, // Include full Zoho error details if available
+        //         };
+        //     }
+
+        //     // 6. Validate the successful Zoho response (optional but recommended)
+        //     const createdInvoiceValidation = ZohoCreatedInvoiceSchema.safeParse(responseData.invoice);
+        //     if (!createdInvoiceValidation.success) {
+        //         console.warn("Zoho success response structure mismatch:", createdInvoiceValidation.error.flatten());
+        //         // Still return success, but maybe log this mismatch. Provide the raw data.
+        //         return { success: true, data: responseData.invoice as ZohoCreatedInvoice }; // Cast carefully
+        //     }
+
+        //     console.log(`Successfully created new invoice: ID ${createdInvoiceValidation.data.invoice_id}, Number ${createdInvoiceValidation.data.invoice_number}`);
+
+        const fakeData: ZohoCreatedInvoice = {
+            invoice_id: 'invoice_id',
+            invoice_number: 'INV-000123',
+            customer_id: 'customer_id',
+            customer_name: 'customer_id',
+            date: '2025-01-01',
+            due_date: '2025-01-01',
+            total: 1055,
+            balance: 10,
+            currency_code: 'AED',
+            status: 'DRAFT',
+            created_time: '2025-01-01 12:02:02',
+            last_modified_time: '2025-01-01 12:02:02',
+            line_items: [ {
+                line_item_id: 'line_item_id',
+                item_id: 'item_id',
+                name: 'name',
+                quantity: 100,
+                rate: 12,
+                item_total: 1200,
+            } ]
         }
+        return { success: true, data: fakeData };
+        // return { success: true, data: createdInvoiceValidation.data };
 
-        // 6. Validate the successful Zoho response (optional but recommended)
-        const createdInvoiceValidation = ZohoCreatedInvoiceSchema.safeParse(responseData.invoice);
-        if (!createdInvoiceValidation.success) {
-            console.warn("Zoho success response structure mismatch:", createdInvoiceValidation.error.flatten());
-            // Still return success, but maybe log this mismatch. Provide the raw data.
-            return { success: true, data: responseData.invoice as ZohoCreatedInvoice }; // Cast carefully
-        }
-
-        console.log(`Successfully created new invoice: ID ${createdInvoiceValidation.data.invoice_id}, Number ${createdInvoiceValidation.data.invoice_number}`);
-        return { success: true, data: createdInvoiceValidation.data };
-
-    } catch (error) {
+        } catch (error) {
         console.error('Unexpected error in createZohoInvoiceCopy:', error);
         // Handle errors from getZohoAccessToken or other unexpected issues
         return {
@@ -205,4 +229,4 @@ export async function createZohoInvoice(
             error: error instanceof Error ? error.message : 'An unexpected server error occurred.',
         };
     }
-}
+    }

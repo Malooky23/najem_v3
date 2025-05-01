@@ -102,7 +102,7 @@ export default function SearchPanel({ initialValue, onSearchChange, onFilterChan
         )}
 
         <Input
-          placeholder="Search movements..."
+          placeholder="Search expenses..."
           value={inputValue}
           onChange={handleInputChange}
           className="pl-8 pr-10"

@@ -23,6 +23,7 @@ import CreateItemForm from "./dialogs/ItemDialog/CreateItem"
 import { useIsMobileTEST } from "@/hooks/use-media-query"
 import { TooltipContent, TooltipTrigger } from "@radix-ui/react-tooltip"
 import { Popover, PopoverContent, PopoverTrigger } from "@radix-ui/react-popover"
+import CustomerModalWrapper from "@/components/dialogs/CustomerDialog/CustomerModalWrapper"
 
 // QuickAction component remains the same - no changes needed here
 interface QuickActionProps {
@@ -94,12 +95,13 @@ export function QuickAccess() {
                     <div className="grid grid-cols-2 gap-4"> {/* Increased gap slightly */}
 
                         {/* CUSTOMER */}
-                        <QuickAction
-                            icon={<UserPlus className="h-5 w-5" />}
-                            label="Add Customer"
-                            onClick={toaster}
-                            color="bg-blue-100 hover:bg-blue-200 text-blue-700 border-blue-200"
-                        />
+                        <CustomerModalWrapper>
+                            <QuickAction
+                                icon={<UserPlus className="h-5 w-5" />}
+                                label="Add Customer"
+                                color="bg-blue-100 hover:bg-blue-200 text-blue-700 border-blue-200"
+                            />
+                        </CustomerModalWrapper>
 
                         {/* ITEM */}
                         <CreateItemForm disableMobileMode={true}>
@@ -164,12 +166,13 @@ export function QuickAccess() {
                 <div className="grid grid-cols-2 gap-4"> {/* Increased gap slightly */}
 
                     {/* CUSTOMER */}
-                    <QuickAction
-                        icon={<UserPlus className="h-5 w-5" />}
-                        label="Add Customer"
-                        onClick={toaster}
-                        color="bg-blue-100 hover:bg-blue-200 text-blue-700 border-blue-200"
-                    />
+                    <CustomerModalWrapper>
+                        <QuickAction
+                            icon={<UserPlus className="h-5 w-5" />}
+                            label="Add Customer"
+                            color="bg-blue-100 hover:bg-blue-200 text-blue-700 border-blue-200"
+                        />
+                    </CustomerModalWrapper>
 
                     {/* ITEM */}
                     <CreateItemForm disableMobileMode={true}>
