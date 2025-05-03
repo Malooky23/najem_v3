@@ -41,6 +41,7 @@ export const createItemsSchema = z.object({
   customerId: z.string().min(35, {message: "please select a customer"}),
   notes: emptyStringToNull,
   createdBy: z.string(),
+  allowNegative: z.boolean().default(false).optional(),
   isDeleted: z.boolean().default(false).optional(),
 });
 export type CreateItemsSchemaType = z.infer<typeof createItemsSchema>
@@ -68,6 +69,8 @@ export const ItemSchema = z.object({
   createdAt: z.date(),
   updatedAt: z.date().nullable(),
   isDeleted: z.boolean().default(false).optional(),
+  allowNegative: z.boolean().default(false).optional(),
+
   itemStock: z.array(itemStock).nullable().optional(),
   stockMovements: z.array(stockMovementsView).optional(), // Changed to use enriched view
   stockReconciliations: z.array(stockReconciliation).optional(),

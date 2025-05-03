@@ -1,8 +1,0 @@
-{
-    "github.copilot.chat.followUps": "always",
-    "github.copilot.chat.codesearch.enabled": true,
-    "github.copilot.nextEditSuggestions.enabled": true,
-    "github.copilot.chat.editor.temporalContext.enabled": true,
-    "github.copilot.chat.edits.temporalContext.enabled": true,
-    "github.copilot.chat.languageContext.typescript.enabled": true
-}

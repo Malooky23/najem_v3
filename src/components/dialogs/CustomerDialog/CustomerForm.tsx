@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
-import { createBusinessCustomer, createIndividualCustomer, updateBusinessCustomer, updateIndividualCustomer } from "../../../app/(pages)/(protected)/og_customers/actions"
+import { createBusinessCustomer, createIndividualCustomer, updateBusinessCustomer, updateIndividualCustomer } from "./actions"
 import { useToast } from "@/hooks/use-toast"
 import { useQueryClient } from '@tanstack/react-query'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion" // Remove AccordionValue

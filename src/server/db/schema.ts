@@ -239,8 +239,9 @@ export const items = pgTable("items", {
   itemModel: text("item_model"),
   itemBarcode: text("item_barcode").unique(),
   itemCountryOfOrigin: text("item_country_of_origin"),
-  dimensions: json("dimensions"),
+  dimensions: json("dimensions"), //DIMENSIONS SAVED IN mm milimeter
   weightGrams: integer("weight_grams"),
+  allowNegative: boolean("allow_Negative").default(false),
   // packingType: text("packing_type").default("NONE"),
 
   customerId: uuid("customer_id").notNull().references(() => customers.customerId, { onDelete: "restrict" }),

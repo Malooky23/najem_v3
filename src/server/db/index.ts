@@ -7,6 +7,8 @@ import { drizzle as drizzleNeon } from 'drizzle-orm/neon-serverless';
 
 // Determine if we're in production or local environment
 const isVercel = process.env.VERCEL === '1' ;
+console.log("isVercel:", isVercel)
+console.log("process.env.VERCEL:", process.env.VERCEL)
 
 // Function to create local database connection
 function createLocalDb() {

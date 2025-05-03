@@ -113,7 +113,7 @@ export default function CreateItemForm({ children, disableMobileMode = false }: 
 
     if (numValue !== undefined) {
       // If using meters, convert to cm for storage
-      const convertedValue = useMeters ? Math.round(numValue * 100) : Math.round(numValue)
+      const convertedValue = useMeters ? Math.round(numValue * 1000) : Math.round(numValue * 10)
       field.onChange(convertedValue)
     } else {
       field.onChange(undefined)
@@ -136,7 +136,7 @@ export default function CreateItemForm({ children, disableMobileMode = false }: 
   // Format dimension value for display
   const formatDimensionValue = (value: number | undefined) => {
     if (value === undefined) return ""
-    return useMeters ? (value / 100).toString() : value.toString()
+    return useMeters ? (value / 1000).toString() : (value / 10).toString().toString()
   }
 
   // Format weight value for display
@@ -153,6 +153,7 @@ export default function CreateItemForm({ children, disableMobileMode = false }: 
 
   async function onSubmit(values: z.infer<typeof createItemsSchema>) {
     try {
+      console.log("Values", values)
       await createItemMutation.mutateAsync(values);
       setOpen(false);
       form.reset();
@@ -408,7 +409,8 @@ export default function CreateItemForm({ children, disableMobileMode = false }: 
                   <FormControl>
                     <Input
                       type="number"
-                      step={useMeters ? "0.01" : "1"}
+                      step={"1"}
+                      // step={useMeters ? "0.01" : "0.1"}
                       placeholder="Width"
                       value={formatDimensionValue(field.value)}
                       onChange={(e) => handleDimensionChange(field, e.target.value, "width")}
@@ -429,7 +431,8 @@ export default function CreateItemForm({ children, disableMobileMode = false }: 
                   <FormControl>
                     <Input
                       type="number"
-                      step={useMeters ? "0.01" : "1"}
+                      step={"1"}
+                      // step={useMeters ? "0.01" : "1"}
                       placeholder="Height"
                       value={formatDimensionValue(field.value)}
                       onChange={(e) => handleDimensionChange(field, e.target.value, "height")}
@@ -450,7 +453,8 @@ export default function CreateItemForm({ children, disableMobileMode = false }: 
                   <FormControl>
                     <Input
                       type="number"
-                      step={useMeters ? "0.01" : "1"}
+                      step={"1"}
+                      // step={useMeters ? "0.01" : "1"}
                       placeholder="Length"
                       value={formatDimensionValue(field.value)}
                       onChange={(e) => handleDimensionChange(field, e.target.value, "length")}

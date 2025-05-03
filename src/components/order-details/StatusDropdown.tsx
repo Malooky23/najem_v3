@@ -59,7 +59,7 @@ export const StatusDropdown = memo(function StatusDropdown({ className }: Status
       });
 
       if (!result.success) {
-        throw new Error(result.error?.message || 'Failed to update status');
+        throw new Error(result.error || '<GENERIC> Failed to update status');
       }
       return { data: result.data, newStatus };
     },

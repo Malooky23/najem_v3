@@ -1,6 +1,6 @@
 
 'use client'
-import { deleteCustomer } from "@/app/(pages)/(protected)/og_customers/actions"
+import { deleteCustomer } from "@/components/dialogs/CustomerDialog/actions"
 import {
     AlertDialog,
     AlertDialogAction,
