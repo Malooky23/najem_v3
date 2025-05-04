@@ -25,7 +25,7 @@ export const itemStock = z.object({
 
 export const createItemsSchema = z.object({
   itemType: itemTypesSchema,
-  itemName: z.string().min(3, {message:"Item Name too short, min 3 characters"}),
+  itemName: z.string().min(2, {message:"Item Name too short, min 3 characters"}),
   itemBrand: emptyStringToNull,
   itemModel: emptyStringToNull,
   itemBarcode: emptyStringToNull,
@@ -78,10 +78,10 @@ export const ItemSchema = z.object({
 export type ItemSchemaType = z.infer<typeof ItemSchema>
 
 
-export const EnrichedItemsSchema = ItemSchema.extend({
-  customerDisplayName: z.string(),
-});
-export type EnrichedItemsType = z.infer<typeof EnrichedItemsSchema>
+// export const EnrichedItemsSchema = ItemSchema.extend({
+//   customerDisplayName: z.string(),
+// });
+// export type EnrichedItemsType = z.infer<typeof EnrichedItemsSchema>
 
 export const UpdateItemSchema = createItemsSchema.extend({
   itemId: z.string(),

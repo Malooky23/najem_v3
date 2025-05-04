@@ -606,21 +606,6 @@ export function DesktopView({
                             className={headerClassNames} // Apply conditional class names
                             onClick={header.column.getToggleSortingHandler()}
                           >
-                            {/* {header.isPlaceholder
-                              ? null
-                              : flexRender(
-                                header.column.columnDef.header,
-                                header.getContext() // Context contains table instance needed for dropdown
-                              )}
-                            {header.column.getIsSorted() ? (
-                              <span className="ml-2 inline-block">
-                                {{
-                                  asc: ' ↑', // Modern arrow up
-                                  desc: ' ↓', // Modern arrow down
-                                }[ header.column.getIsSorted() as string ] ?? null}
-                              </span>
-                            ) : null} */}
-
                             <div className={headerCellClass}> {/* Wrap content and icon */}
                               {header.isPlaceholder
                                 ? null

@@ -226,7 +226,7 @@ export const locations = pgTable("locations", {
 
 // Item table
 
-export const itemTypes = pgEnum("item_type", [ "SACK", "PALLET", "CARTON", "OTHER", "BOX", "EQUIPMENT", "CAR" ]);
+export const itemTypes = pgEnum("item_type", [ "SACK", "PALLET", "CARTON", "OTHER", "BOX", "EQUIPMENT", "CAR", "SINGLE", "ROLL" ]);
 export const itemTypesSchema = z.enum(itemTypes.enumValues);
 
 export const items = pgTable("items", {

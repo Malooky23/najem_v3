@@ -19,6 +19,7 @@ import { ArrowDown, Filter, X } from "lucide-react"
 import { Item } from "@radix-ui/react-radio-group"
 import { DetailsPanel } from "./DetailsPanel"
 import { useItemsStore } from "@/stores/items-store"
+import { ItemDetailsContainer } from "@/components/item-details/ItemDetailsContainer"
 
 
 interface MobileViewProps {
@@ -355,6 +356,9 @@ export function MobileView({
 
       <MobileBottomNav />
         <DetailsPanel items={data} />
+        {store.isDetailsOpen && (
+                    <ItemDetailsContainer isMobile={true} className="h-full" />
+                  )}
       {/* Mobile item detail dialog */}
       {/* <Dialog open={!!selectedItem} onOpenChange={(open) => !open && setSelectedItem(null)}>
         <DialogContent className="sm:max-w-md">

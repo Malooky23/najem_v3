@@ -119,6 +119,7 @@ export default function ItemsPageWrapper() {
       pagination,
       globalFilter,
     },
+    defaultColumn:{minSize:1}
   })
 
   // Apply custom filters

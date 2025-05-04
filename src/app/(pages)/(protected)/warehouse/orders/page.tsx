@@ -91,7 +91,7 @@ export default function OrdersPageWrapper() {
         <div className={cn(
           ' ',
           "flex flex-col rounded-md  overflow-hidden",
-          isMobile ? "w-full" : "w-[40%]",
+          isMobile ? "w-full" : "w-[40%] h-full",
           store.isDetailsOpen ? "ml-2" : "hidden",
           // !isMobile && !store.isDetailsOpen && "hidden", // Hide on desktop when details are closed
           // "transition-width duration-100", // Enable transition for width
@@ -100,7 +100,7 @@ export default function OrdersPageWrapper() {
         >
           <OrderDetailsContainer
             isMobile={isMobile}
-            className="w-full h-full"
+            className="w-full h-full "
           />
         </div>
 

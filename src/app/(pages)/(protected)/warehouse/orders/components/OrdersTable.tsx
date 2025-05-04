@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, memo, useState, useRef } from "react"
+import { useCallback, useEffect, memo, useState, useRef, Key } from "react"
 import { useOrdersStore } from "@/stores/orders-store"
 import { PaginationControls } from "@/components/ui/pagination-controls"
 import { EnrichedOrders, EnrichedOrderSchemaType, OrderSortField } from "@/types/orders"
@@ -18,6 +18,11 @@ import { format } from "date-fns"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 import { Alert } from "@/components/ui/alert"
+import { ArrowDown, ArrowDownLeft, ArrowUp, ArrowUpRight } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { OrderTableRow } from "./OrderTableRow"
+import { OrdersState } from "@/stores/orders-store"
+import { useShallow } from "zustand/shallow"
 
 interface OrdersTableProps {
   isMobile: boolean;
@@ -86,37 +91,13 @@ const TablePagination = memo<TablePaginationProps>(function TablePagination({
   );
 });
 
-
-
-const StatusBadge = ({ status }: { status: string }) => {
-  const getStatusStyles = (status: string) => {
-    const baseStyles = "px-2 py-1 rounded-full text-xs font-semibold w-24 text-center inline-block"
-    const statuses: { [ key: string ]: string } = {
-      "DRAFT": "bg-gray-500/20 text-gray-700",
-      "PENDING": "bg-yellow-500/20 text-yellow-700",
-      "PROCESSING": "bg-blue-500/20 text-blue-700",
-      "COMPLETED": "bg-green-500/20 text-green-700",
-      "READY": "bg-purple-500/20 text-purple-700",
-      "CANCELLED": "bg-red-500/20 text-red-700",
-    }
-    return `${baseStyles} ${statuses[ status ] || statuses[ "PENDING" ]}`
-  }
-
-  return (
-    <div className="flex items-center  w-full">
-      <span className={getStatusStyles(status)}>{status}</span>
-    </div>
-  )
+interface TableRowSkeletonProps{
+  colSpan: number
 }
-
 // Table row loading skeleton
-const TableRowSkeleton = () => (
+const TableRowSkeleton = ({ colSpan }: TableRowSkeletonProps ) => (
   <TableRow>
-    <TableCell colSpan={5}><Skeleton className="h-6 w-full" /></TableCell>
-    {/* <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-    <TableCell><Skeleton className="h-4 w-28" /></TableCell>
-    <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-    <TableCell><Skeleton className="h-4 w-24" /></TableCell> */}
+    <TableCell colSpan={colSpan}><Skeleton className="h-6 w-full" /></TableCell>
   </TableRow>
 );
 
@@ -130,15 +111,30 @@ export const OrdersTable = memo<OrdersTableProps>(function OrdersTable({
     sortField,
     sortDirection,
     selectedOrderId,
-    selectedOrderData,
-    isDetailsOpen,
+    // selectedOrderData,
+    // isDetailsOpen,
     setPage,
     setPageSize,
     setSort,
     selectOrder,
     getFilters,
     getSort,
-  } = useOrdersStore();
+  } = useOrdersStore(
+      useShallow((state: OrdersState)  => ({
+        page: state.page,
+        pageSize: state.pageSize,
+        sortField: state.sortField,
+        sortDirection: state.sortDirection,
+        selectedOrderId: state.selectedOrderId,
+        setPage: state.setPage,
+        setPageSize: state.setPageSize,
+        setSort: state.setSort,
+        selectOrder: state.selectOrder,
+        getFilters: state.getFilters, // Assuming these are stable or memoized in the store
+        getSort: state.getSort,       // Assuming these are stable or memoized in the store
+      }),
+    ));
+
 
   // Get filters and sort once per render
   const filters = getFilters();
@@ -217,11 +213,11 @@ export const OrdersTable = memo<OrdersTableProps>(function OrdersTable({
 
 
   if (!isLoading && !isFetching && (!data || data.orders.length === 0)) {
-      return (
-        <Alert>
-          Error with data. E1337
-        </Alert>
-      )
+    return (
+      <Alert>
+        Error with data. E1337
+      </Alert>
+    )
 
   }
 
@@ -245,11 +241,16 @@ export const OrdersTable = memo<OrdersTableProps>(function OrdersTable({
                   )}
                 </div>
               </TableHead>
+              <TableHead>
+                <div className="flex justify-center">
+                  <ArrowUp className="text-red-500 h-4 w-4" /><ArrowDown className="h-4 w-4 text-green-500" />
+                </div>
+              </TableHead>
               <TableHead
                 className="cursor-pointer"
                 onClick={() => handleSortChange('status')}
               >
-                <div className="flex items-center">
+                <div className="flex justify-center text-center items-center">
                   Status
                   {sortField === 'status' && (
                     <span className="ml-1">
@@ -275,7 +276,7 @@ export const OrdersTable = memo<OrdersTableProps>(function OrdersTable({
               </TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody>
+          {/* <TableBody>
             {isLoading || isFetching ? (
               // <TableBody>
               Array(20).fill(0).map((_, index) => (
@@ -305,7 +306,15 @@ export const OrdersTable = memo<OrdersTableProps>(function OrdersTable({
                   <TableCell className="font-medium">
                     #{order.orderNumber}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="font-medium  w-[2px]">
+                    <Badge className={cn("w-16 flex justify-center text-center",
+                      // "px-2 py-1 rounded-full text-xs font-semibold ",
+                      order.movement === "IN" ? " bg-green-100 text-green-700" : "bg-red-100 text-red-700")}>
+                      {order.movement === "IN" ? <ArrowDownLeft className="w-4 h-4 text-green-500" /> : <ArrowUpRight className="w-4 h-4 text-red-500" />}
+                      {order.movement}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="">
                     <StatusBadge status={order.status} />
                   </TableCell>
                   <TableCell>
@@ -320,10 +329,26 @@ export const OrdersTable = memo<OrdersTableProps>(function OrdersTable({
                 </TableRow>
               ))
             )}
+          </TableBody> */}
+          <TableBody>
+            {isLoading || isFetching ? (
+              Array(pageSize).fill(0).map((_, index) => ( // Show skeletons based on pageSize
+                <TableRowSkeleton colSpan={Number(pageSize)} key={`skeleton-${index}`} />
+              ))
+            ) : (
+              data?.orders.map((order) => (
+                <OrderTableRow
+                  key={order.orderId} // Key is still needed here for map
+                  order={order}
+                  isSelected={selectedOrderId === order.orderId}
+                  onClick={handleRowClick} // Pass the memoized callback
+                />
+              ))
+            )}
           </TableBody>
         </Table>
 
-      </div>
+      </div >
 
       <TablePagination
         pagination={data?.pagination}

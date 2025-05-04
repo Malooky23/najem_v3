@@ -36,3 +36,4 @@ function createProdDb() {
 export const db = isVercel ? createProdDb() : createLocalDb();
 
 console.log(`Database initialized in ${isVercel ? 'production' : 'local'} mode`);
+console.log(`Database URL: ${isVercel ? process.env.DATABASE_URL : process.env.DATABASE_URL_LOCAL}`);

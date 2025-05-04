@@ -9,7 +9,7 @@ import { z } from 'zod';
 type OrderStatus = z.infer<typeof orderStatusSchema>;
 type MovementType = z.infer<typeof movementTypeSchema>;
 // Simpler state interface with focused responsibilities
-interface OrdersState {
+export interface OrdersState {
   // Pagination
   page: number;
   pageSize: number;

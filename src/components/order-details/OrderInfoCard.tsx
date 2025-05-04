@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowUpRight, Box, RailSymbol, Truck, UserCircle2 } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, Box, RailSymbol, Truck, UserCircle2 } from "lucide-react";
 import { orderTypeSchema, movementTypeSchema, packingTypeSchema, deliveryMethodSchema } from "@/server/db/schema";
 import { z } from "zod";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -101,7 +101,7 @@ export function OrderInfoCard({
               <Skeleton className="h-4 w-24" />
             ) : (
               <div className="pt-[4px] flex items-center h-full text-end gap-2 text-sm font-medium text-gray-700 ">
-                <ArrowUpRight className="w-4 h-4 text-blue-500" />
+                  {movement === "IN" ? <ArrowDownLeft className="w-4 h-4 text-green-500" /> : <ArrowUpRight className="w-4 h-4 text-red-500"/>}
                 <span className="text-end">{movement}</span>
               </div>
             )}

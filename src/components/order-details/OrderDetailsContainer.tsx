@@ -76,10 +76,11 @@ export const OrderDetailsContainer = memo(function OrderDetailsContainer({
 
   // --- Styling ---
   const containerClass = cn(
-    "flex flex-col",
+    "flex flex-col shadow-0",
+    "bg-gradient-to-br from-blue-200 via-purple-200 to-pink-200",
     isMobile
-      ? "h-screen w-screen fixed inset-0 z-50 bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100"
-      : "mb-12 p-4 bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 rounded-lg border border-2 border-slate-200 w-[40%]",
+      ? "h-screen w-screen fixed inset-0 z-50 "
+      : "mb-4   rounded-lg border border-2 border-slate-200 w-[40%]",
     className
     );
 

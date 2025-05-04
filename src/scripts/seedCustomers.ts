@@ -35,6 +35,7 @@ interface CustomerJsonData {
     phone1: string | number;
     email: string;
     taxNumber: number | string;
+    customerId: string | null | undefined
 }
 
 // --- Helper Functions ---
@@ -58,7 +59,7 @@ function cleanZohoId(value: any): string | null {
 // --- Main Seeding Function ---
 async function seedCustomers() {
     console.log('Starting customer seeding...');
-    const jsonPath = path.resolve('/Users/malek/local_projects/najem_v3/src/scripts/customerData.json'); // Use absolute path
+    const jsonPath = path.resolve('/Users/malek/local_projects/najem_v3/src/scripts/mergedCustomerData.json'); // Use absolute path
     if (!fs.existsSync(jsonPath)) {
         console.error(`Error: customerData.json not found at ${jsonPath}`);
         return;
@@ -82,6 +83,7 @@ async function seedCustomers() {
         const rowNum = customerData.row;
         const displayName = cleanString(customerData.displayName);
         const type = customerData.customerType?.toLowerCase();
+        const customerIdJSON = customerData.customerId
 
         // Basic validation: Skip if essential data is missing
         if (!displayName || (type !== 'business' && type !== 'individual')) {
@@ -105,6 +107,7 @@ async function seedCustomers() {
                         zohoCustomerId: cleanZohoId(customerData.zohoCustomerId),
                         notes: cleanString(customerData.notes),
                         country: customerCountry, // Ensure country is not null
+                        customerId: customerData.customerId ?? undefined
                     })
                     .returning({
                         customerId: customers.customerId,
