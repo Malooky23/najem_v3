@@ -23,6 +23,8 @@ import { useSession } from "next-auth/react"
 import { ComboboxForm } from "@/components/ui/combobox"
 import { useCreateItem } from "@/hooks/data/useItems";
 import { itemTypes } from "@/server/db/schema";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { itemTypeClasses } from "@/components/ui/styles";
 
 
 interface CreateItemFormProps {
@@ -179,22 +181,37 @@ export default function CreateItemForm({ children, disableMobileMode = false }: 
         <div className="grid md:grid-cols-2 gap-6">
           {/* Item Type */}
           <FormField
+            
             control={form.control}
             name="itemType"
             render={({ field }) => (
-              <FormItem className="flex flex-col">
+              <FormItem  className="flex flex-col">
                 <FormLabel className="flex items-center gap-2">
                   <Layers className="h-4 w-4 text-primary" />
                   Item Type *
                 </FormLabel>
-                <ComboboxForm
+                {/* <ComboboxForm
                   name="itemType"
                   options={itemTypes.enumValues.map((type) => ({ label: type, value: type }))}
                   value={field.value}
                   placeholder="Select item type"
                   enableFormMessage={false}
                   isModal={true}
-                />
+                  // itemClassName={"hover:bg-"}
+
+                /> */}
+                <Select name="itemType" onValueChange={field.onChange} defaultValue={field.value}>
+                  <SelectTrigger  className="w-full">
+                    <SelectValue placeholder="Select item type" />
+                  </SelectTrigger>
+                  <SelectContent className="w-full ">
+                    {itemTypes.enumValues.map((type)=>(
+                      <SelectItem key={type} className={cn(itemTypeClasses[ type ])} value={type}>
+                        {type}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}
@@ -204,12 +221,15 @@ export default function CreateItemForm({ children, disableMobileMode = false }: 
             control={form.control}
             name="customerId"
             render={({ field }) => (
-              <FormItem className="flex flex-col">
+              <FormItem  className="flex flex-col">
                 <FormLabel className="flex items-center gap-2">
                   <Building className="h-4 w-4 text-primary" />
                   Customer *
                 </FormLabel>
-                <CustomerDropdown {...field} isModal={true} />
+                <CustomerDropdown {...field} 
+                // isModal={true} 
+                
+                />
                 <FormMessage />
               </FormItem>
             )}
@@ -223,13 +243,14 @@ export default function CreateItemForm({ children, disableMobileMode = false }: 
             control={form.control}
             name="itemName"
             render={({ field }) => (
-              <FormItem>
+              <FormItem >
                 <FormLabel className="flex items-center gap-2">
                   <Package className="h-4 w-4 text-primary" />
                   Item Name *
                 </FormLabel>
                 <FormControl>
                   <Input
+                    
                     placeholder="Enter item name"
                     {...field}
                     className="border-primary/20 focus-visible:ring-primary"
@@ -247,13 +268,14 @@ export default function CreateItemForm({ children, disableMobileMode = false }: 
             control={form.control}
             name="itemBarcode"
             render={({ field }) => (
-              <FormItem>
+              <FormItem >
                 <FormLabel className="flex items-center gap-2">
                   <Barcode className="h-4 w-4 text-primary" />
                   Barcode
                 </FormLabel>
                 <FormControl>
                   <Input
+                    
                     placeholder="Enter barcode"
                     {...field}
                     value={field.value || ""}
@@ -274,13 +296,14 @@ export default function CreateItemForm({ children, disableMobileMode = false }: 
             control={form.control}
             name="itemBrand"
             render={({ field }) => (
-              <FormItem>
+              <FormItem >
                 <FormLabel className="flex items-center gap-2">
                   <Tag className="h-4 w-4 text-primary" />
                   Brand
                 </FormLabel>
                 <FormControl>
                   <Input
+                    
                     placeholder="Enter brand name"
                     {...field}
                     value={field.value || ""}
@@ -298,13 +321,14 @@ export default function CreateItemForm({ children, disableMobileMode = false }: 
             control={form.control}
             name="itemCountryOfOrigin"
             render={({ field }) => (
-              <FormItem>
+              <FormItem >
                 <FormLabel className="flex items-center gap-2">
                   <Globe className="h-4 w-4 text-primary" />
                   Country of Origin
                 </FormLabel>
                 <FormControl>
                   <Input
+                    
                     placeholder="Enter country"
                     {...field}
                     value={field.value || ""}
@@ -325,13 +349,14 @@ export default function CreateItemForm({ children, disableMobileMode = false }: 
             control={form.control}
             name="itemModel"
             render={({ field }) => (
-              <FormItem>
+              <FormItem >
                 <FormLabel className="flex items-center gap-2">
                   <Briefcase className="h-4 w-4 text-primary" />
                   Model
                 </FormLabel>
                 <FormControl>
                   <Input
+                    
                     placeholder="Enter model number"
                     {...field}
                     value={field.value || ""}
@@ -349,7 +374,7 @@ export default function CreateItemForm({ children, disableMobileMode = false }: 
             control={form.control}
             name="weightGrams"
             render={({ field }) => (
-              <FormItem>
+              <FormItem >
                 <div className="flex justify-between">
                   <FormLabel className="flex items-center gap-2">
                     <Weight className="h-4 w-4 text-primary" />
@@ -367,6 +392,7 @@ export default function CreateItemForm({ children, disableMobileMode = false }: 
                 </div>
                 <FormControl>
                   <Input
+                    
                     type="number"
                     step={useKilograms ? "0.001" : "1"}
                     placeholder={`Enter weight in ${useKilograms ? "kilograms" : "grams"}`}
@@ -404,10 +430,11 @@ export default function CreateItemForm({ children, disableMobileMode = false }: 
               control={form.control}
               name="dimensions.width"
               render={({ field }) => (
-                <FormItem>
+                <FormItem >
                   <FormLabel>Width</FormLabel>
                   <FormControl>
                     <Input
+                    
                       type="number"
                       step={"1"}
                       // step={useMeters ? "0.01" : "0.1"}
@@ -426,7 +453,7 @@ export default function CreateItemForm({ children, disableMobileMode = false }: 
               control={form.control}
               name="dimensions.height"
               render={({ field }) => (
-                <FormItem>
+                <FormItem >
                   <FormLabel>Height</FormLabel>
                   <FormControl>
                     <Input
@@ -448,7 +475,7 @@ export default function CreateItemForm({ children, disableMobileMode = false }: 
               control={form.control}
               name="dimensions.length"
               render={({ field }) => (
-                <FormItem>
+                <FormItem >
                   <FormLabel>Length</FormLabel>
                   <FormControl>
                     <Input
@@ -474,7 +501,7 @@ export default function CreateItemForm({ children, disableMobileMode = false }: 
           control={form.control}
           name="notes"
           render={({ field }) => (
-            <FormItem>
+            <FormItem >
               <FormLabel className="flex items-center gap-2">
                 <StickyNote className="h-4 w-4 text-primary" />
                 Notes
@@ -482,7 +509,7 @@ export default function CreateItemForm({ children, disableMobileMode = false }: 
               <FormControl>
                 <Textarea
                   placeholder="Add any additional notes here"
-                  className="resize-none min-h-[100px] border-primary/20 focus-visible:ring-primary"
+                  className="resize-none min-h-[80px] border-primary/20 focus-visible:ring-primary"
                   {...field}
                   value={field.value || ""}
                   onTouchStart={handleInputTouchStart}
@@ -553,7 +580,7 @@ export default function CreateItemForm({ children, disableMobileMode = false }: 
             <Button
               onClick={form.handleSubmit(onSubmit)}
               className="bg-primary hover:bg-primary/90"
-              tabIndex={0} // Ensure the button is keyboard accessible
+               // Ensure the button is keyboard accessible
             >
               {createItemMutation.isPending ? 'Creating...' : 'Create Item'}
             </Button>
@@ -561,7 +588,7 @@ export default function CreateItemForm({ children, disableMobileMode = false }: 
               <Button
                 variant="outline"
                 className="border-primary/20 hover:bg-primary/10"
-                tabIndex={0} // Ensure the button is keyboard accessible
+                 // Ensure the button is keyboard accessible
               >
                 Cancel
               </Button>
@@ -580,13 +607,14 @@ export default function CreateItemForm({ children, disableMobileMode = false }: 
           // If children is provided, use it as the trigger
           <div onClick={() => setOpen(true)}>{children}</div>
         ) : (
-          <Button variant="default" className="bg-primary hover:bg-primary/90" tabIndex={0}>
+          <Button variant="default" className="bg-primary hover:bg-primary/90" >
             <Package className="mr-2 h-4 w-4" />
             Create New Item
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-hidden">
+      {/* <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-hidden"> */}
+        <DialogContent className="sm:max-w-[800px] max-h-[90vh] flex flex-col"> {/* Adjusted for flex layout */}
 
 
         <DialogHeader className="border-b border-primary/20 pb-4">
@@ -597,9 +625,15 @@ export default function CreateItemForm({ children, disableMobileMode = false }: 
           <DialogDescription>Fill in the details to create a new inventory item.</DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="max-h-[calc(90vh-180px)] overflow-auto pr-4">
+        {/* <ScrollArea className="max-h-[calc(90vh-180px)] overflow-auto pr-4">
           <div className="py-4">{FormContent}</div>
-        </ScrollArea>
+        </ScrollArea> */}
+        {/* <div className="flex-1 overflow-y-auto pr-4 py-4"> */}
+        <div className="flex-1 overflow-y-auto p-4">
+          {/* Removed ScrollArea wrapper */}
+          {FormContent}
+          {/* Removed ScrollArea wrapper */}
+        </div>
 
         <DialogFooter className="flex items-center justify-between sm:justify-end gap-2 border-t border-primary/20 pt-4">
           <Button
@@ -607,7 +641,7 @@ export default function CreateItemForm({ children, disableMobileMode = false }: 
             onClick={() => setOpen(false)}
             className="border-primary/20 hover:bg-primary/10"
             disabled={createItemMutation.isPending}
-            tabIndex={0}
+            
           >
             Cancel
           </Button>
@@ -616,7 +650,7 @@ export default function CreateItemForm({ children, disableMobileMode = false }: 
             onClick={form.handleSubmit(onSubmit)}
             className="bg-primary hover:bg-primary/90"
             disabled={createItemMutation.isPending}
-            tabIndex={0}
+            
           >
             {createItemMutation.isPending ? (
               <p className="">Creating...</p>
