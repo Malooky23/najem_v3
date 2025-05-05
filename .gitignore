@@ -49,3 +49,21 @@ next-env.d.ts
 
 .idea
 .next
+src/scripts/
+src/scripts/copyUsers.mjs
+src/scripts/copyUsers.ts
+src/scripts/customerData.json
+db_items.csv
+.gitignore
+dist/scripts/createOrders.js
+dist/scripts/scripts/createOrders.js
+dist/scripts/server/actions/orders.js
+dist/scripts/types/expense.js
+dist/scripts/server/db/schema.js
+dist/scripts/types/items.js
+dist/scripts/types/stockMovement.js
+dist/scripts/types/orders.js
+src/scripts/customerData.json
+src/scripts/orderDataInvalid.json
+src/scripts/copyCustomers.ts
+src/scripts/customerData.json

@@ -9,6 +9,18 @@ export default {
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
     "./node_modules/@heroui/theme/dist/components/spinner.js"
   ],
+	safelist: [
+		// Add dynamically used class names here
+		'CARTON',
+		'BOX',
+		'SACK',
+		'EQUIPMENT',
+		'PALLET',
+		'CAR',
+		'SINGLE', // <-- Add SINGLE here
+		'ROLL',
+		'OTHER',
+	],
 	theme: {
 		extend: {
 			fontFamily: {

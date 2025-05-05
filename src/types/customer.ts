@@ -105,3 +105,9 @@ export const customerList = z.object({
 
 export type EnrichedCustomer = z.infer<typeof customerSchema>;
 export type CustomerList = z.infer<typeof customerList>;
+
+export type CustomerFilterState = {
+  types: string[]
+  customers: string[]
+  selectedItems: string[]
+}
