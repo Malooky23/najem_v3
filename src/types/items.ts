@@ -1,13 +1,13 @@
 import { z } from "zod";
-import { type InsertItem, items, type Item, itemTypesSchema } from "@/server/db/schema";
+import { items, itemTypesSchema } from "@/server/db/schema";
 import {createInsertSchema,} from 'drizzle-zod'
 import { stockMovement, stockReconciliation, stockMovementsView } from "./stockMovement";
-import { is } from "drizzle-orm";
+
 
 export const emptyStringToNull = z.string().optional().nullable().nullish().transform((val) => val === '' ? null : val);
 
 
-export type FilterState = {
+export type ItemFilterState = {
   types: string[]
   customers: string[]
   selectedItems: string[]
@@ -16,7 +16,7 @@ export type FilterState = {
 export const itemStock = z.object({
   itemId: z.string(),
   locationId: z.string(),
-  currentQuantity: z.number().nonnegative(),
+  currentQuantity: z.number(),
   lastUpdated: z.date(),
   lastMovementId: z.string().nullable(),
   lastReconciliationAt: z.date().nullable(),

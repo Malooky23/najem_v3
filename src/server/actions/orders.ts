@@ -8,13 +8,19 @@ import { eq, and, desc, asc, sql, gte, lte, inArray } from 'drizzle-orm';
 import { CreateOrderInput, createOrderSchema, EnrichedOrders, EnrichedOrderSchemaType, UpdateOrderInput, updateOrderSchema, type OrderFilters, type OrderSort } from '@/types/orders';
 import useDelay from '@/hooks/useDelay';
 
+// export type OrderActionResponse = {
+//     success: boolean;
+//     data?: EnrichedOrderSchemaType;
+//     error?: string;
+// };
+
 export type OrderActionResponse = {
     success: boolean;
     data?: EnrichedOrderSchemaType;
     error?: string;
+    validationErrors?: Record<string, string[]>; // For potential future use
+    originalOrderNumber?: string | number; // To track the original JSON order number in response
 };
-
-
 
 
 export async function createOrder(orderData: CreateOrderInput): Promise<OrderActionResponse> {
@@ -47,36 +53,43 @@ export async function createOrder(orderData: CreateOrderInput): Promise<OrderAct
                 if (requiredStock.length > 0) {
                     const itemIds = requiredStock.map(item => item.itemId);
 
-                    const currentStockLevels = await tx.select({
-                        itemId: itemStock.itemId,
-                        available: itemStock.currentQuantity, // Adjust column name if needed
-                        itemName: items.itemName // item name added here
-
-                        // locationId: stockQuantities.locationId // If relevant
+                    // Fetch current stock AND item properties (including allowNegative) in one go
+                    const itemDetailsAndStock = await tx.select({
+                        itemId: items.itemId,
+                        itemName: items.itemName,
+                        allowNegative: items.allowNegative, // Fetch the allowNegative flag
+                        available: itemStock.currentQuantity // Fetch current stock
                     })
-                        .from(itemStock)
-                        .innerJoin(items, eq(itemStock.itemId, items.itemId)) // Join to get item name
-                        .where(inArray(itemStock.itemId, itemIds));
-                    // Add location filter here if stock is location-specific
+                        .from(items)
+                        // Left join in case an item exists but has no stock record yet (available will be null)
+                        .leftJoin(itemStock, eq(items.itemId, itemStock.itemId))
+                        // Add location filter here if stock is location-specific and you track it per location
+                        // .where(and(inArray(items.itemId, itemIds), eq(itemStock.locationId, 'YOUR_DEFAULT_LOCATION_ID_OR_VARIABLE')))
+                        .where(inArray(items.itemId, itemIds)); // Filter for relevant items
 
 
-                    // Create a map for easy lookup
-                    const stockMap = new Map(currentStockLevels.map(s => [ s.itemId, s.available ]));
-                    const itemNameMap = new Map(currentStockLevels.map(s => [ s.itemId, s.itemName ])); // Map for item names
+                    // Create maps for easy lookup
+                    const stockMap = new Map(itemDetailsAndStock.map(s => [ s.itemId, s.available ?? 0 ])); // Default to 0 if no stock record
+                    const itemNameMap = new Map(itemDetailsAndStock.map(s => [ s.itemId, s.itemName ]));
+                    const allowNegativeMap = new Map(itemDetailsAndStock.map(s => [ s.itemId, s.allowNegative ?? false ])); // Default to false if flag is null
 
                     // Check each item
                     for (const item of requiredStock) {
-                        const available = stockMap.get(item.itemId) ?? 0;
-                        const itemName = itemNameMap.get(item.itemId) ?? 'Unknown Item'; // Get item name for error message
-                        if (available < item.requiredQuantity) {
+                        const available = stockMap.get(item.itemId) ?? 0; // Default to 0 again just in case
+                        const itemName = itemNameMap.get(item.itemId) ?? `Unknown Item (ID: ${item.itemId})`;
+                        const allowNegative = allowNegativeMap.get(item.itemId) ?? false; // Default to false
+
+                        // Check if stock is insufficient AND negative stock is NOT allowed
+                        if (available < item.requiredQuantity && !allowNegative) {
                             // Insufficient stock - throw error BEFORE inserting the order
-                            throw new Error(` Insufficient stock for ${itemName}.\n Required: ${item.requiredQuantity}, Available: ${available}`); // itemName included in error
+                            throw new Error(` Insufficient stock for ${itemName}.\n Required: ${item.requiredQuantity}, Available: ${available} (Negative stock not allowed for this item)`);
                         }
                     }
-                    // If we reach here, stock is sufficient for all items
-                    console.log("Stock pre-check passed.");
+                    // If we reach here, stock is sufficient (or negative allowed) for all items
+                    console.log("Stock pre-check passed (considering allowNegative).");
                 }
             }
+            // --- End of Stock Pre-check Modification ---
 
             const [ newOrder ] = await tx.insert(orders).values({
                 customerId: orderDataPayload.customerId,
@@ -86,10 +99,12 @@ export async function createOrder(orderData: CreateOrderInput): Promise<OrderAct
                 deliveryMethod: orderDataPayload.deliveryMethod,
                 // status: orderData.status,
                 status: orderDataPayload.status === 'COMPLETED' ? 'PENDING' : orderDataPayload.status, // Temporarily set to PENDING if it's COMPLETED
-
+                orderNumber: orderDataPayload.orderNumber ?? undefined,
                 addressId: orderDataPayload.addressId,
                 notes: orderDataPayload.notes,
-                createdBy: session?.user.id ?? ""
+                createdBy: session?.user.id ?? "",
+                createdAt: orderDataPayload.createdAt ?? undefined,
+
             }).returning();
 
             let orderItemsData = [];

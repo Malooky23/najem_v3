@@ -74,7 +74,10 @@ export const createOrderSchema = z.object({
             itemLocationId: z.string().uuid()
         })
     ).min(1, 'At least one item is required'),
-    createdBy: z.string().uuid()
+    createdBy: z.string().uuid(),
+    createdAt: z.date().optional(),
+    orderNumber: z.number().optional()
+
 });
 
 export type CreateOrderInput = z.infer<typeof createOrderSchema>;
