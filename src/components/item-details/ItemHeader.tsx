@@ -30,16 +30,20 @@ export function ItemHeader({ item, handleClose, isLoading }: ItemHeaderProps) {
   return (
     <div className="flex justify-between items-center w-full gap-4">
       <div className="flex gap-3 items-center min-w-0">
-        {/* <Package2 className="h-5 w-5 text-primary shrink-0" /> */}
+        <Badge
+          variant="outline"
+          className="h-7 px-3 text-lg font-bold border-2 border-black bg-white rounded-full"
+        >
+          <p className="whitespace-nowrap">Item #{item.itemNumber}</p>
+        </Badge>
         {item.itemType && (
-          <Badge
-          variant={item.itemType as any} // Assuming variant matches type
-          className="capitalize text-xs px-2 py-0.5 whitespace-nowrap shrink-0"
+          <span
+            className={`h-7 rounded-full items-center flex justify-center font-bold w-28 text-center ${item.itemType}`}
           >
             {item.itemType}
-          </Badge>
+          </span>
+          
         )}
-        <h2 className="text-lg font-semibold truncate">{item.itemName}</h2>
       </div>
       <div className="flex gap-2 shrink-0">
         {/* Add Edit Button Trigger here if needed */}
