@@ -15,13 +15,13 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 
-import type { FilterState, ItemSchemaType } from "@/types/items"
+import type { ItemFilterState, ItemSchemaType } from "@/types/items"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useState } from "react"
 import { Input } from "@/components/ui/input"
 
 interface MobileFiltersProps {
-  activeFilters: FilterState
+  activeFilters: ItemFilterState
   handleTypeFilter: (type: string) => void
   handleCustomerFilter: (customer: string) => void
   handleItemSelection: (itemId: string) => void
