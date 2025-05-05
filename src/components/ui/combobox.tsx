@@ -35,6 +35,8 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer"
 import { useState } from "react"
+import { itemTypes } from "@/server/db/schema"
+import { ItemSchemaType } from "@/types/items"
 
 
 interface Option {
@@ -55,9 +57,10 @@ export interface ComboboxProps {
   required?: boolean
   isModal?: boolean
   enableFormMessage?: boolean
+  itemClassName?: string
 }
 
-function ComboboxContent({ field, form, options, label, placeholder, disabled, onChange }: {
+function ComboboxContent({ field, form, options, label, placeholder, disabled, onChange, itemClassName="" }: {
   field: any
   form: any
   options: Option[]
@@ -65,6 +68,8 @@ function ComboboxContent({ field, form, options, label, placeholder, disabled, o
   placeholder?: string
   disabled?: boolean
   onChange?: (value: string) => void
+  itemClassName?: string
+
 }) {
   return (
     <Command>
@@ -72,13 +77,15 @@ function ComboboxContent({ field, form, options, label, placeholder, disabled, o
         placeholder={`Search ${label?.toLowerCase() ?? "option"}...`}
         className="h-9"
       />
-
         <CommandList >
           <CommandEmpty>No option found.</CommandEmpty>
           <CommandGroup >
             {options.map((option) => (
               <CommandItem
-                value={option.label}  // Changed from option.label to option.value
+                className={cn(option.value === field.value
+                  ? "bg-slate-100"
+                  : "",
+                   itemClassName)}
                 key={option.value}
                 onSelect={() => {
                   form.setValue(field.name, option.value)
@@ -115,6 +122,7 @@ export function ComboboxForm({
   disabled = false,
   required = false,
   enableFormMessage = true,
+  itemClassName = ""
 }: ComboboxProps) {
   const form = useFormContext()
 
@@ -129,7 +137,6 @@ export function ComboboxForm({
   }
 
   return (
-    // <Form {...form}>
     <FormField
       control={form.control}
       name={name}
@@ -150,15 +157,15 @@ export function ComboboxForm({
                     role="combobox"
                     disabled={disabled}
                     className={cn(
-                      "w-full justify-between min-h-[2.5rem]",
+                      "w-full justify-between min-h-[2.5rem] px-1",
                       !field.value && "text-muted-foreground"
                     )}
                   >
-                    {field.value
+                    <span className="truncate">{field.value
                       ? options.find(
                         (option) => option.value === field.value
                       )?.label
-                      : placeholder}
+                      : placeholder}</span>
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </FormControl>
@@ -172,12 +179,13 @@ export function ComboboxForm({
                   placeholder={placeholder}
                   disabled={disabled}
                   onChange={doo}
+                  itemClassName={itemClassName}
                   
                 />
               </PopoverContent>
             </Popover>
           ) : (
-            <Drawer open={open} onOpenChange={setOpen}>
+              <Drawer  open={open} onOpenChange={setOpen}>
               <DrawerTrigger asChild>
                 <FormControl>
                   <Button
@@ -190,11 +198,11 @@ export function ComboboxForm({
                       !field.value && "text-muted-foreground"
                     )}
                   >
-                    {field.value
-                      ? options.find(
-                        (option) => option.value === field.value
-                      )?.label
-                      : placeholder}
+                      <span className="truncate">{field.value
+                        ? options.find(
+                          (option) => option.value === field.value
+                        )?.label
+                        : placeholder}</span>
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </FormControl>
@@ -217,10 +225,10 @@ export function ComboboxForm({
                     onChange={doo}
                   />
                 </div>
-                <div className="h-12 bg-amber-50 text-center text-gray-300">
+                {/* <div className="h-12 bg-amber-50 text-center text-gray-300">
                     <p>i added some space. /components/ui/combobox.tsx line 220</p>
                     <p>className="h-12 bg-amber-50 text-center</p>
-                  </div>
+                  </div> */}
 
               </DrawerContent>
             </Drawer>
@@ -230,7 +238,6 @@ export function ComboboxForm({
         </FormItem>
       )}
     />
-    // </Form>
   )
 }
 

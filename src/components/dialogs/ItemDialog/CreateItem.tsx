@@ -227,8 +227,7 @@ export default function CreateItemForm({ children, disableMobileMode = false }: 
                   Customer *
                 </FormLabel>
                 <CustomerDropdown {...field} 
-                // isModal={true} 
-                
+                isModal={true}
                 />
                 <FormMessage />
               </FormItem>
@@ -523,7 +522,9 @@ export default function CreateItemForm({ children, disableMobileMode = false }: 
     </Form>
   )
 
-  if (isMobile && !disableMobileMode) {
+  // Not sure why i added this
+  // if (isMobile && !disableMobileMode) {
+  if (isMobile ) {
     return (
       <Drawer modal={true} open={open} onOpenChange={setOpen} >
         <DrawerTrigger asChild>
@@ -545,7 +546,7 @@ export default function CreateItemForm({ children, disableMobileMode = false }: 
           </DrawerHeader>
           <div className="flex-1 overflow-hidden form-scroll-container" id="form-container">
             <div
-              className="h-full overflow-y-auto p-4 pb-0 mobile-form-container"
+              className="h-full overflow-y-auto p-4 pb-2 mobile-form-container"
             >
               {FormContent}
             </div>

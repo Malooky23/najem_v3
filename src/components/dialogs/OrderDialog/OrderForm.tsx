@@ -290,13 +290,13 @@ export const OrderForm = ({ onClose, initialData, isEditMode = false }: OrderFor
 
                     className="flex flex-col h-full w-full "
                 >
-                    <div className="flex flex-col px-2 sm:px-6 flex-grow overflow-auto ">
+                    <div className="flex flex-col px-0 sm:px-6 flex-grow overflow-auto ">
                         {/* Grid Layout */}
                         {/* <LoadingOverlay /> */}
                         <div className="grid grid-cols-1 lg:grid-cols-[1.2fr,2fr] gap-6">
 
                             {/* Left Column Card */}
-                            <Card className={cn("shadow-sm border-gray-200 flex flex-col ")}>
+                            <Card className={cn("shadow-sm border-gray-200 flex flex-col min-w-0 ")}>
                                 <div className="pt-5 px-5 pb-2 border-b">
                                     <h3 className="text-lg font-semibold text-gray-800 flex items-center">
                                         <div className="h-5 w-1.5 bg-blue-500 rounded-full mr-2"></div>
@@ -506,7 +506,10 @@ export const OrderForm = ({ onClose, initialData, isEditMode = false }: OrderFor
                             </Card>
 
                             {/* Right Column Card - Items */}
-                            <Card className={cn("shadow-sm border-gray-200 flex flex-col", isMobile ? "" : "h-[calc(100vh-20rem)] overflow-hidden")}>
+                            <Card className={cn(
+                                "shadow-sm border-gray-200 flex flex-col min-w-0", // Added min-w-0
+                                isMobile ? "" : "h-[calc(100vh-20rem)] overflow-hidden"
+                            )}>
                                 <div className="pt-5 px-5 py-2 border-b">
                                     <div className="flex justify-between items-center">
                                         <h3 className="text-lg font-semibold text-gray-800 flex items-center">
@@ -514,20 +517,20 @@ export const OrderForm = ({ onClose, initialData, isEditMode = false }: OrderFor
                                             Order Items
                                         </h3>
                                         <div className="flex gap-2">
-                                            <CreateItemForm disableMobileMode={true}> 
+                                            <CreateItemForm disableMobileMode={true}>
 
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                size="sm"
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    size="sm"
                                                     className="flex items-center hover:text-blue-900 border-blue-500 text-blue-600 hover:bg-blue-50"
                                                 // Ensure you provide default/valid values required by your item schema
                                                 // onClick={() => append({ itemId: "", quantity: 1, itemLocationId: "4e176e92-e833-44f5-aea9-0537f980fb4b" /* Add other required defaults */ })}
-                                            >
+                                                >
                                                     <PackagePlus className="h-4 w-4" />
-                                                Create New Item
-                                            </Button>
-                                                </CreateItemForm>
+                                                    Create New Item
+                                                </Button>
+                                            </CreateItemForm>
 
                                             <Button
                                                 type="button"
@@ -547,13 +550,32 @@ export const OrderForm = ({ onClose, initialData, isEditMode = false }: OrderFor
                                 <div className="flex-1 overflow-hidden flex flex-col">
                                     {/* Desktop Header */}
                                     <div className="hidden md:block bg-gray-50 border-b sticky top-0 z-10">
-                                        <table className="w-full border-collapse">
+
+                                        {/* ORIGINAL TABLE HEADER */}
+                                        {/* <table className="w-full border-collapse">
                                             <thead>
                                                 <tr>
                                                     <th className="py-3 px-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-12">#</th>
                                                     <th className="py-3 px-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Item</th>
                                                     <th className="py-3 px-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider w-28">Quantity</th>
                                                     <th className="py-3 px-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider w-16">Actions</th>
+                                                </tr>
+                                            </thead>
+                                        </table> */}
+
+                                        <table className="w-full border-collapse table-fixed">
+                                            <colgroup>
+                                                <col className="w-8" />
+                                                <col className="w-auto" />
+                                                <col className="w-32" />
+                                                <col className="w-10" />
+                                            </colgroup>
+                                            <thead>
+                                                <tr className="text-gray-600 py-3 px-4 text-left text-xs font-semibold  uppercase tracking-wider">
+                                                    <th className="py-1 px-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">#</th>
+                                                    <th className="py-1 px-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Item</th>
+                                                    <th className="py-1 px-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Quantity</th>
+                                                    <th className="py-1 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">...</th>
                                                 </tr>
                                             </thead>
                                         </table>
@@ -568,26 +590,20 @@ export const OrderForm = ({ onClose, initialData, isEditMode = false }: OrderFor
                                                 <p className="text-sm text-gray-400">Click "Add Item" to begin</p>
                                             </div>
                                         ) : (
-                                            <table className="w-full border-collapse">
+                                            <table className="w-full border-collapse table-fixed">
+                                                 <colgroup>
+                                                     <col className="w-full md:w-4" />
+                                                     <col className="md:w-auto" />
+                                                     <col className="md:w-32" />
+                                                     <col className="md:w-10" />
+                                                 </colgroup>
+                                                {/* <colgroup className="hidden md:table-column-group">
+                                                    <col className="w-12" />
+                                                    <col className="w-auto" />
+                                                    <col className="w-32" />
+                                                    <col className="w-20" />
+                                                </colgroup> */}
                                                 <tbody>
-                                                    {/* {fields.map((field, index) => (
-                                                        <>
-                                                        <ItemRow
-                                                            key={field.id}
-                                                            index={index}
-                                                            itemId={form.watch(`items.${index}.itemId`)}
-                                                            quantity={form.watch(`items.${index}.quantity`)}
-                                                            itemLocationId={form.watch(`items.${index}.itemLocationId`)}
-                                                            items={itemsList || []}
-                                                            onItemChange={(value: string) => form.setValue(`items.${index}.itemId`, value)}
-                                                            onQuantityChange={(value: string) => form.setValue(`items.${index}.quantity`, parseInt(value))}
-                                                            onRemove={() => remove(index)}
-                                                        />
-                                                        </>
-
-                                                    ))}
-                                                </tbody>
-                                            </table> */}
                                                     {fields.map((field, index) => {
                                                         const currentItemId = form.watch(`items.${index}.itemId`);
                                                         const filteredItems = itemsList?.filter(item => {
@@ -599,13 +615,14 @@ export const OrderForm = ({ onClose, initialData, isEditMode = false }: OrderFor
                                                             <ItemRow
                                                                 key={field.id}
                                                                 index={index}
-                                                                itemId={currentItemId}
-                                                                quantity={form.watch(`items.${index}.quantity`)}
-                                                                itemLocationId={form.watch(`items.${index}.itemLocationId`)}
+                                                                // itemId={currentItemId}
+                                                                // quantity={form.watch(`items.${index}.quantity`)}
+                                                                // itemLocationId={form.watch(`items.${index}.itemLocationId`)}
                                                                 items={filteredItems}
-                                                                onItemChange={(value: string) => form.setValue(`items.${index}.itemId`, value)}
-                                                                onQuantityChange={(value: string) => form.setValue(`items.${index}.quantity`, parseInt(value))}
+                                                                // onItemChange={(value: string) => form.setValue(`items.${index}.itemId`, value)}
+                                                                // onQuantityChange={(value: string) => form.setValue(`items.${index}.quantity`, parseInt(value))}
                                                                 onRemove={() => remove(index)}
+                                                                className={cn(isMobile && "border-0")}
                                                             />
                                                         );
                                                     })}
@@ -614,8 +631,7 @@ export const OrderForm = ({ onClose, initialData, isEditMode = false }: OrderFor
                                         )}
                                     </div>
                                 </div>
-                                {/* Add Another Item Button */}
-                                {/* <div className="p-4 border-t bg-gray-50"> */}
+
                                 <Button
                                     type="button"
                                     variant="ghost"
@@ -626,7 +642,6 @@ export const OrderForm = ({ onClose, initialData, isEditMode = false }: OrderFor
                                     <Plus className="h-4 w-4" />
                                     Add Item
                                 </Button>
-                                {/* </div> */}
                             </Card>
 
                         </div> {/* End Grid Layout */}
@@ -658,27 +673,6 @@ export const OrderForm = ({ onClose, initialData, isEditMode = false }: OrderFor
                                 >
                                     Cancel
                                 </Button>
-
-                                {/* <Button
-                                    type="submit"
-                                    // Disable logic: Use formState.isSubmitting. Keep business logic (require items).
-                                    // Add !form.formState.isValid if you only want submission when the form is valid according to schema
-                                    disabled={
-                                        form.formState.isSubmitting ||
-                                        fields.length === 0
-                                        // You might want to rely on schema validation instead of the .some check here
-                                        // !form.formState.isValid // Add this if you want to prevent submission until valid
-                                    }
-                                    className="px-6 bg-blue-600 hover:bg-blue-700 h-8"
-                                >
-                                    {form.formState.isSubmitting ? (
-                                        <>
-                                            {isEditMode ? 'Updating Order...' : 'Creating Order...'}
-                                        </>
-                                    ) : (
-                                        isEditMode ? 'Update Order' : 'Create Order'
-                                    )}
-                                </Button> */}
 
                                 <SaveButton
                                     onClick={form.handleSubmit(handleFormSubmit)} // <--- CHANGE THIS LINE

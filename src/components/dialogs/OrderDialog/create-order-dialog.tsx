@@ -96,15 +96,16 @@ function CreateOrderDialogComponent({
         )}
       </DialogTrigger>
 
-      <DialogContentNoXButton  className="max-w-full sm:max-w-[95%] md:max-w-[90%] lg:max-w-[80%] xl:max-w-[1100px] h-[90vh] sm:h-[85vh] p-0 overflow-hidden flex-row">
-        <DialogHeader className="px-6 border-b ">
-          <DialogTitle className="text-xl font-semibold my-auto">
-            {isEditMode
+      <DialogContentNoXButton  className="max-w-full sm:max-w-[95%] md:max-w-[90%] lg:max-w-[80%] xl:max-w-[1100px] h-full sm:h-[85vh] p-0 overflow-hidden flex-row">
+        <DialogHeader className="px-6 border-b h-auto  bg-slate-50">
+          <DialogTitle className="text-xl py-2 text-left font-semibold ">
+           <span className=""> {isEditMode
               ? `Edit Order ${initialData?.orderId ? `#${initialData.orderNumber}` : ""}`
-              : "Create New Order"}
+              : "Create New Order"}</span>
           </DialogTitle>
         </DialogHeader>
-        <div className="flex-1 pt-0 h-full overflow-hidden">
+        <div className="flex-1 -mt-4 md:pt-2  h-full overflow-hidden bg-slate-100">
+        {/* <div className="flex-1 pt-0  bg-green-200 h-full overflow-hidden"> */}
           {/* The key prop forces a fresh instance of OrderForm every time the dialog opens */}
           <OrderForm key={formKey} onClose={handleFormClose} initialData={initialData} isEditMode={isEditMode} />
         </div>

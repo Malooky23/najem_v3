@@ -20,6 +20,7 @@ import {
 import { EnrichedCustomer } from '@/types/customer'
 import { Loader2 } from 'lucide-react'
 import { useCustomers } from '@/hooks/data-fetcher'
+import { cn } from '@/lib/utils'
 
 interface CustomerDropdownProps {
   // New interface
@@ -106,15 +107,21 @@ export function CustomerDropdown({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-full justify-between"
+          // --- MODIFICATION START ---
+          // Apply width, overflow, and text handling classes
+          className={cn(
+            "w-full justify-between overflow-hidden whitespace-nowrap text-ellipsis",
+            className // Ensure any passed className is also applied
+          )}
+          // --- MODIFICATION END ---
           disabled={disabled || isLoading}
         >
           {selectedCustomer ? (
-            <span>{selectedCustomer.displayName}</span>
+            <span className='truncate'>{selectedCustomer.displayName}</span>
           ) : (
             <span className="text-muted-foreground">Select customer...</span>
           )}
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0  opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">

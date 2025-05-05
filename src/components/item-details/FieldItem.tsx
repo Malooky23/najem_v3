@@ -20,10 +20,10 @@ export const FieldItem: React.FC<FieldItemProps> = ({
   containerClassName = cn("flex items-start gap-3", value ?? "hidden") // Use items-start for better alignment if text wraps
 }) => (
   <div className={containerClassName}>
-    <Icon className={cn("h-4 w-4 shrink-0 mt-0.5", iconClassName)} aria-hidden="true" /> {/* Add mt-0.5 for alignment */}
+    <Icon className={cn("h-4 w-4 shrink-0 mt-2", iconClassName)} aria-hidden="true" /> {/* Add mt-0.5 for alignment */}
     <div className="min-w-0 flex-1">
-      <p className={valueClassName}>{value || "-"}</p>
       <p className="text-xs text-muted-foreground">{label}</p>
+      <p className={valueClassName}>{value || "-"}</p>
     </div>
   </div>
 );
