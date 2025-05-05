@@ -1,0 +1,47 @@
+{/* Quantity Input (Using register) */}
+            <div className="col-span-2">
+                <Controller
+                    control={control}
+                    name={`expenses.${fieldIndex}.expenseItemQuantity`}
+                    // rules={{ required: "Expense item is required" }} // Add validation rules
+                    render={({ field: controllerField, fieldState }) => {
+                        if (field.expenseItemId === sackExpenseItemId) {
+                            return (
+                                <Input
+                                    onClick={() => onOpenSackDialog(fieldIndex)}
+                                    type="number"
+                                    min="0" // Allow 0 for deletion marking
+                                    className={cn(
+                                        "h-8 text-sm text-center",
+                                        isMarkedForDeletion && "border-dashed border-destructive/50",
+                                        fieldErrors?.expenseItemQuantity && "border-destructive focus-visible:ring-destructive" // Error styling
+                                    )}
+                                    // disabled={true}
+                                    {...register(`expenses.${fieldIndex}.expenseItemQuantity`, {
+                                        valueAsNumber: true, // Convert input value to number
+                                        min: { value: 0, message: "Qty must be >= 0" },
+                                        validate: (value) => (value === 0 && !!field.orderExpenseId) || value >= 1 || "Qty must be >= 1 (or 0 to delete)", // Allow 0 only for existing items
+                                    })}
+                                />
+                            )
+                        }
+                        else return (
+                            <Input
+                                type="number"
+                                min="0" // Allow 0 for deletion marking
+                                className={cn(
+                                    "h-8 text-sm text-center",
+                                    isMarkedForDeletion && "border-dashed border-destructive/50",
+                                    fieldErrors?.expenseItemQuantity && "border-destructive focus-visible:ring-destructive" // Error styling
+                                )}
+                                disabled={isExiting || isPending || isMarkedForDeletion}
+                                {...register(`expenses.${fieldIndex}.expenseItemQuantity`, {
+                                    valueAsNumber: true, // Convert input value to number
+                                    min: { value: 0, message: "Qty must be >= 0" },
+                                    validate: (value) => (value === 0 && !!field.orderExpenseId) || value >= 1 || "Qty must be >= 1 (or 0 to delete)", // Allow 0 only for existing items
+                                })}
+                            />
+                        )}}
+                />
+                {/* {fieldErrors?.expenseItemQuantity && <p className="text-xs text-destructive mt-1">{fieldErrors.expenseItemQuantity.message}</p>} */}
+            </div>

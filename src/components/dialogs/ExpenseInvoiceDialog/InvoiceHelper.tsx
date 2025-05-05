@@ -36,7 +36,7 @@ export const generateInitialDescription = (
     item: EnrichedOrderExpenseSchemaType,
     orderDetailsMap: Map<string, { createdAt: Date | string | null; orderMark: string | null }> | undefined
 ): string | undefined => {
-    const isSackItem = item.expenseItemName === "Sack Small" || item.expenseItemName === "Sack Large";
+    const isSackItem = item.expenseItemName === "Sack Repacking" 
     if (isSackItem) {
         const orderDetails = item.orderId ? orderDetailsMap?.get(item.orderId) : undefined;
         if (orderDetails) {

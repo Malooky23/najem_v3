@@ -263,7 +263,7 @@ export const CreateInvoiceDialog = ({ selectedOrderIds }: CreateInvoiceDialogPro
         const groupedItems = new Map<string, LineItemFormData>();
 
         formData.lineItems.forEach((item, index) => {
-            const isSack = item.expenseItemName === "Sack Small" || item.expenseItemName === "Sack Large";
+            const isSack = item.expenseItemName === "Sack - Small" || item.expenseItemName === "Sack - Large";
             let groupingKey: string;
 
             // Define grouping key: For sacks from the same order with the same rate, use a combined key. Otherwise, use a unique key.

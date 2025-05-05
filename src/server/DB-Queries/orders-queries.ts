@@ -2,7 +2,7 @@
 import { z } from 'zod';
 import { db } from '@/server/db';
 import { auth } from '@/lib/auth/auth';
-import { orders, orderItems, customers, items, users, itemStock, orderExpenses, orderExpenseDetailsMaterializedView, expenseItems } from '@/server/db/schema';
+import { orders, orderItems, customers, items, users, itemStock, orderExpenses, orderExpenseDetailsMaterializedView, expenseItems, sackSizeTracker } from '@/server/db/schema';
 // Import 'not' and 'sql'
 import { eq, and, desc, asc, sql, gte, lte, inArray, not, or, SQL, SQLChunk, SQLWrapper } from 'drizzle-orm';
 import {
@@ -352,7 +352,7 @@ export async function fetchOrderById(orderId: string): Promise<ApiResponse<Enric
         return { success: true, data: parsedOrder };
     } catch (error) {
         console.error('Error in getOrderById E2881: ', error);
-        return { success: false, message: 'Failed to fetch order\n'+error };
+        return { success: false, message: 'Failed to fetch order\n' + error };
     }
 }
 
@@ -616,98 +616,194 @@ export async function updateOrderInDb(inputData: UpdateOrderSchemaType): Promise
 
 
 
+// if (!process.env.SACK_PACKING_EXPENSE_ITEM_ID) throw new Error("process.env.SACK_PACKING_EXPENSE_ITEM_ID MISSING")
+const SACK_PACKING_EXPENSE_ITEM_ID = process.env.SACK_PACKING_EXPENSE_ITEM_ID || "1d55fcb3-bc10-4b3a-82e9-a329deeafcf0"; // Load from env or define directly
 
-export async function createOrderExpenseInDb(inputData: createOrderExpenseSchemaType): Promise<ApiResponse<orderExpenseSchemaType>> {
+export async function createOrderExpenseInDb(inputData: createOrderExpenseSchemaType): Promise<ApiResponse<any>> { // Return type might need adjustment if returning data
     try {
-        // 1. Validate Input Delta Structure
+        const session = await auth();
+        if (!session?.user?.id) {
+            return { success: false, message: "Unauthorized: Must be logged in." };
+        }
+        const userId = session.user.id;
+
+        // 1. Validate Input Array Structure
         const validatedSchema = createOrderExpenseSchema.safeParse(inputData);
         if (!validatedSchema.success) {
-            console.error("Validation Error (createOrderExpenseInDb delta input):", validatedSchema.error.format());
-            return { success: false, message: "Invalid input data format." };
+            console.error("Validation Error (createOrderExpenseInDb input):", validatedSchema.error.format());
+            // Provide more specific error feedback if possible
+            const firstError = validatedSchema.error.errors[ 0 ];
+            const errorMessage = `Invalid input: ${firstError?.path.join('.')} - ${firstError?.message}`;
+            return { success: false, message: errorMessage || "Invalid input data format." };
         }
-        const validatedDelta = validatedSchema.data;
+        const validatedData = validatedSchema.data;
 
-        // 2. Handle Empty Delta (Indicates no changes were submitted)
-        if (validatedDelta.length === 0) {
-            console.warn("createOrderExpenseInDb called with empty delta array. No action taken.");
-            // Return success because no changes needed to be applied
-            return { success: true, message: "No changes submitted." };
+        // 2. Handle Empty Input
+        if (validatedData.length === 0) {
+            console.warn("createOrderExpenseInDb called with empty data array. No action taken.");
+            return { success: true, message: "No expense changes submitted." };
         }
 
-        // 3. Get Order ID (Ensure consistency if multiple items in delta)
-        // It's safer to check if all items in the delta belong to the same order.
-        const orderId = validatedDelta[ 0 ]?.orderId;
+        // 3. Get Order ID (Ensure consistency)
+        const orderId = validatedData[ 0 ]?.orderId;
         if (!orderId) {
-            return { success: false, message: "Missing orderId in expense data." };
+            return { success: false, message: "Missing orderId in the first expense item." };
         }
-        // Optional: Add check for consistent orderId across delta items if needed
-        const allSameOrder = validatedDelta.every(item => item.orderId === orderId);
+        const allSameOrder = validatedData.every(item => item.orderId === orderId);
         if (!allSameOrder) {
-            return { success: false, message: "Delta contains items for multiple orders." };
+            return { success: false, message: "Expense items belong to multiple orders." };
         }
 
-        // 4. Separate Delta Items
-        const itemsToUpsert = validatedDelta.filter(item => item.expenseItemQuantity > 0);
-        const itemsMarkedForDelete = validatedDelta.filter(item => item.expenseItemQuantity === 0 && item.orderExpenseId);
-        const idsMarkedForDelete: string[] = itemsMarkedForDelete.map(item => item.orderExpenseId as string); // Extract IDs for deletion
+        // 4. Separate items for processing
+        const itemsToProcess = validatedData.filter(item => item.expenseItemQuantity > 0);
+        const itemsMarkedForDelete = validatedData.filter(item => item.expenseItemQuantity === 0 && item.orderExpenseId);
+        const idsMarkedForDelete: string[] = itemsMarkedForDelete.map(item => item.orderExpenseId as string);
 
         // 5. Database Transaction
         await db.transaction(async (tx) => {
-            // 5a. Upsert items with quantity > 0 from the DELTA
-            if (itemsToUpsert.length > 0) {
-                const valuesToUpsert = itemsToUpsert.map(item => ({
-                    ...item,
-                    expenseItemPrice: String(item.expenseItemPrice),
-                    orderExpenseId: item.orderExpenseId ?? undefined, // Let DB handle default/null for new items
-                    expenseItemQuantity: item.expenseItemQuantity, // Set quantity for existing/new
-                }));
+            // 5a. Process items to potentially upsert (quantity > 0)
+            if (itemsToProcess.length > 0) {
+                console.log(`Processing ${itemsToProcess.length} expense items for upsert on order ${orderId}.`);
+                for (const item of itemsToProcess) {
 
-                console.log("Order Expenses Values to upsert: ", JSON.stringify(valuesToUpsert, null, 2))
-                await tx.insert(orderExpenses)
-                    .values(valuesToUpsert)
-                    .onConflictDoUpdate({
-                        target: orderExpenses.orderExpenseId, // Target PK
-                        set: { // Define updates for existing items
-                            expenseItemId: sql`excluded.expense_item_id`,
-                            expenseItemQuantity: sql`excluded.expense_item_quantity`,
-                            expenseItemPrice: sql`excluded.expense_item_price`,
-                            notes: sql`excluded.notes`,
-                            updatedAt: new Date(),
-                            // Do NOT update orderId or createdBy on conflict
+                    const insertValues = {
+                        orderId: item.orderId,
+                        expenseItemId: item.expenseItemId,
+                        expenseItemPrice: String(item.expenseItemPrice), // Numeric -> String
+                        expenseItemQuantity: item.expenseItemQuantity,
+                        notes: item.notes, // notes is nullable in schema, so this is fine
+                        createdBy: userId,
+                        // status defaults to 'PENDING' in the schema
+                    };
+
+                    // Define the object for updates separately and explicitly
+                    const updateValues = {
+                        expenseItemId: item.expenseItemId, // Allow changing the expense type
+                        expenseItemPrice: String(item.expenseItemPrice),
+                        expenseItemQuantity: item.expenseItemQuantity,
+                        notes: item.notes,
+                        updatedAt: new Date(), // Update timestamp
+                        // Do NOT include createdBy or orderId in the SET clause
+                    };
+
+
+                    let upsertedExpense: { orderExpenseId: string }[];
+
+                    if (item.orderExpenseId) {
+                        // Attempt to UPDATE existing item
+                        upsertedExpense = await tx.update(orderExpenses)
+                            .set(updateValues)
+                            .where(eq(orderExpenses.orderExpenseId, item.orderExpenseId))
+                            .returning({ orderExpenseId: orderExpenses.orderExpenseId });
+
+                    } else {
+                        // INSERT new item
+                        upsertedExpense = await tx.insert(orderExpenses)
+                            .values(insertValues
+                                // {
+                                //     orderId: valuesToUpsert.orderId!,
+                                //     expenseItemId: valuesToUpsert.expenseItemId!,
+                                //     expenseItemPrice: valuesToUpsert.expenseItemPrice!,
+                                //     expenseItemQuantity: valuesToUpsert.expenseItemQuantity!,
+                                //     notes: valuesToUpsert.notes!,
+                                //     createdBy: valuesToUpsert.createdBy!,
+                                // }
+                            )
+                            .returning({ orderExpenseId: orderExpenses.orderExpenseId });
+                    }
+
+                    if (upsertedExpense.length === 0 || !upsertedExpense[ 0 ]?.orderExpenseId) {
+                        throw new Error(`Failed to upsert order expense for item ID ${item.expenseItemId} and could not get orderExpenseId.`);
+                    }
+
+                    const currentOrderExpenseId = upsertedExpense[ 0 ].orderExpenseId;
+
+                    // --- Sack Size Tracker Logic ---
+                    // Check if this expense item is the specific one for sacks AND if sackSizes data is provided
+                    if (item.expenseItemId === SACK_PACKING_EXPENSE_ITEM_ID && item.sackSizes && item.sackSizes.length > 0) {
+                        console.log(`Processing sack sizes for orderExpenseId: ${currentOrderExpenseId}`);
+
+                        // 1. Delete existing sack sizes for this specific order expense entry
+                        await tx.delete(sackSizeTracker)
+                            .where(eq(sackSizeTracker.orderExpensesId, currentOrderExpenseId));
+
+                        // 2. Prepare new sack size data for insertion
+                        const sackSizesToInsert = item.sackSizes.map(sack => ({
+                            orderExpensesId: currentOrderExpenseId, // Link to the parent expense
+                            sackType: sack.sackType,
+                            amount: sack.amount,
+                            createdBy: userId, // Set creator
+                        }));
+
+                        // 3. Insert the new sack size entries
+                        if (sackSizesToInsert.length > 0) {
+                            await tx.insert(sackSizeTracker).values(sackSizesToInsert);
+                            console.log(`Inserted ${sackSizesToInsert.length} sack size entries for orderExpenseId: ${currentOrderExpenseId}`);
                         }
-                    });
-                console.log(`Upserted ${valuesToUpsert.length} expense items from delta for order ${orderId}.`);
+                    } else if (item.expenseItemId === SACK_PACKING_EXPENSE_ITEM_ID) {
+                        // If it's the sack expense item but no sackSizes were provided (or empty array),
+                        // ensure any existing trackers are deleted.
+                        console.log(`Ensuring no sack sizes exist for orderExpenseId: ${currentOrderExpenseId} as none were provided.`);
+                        await tx.delete(sackSizeTracker)
+                            .where(eq(sackSizeTracker.orderExpensesId, currentOrderExpenseId));
+                    }
+                    // --- End Sack Size Tracker Logic ---
+                }
             } else {
-                console.log(`No items to upsert in delta for order ${orderId}.`);
+                console.log(`No items to upsert for order ${orderId}.`);
             }
 
-            // 5b. Delete items explicitly marked in the DELTA (quantity 0)
+            // 5b. Delete items explicitly marked (quantity 0 with an existing ID)
             if (idsMarkedForDelete.length > 0) {
+                console.log(`Attempting to delete ${idsMarkedForDelete.length} expense items and their sack trackers for order ${orderId}.`);
+
+                // --- Sack Size Tracker Deletion ---
+                // Delete associated sack trackers *before* deleting the parent expense item
+                // This is crucial if FK constraint doesn't have ON DELETE CASCADE
+                const deletedTrackers = await tx.delete(sackSizeTracker)
+                    .where(inArray(sackSizeTracker.orderExpensesId, idsMarkedForDelete))
+                    .returning({ id: sackSizeTracker.id });
+                console.log(`Deleted ${deletedTrackers.length} associated sack tracker entries.`);
+                // --- End Sack Size Tracker Deletion ---
+
+                // Now delete the actual order expense items
                 const deleteResult = await tx.delete(orderExpenses).where(
                     and(
-                        eq(orderExpenses.orderId, orderId), // Ensure deletion is scoped to the correct order
-                        inArray(orderExpenses.orderExpenseId, idsMarkedForDelete) // Only delete items explicitly marked
+                        eq(orderExpenses.orderId, orderId),
+                        inArray(orderExpenses.orderExpenseId, idsMarkedForDelete)
                     )
                 ).returning({ id: orderExpenses.orderExpenseId });
-                console.log(`Deleted ${deleteResult.length} expense items explicitly marked in delta for order ${orderId}.`);
+                console.log(`Deleted ${deleteResult.length} expense items explicitly marked in data for order ${orderId}.`);
+
+                if (deleteResult.length !== idsMarkedForDelete.length) {
+                    console.warn(`Mismatch in expected deletions (${idsMarkedForDelete.length}) vs actual deletions (${deleteResult.length}) for order expenses.`);
+                }
             } else {
-                console.log(`No items marked for deletion in delta for order ${orderId}.`);
+                console.log(`No items marked for deletion for order ${orderId}.`);
             }
 
-            // REMOVED: The complex logic trying to delete items *not* in the payload.
-
-            // 5c. Refresh Materialized View (Still needed after changes)
-            await tx.refreshMaterializedView(orderExpenseDetailsMaterializedView);
-            console.log(`Refreshed materialized view for order ${orderId}.`);
+            // 5c. Refresh Materialized View (If still needed)
+            // Consider if this view needs updating based on sackSizeTracker or if it's independent
+            try {
+                await tx.execute(sql`REFRESH MATERIALIZED VIEW CONCURRENTLY ${orderExpenseDetailsMaterializedView};`);
+                console.log(`Refreshed materialized view concurrently for order ${orderId}.`);
+            } catch (refreshError: any) {
+                // Fallback to non-concurrent refresh if concurrent fails (e.g., not setup correctly)
+                console.warn(`Concurrent refresh failed (maybe first time?), attempting standard refresh: ${refreshError.message}`);
+                await tx.execute(sql`REFRESH MATERIALIZED VIEW ${orderExpenseDetailsMaterializedView};`);
+                console.log(`Refreshed materialized view (standard) for order ${orderId}.`);
+            }
         });
 
         // 6. Return Success
-        console.log(`Successfully processed expense delta for order ${orderId}.`);
+        console.log(`Successfully processed expense changes for order ${orderId}.`);
+        // Optionally fetch and return the updated expenses if needed by the frontend
         return { success: true, message: "Order expenses updated successfully." };
 
     } catch (error: any) {
-        console.error(`Error processing expense delta for order ${inputData[ 0 ]?.orderId}:`, error);
+        console.error(`Error processing expense changes for order ${inputData[ 0 ]?.orderId}:`, error);
         const message = error.message || "An unexpected error occurred.";
+        // Check for specific DB constraint errors if necessary
         return { success: false, message: `Failed to update order expenses: ${message}` };
     }
 }

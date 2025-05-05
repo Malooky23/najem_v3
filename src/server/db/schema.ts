@@ -17,6 +17,7 @@ import {
   pgView,
   pgMaterializedView,
   numeric,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { sql, eq } from "drizzle-orm";
 import { relations } from 'drizzle-orm';
@@ -268,7 +269,7 @@ export const itemStock = pgTable("item_stock", {
 },
   (table) => [
     primaryKey({ columns: [ table.itemId, table.locationId ] }),
-    check("quantity_check", sql`current_quantity >= 0`)
+    // check("quantity_check", sql`current_quantity >= 0`)
   ]);
 
 export const stockReconciliation = pgTable("stock_reconciliation", {
@@ -466,6 +467,33 @@ export const orderExpenses = pgTable("order_expenses", {
   createdBy: uuid("created_by").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }),
+},
+  (table) => {
+    return {
+      // Add a unique index on orderExpenseId
+      // { { uniqueIndex("order_expenses_order_expense_id_unique").on(table.orderExpenseId) } }
+    // Add a composite unique index to prevent duplicating the same expense item on the same order
+    // orderItemUnique: uniqueIndex("order_expenses_order_id_expense_item_id_unique").on(
+    //   table.orderId,
+    //   table.expenseItemId,
+    // ),
+  }
+}
+)
+
+export const sackSizeType = pgEnum("sack_size_type", [ "LARGE", "SMALL", 
+  "OTHER"
+ ])
+export const sackSizeTypeSchema = z.enum(sackSizeType.enumValues)
+
+export const sackSizeTracker = pgTable("sack_size_tracker", {
+  id: uuid().defaultRandom().primaryKey(),
+  orderExpensesId: uuid("order_expenses_id").notNull().references(() => orderExpenses.orderExpenseId),
+  sackType: sackSizeType("sack_type").notNull().default("OTHER"),
+  amount: integer().notNull(),
+  createdBy: uuid("created_by").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'string', }).defaultNow().notNull().$onUpdate(() => sql`now()`),
 })
 
 export const orderExpenseDetailsMaterializedView = pgMaterializedView('order_expense_details_mv')

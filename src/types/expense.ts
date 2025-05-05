@@ -1,8 +1,8 @@
-import { expenseCategoryTypeSchema, orderExpenseStatusTypes, orderExpenseStatusTypesSchema, zohoTaxTypeSchema } from "@/server/db/schema";
+import { expenseCategoryTypeSchema, orderExpenseStatusTypes, orderExpenseStatusTypesSchema, sackSizeTypeSchema, zohoTaxTypeSchema } from "@/server/db/schema";
 import { DateRange } from "react-day-picker";
 import { z } from "zod";
 
-export const ExpenseFilterFields = z.enum([ 'orderNumber' , 'customerId' , 'expenseItemName' , 'expenseItemCategory' , 'status' ])
+export const ExpenseFilterFields = z.enum([ 'orderNumber', 'customerId', 'expenseItemName', 'expenseItemCategory', 'status' ])
 export type ExpenseFilterFieldsType = z.infer<typeof ExpenseFilterFields>
 
 export const statusOptions = [ '', 'PENDING', 'DONE', 'CANCELLED' ] as const;
@@ -21,7 +21,7 @@ export interface ExpenseFilters {
     expenseItemCategory?: string
     status?: StatusType
     search?: string;
-} 
+}
 
 export type ExpenseSortFields = 'orderNumber' | 'createdAt' | 'customerName' | 'status';
 
@@ -63,15 +63,15 @@ export const createExpenseItemsSchema = z.array(expenseItemsSchema.omit({
 
 // EXPENSES RELATING TO ORDERS
 export const orderExpenseSchema = z.object({
-    orderExpenseId: z.string().uuid().optional(),
-    orderId: z.string().uuid(),
+    orderExpenseId: z.string().uuid(),
+    orderId: z.string(),
     expenseItemId: z.string().uuid(),
     expenseItemPrice: z.coerce.number().nonnegative(),
     expenseItemQuantity: z.number(),
-    status: orderExpenseStatusTypesSchema,
+    status: orderExpenseStatusTypesSchema.optional(),
     notes: z.string().optional().nullish(),
     createdBy: z.string().uuid(),
-    createdAt: z.coerce.date(),
+    createdAt: z.coerce.date().optional(),
     updatedAt: z.coerce.date().nullish()
 })
 export type orderExpenseSchemaType = z.infer<typeof orderExpenseSchema>
@@ -92,11 +92,35 @@ export const orderExpenseWithName = orderExpenseSchema.extend({
 })
 export type orderExpenseWithNameType = z.infer<typeof orderExpenseWithName>
 
-export const createOrderExpenseSchema = z.array(orderExpenseSchema.omit({
+export const sackSizeTrackerSchema = z.object({
+    id: z.string().optional(),
+    orderExpensesId: z.string().optional(),
+    sackType: sackSizeTypeSchema,
+    amount: z.number(),
+    createdBy: z.string(),
+    createdAt: z.coerce.date().optional(),
+    updatedAt: z.coerce.date().nullish(),
+})
+
+export const createOrderExpenseWithSackSizeTrackerSchema = z.object({
+    orderExpenseId: z.string().uuid().optional().nullish(),
+    orderId: z.string(),
+    expenseItemId: z.string().uuid(),
+    expenseItemPrice: z.coerce.number().nonnegative(),
+    expenseItemQuantity: z.number(),
+    status: orderExpenseStatusTypesSchema.optional(),
+    notes: z.string().optional().nullish(),
+    sackSizes: z.array(sackSizeTrackerSchema).nullish(),
+    createdBy: z.string().uuid(),
+    createdAt: z.coerce.date().optional(),
+    updatedAt: z.coerce.date().nullish()
+})
+
+export const createOrderExpenseSchema = z.array(createOrderExpenseWithSackSizeTrackerSchema.omit({
     // orderExpenseId: true,
     createdAt: true,
     updatedAt: true,
-    status:true
+    status: true
 }))
 export type createOrderExpenseSchemaType = z.infer<typeof createOrderExpenseSchema>
 
