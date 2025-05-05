@@ -422,7 +422,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import type { FilterState, ItemSchemaType } from "@/types/items"
+import { CustomerFilterState } from "@/types/customer"
 import { FilterControls } from "./filter-controls"
 import { ActiveFilters } from "./active-filters"
 
@@ -449,7 +449,7 @@ interface DesktopViewProps {
   table: Table<EnrichedCustomer>
   globalFilter: string
   setGlobalFilter: (value: string) => void
-  activeFilters: FilterState
+  activeFilters: CustomerFilterState
   handleTypeFilter: (type: string) => void
   handleCustomerFilter: (customer: string) => void
   handleItemSelection: (itemId: string) => void

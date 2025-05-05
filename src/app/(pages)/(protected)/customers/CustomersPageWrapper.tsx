@@ -12,7 +12,7 @@ import {
   useReactTable,
   FilterFn,
 } from "@tanstack/react-table"
-import { FilterState, ItemSchemaType } from "@/types/items"
+import { CustomerFilterState } from "@/types/customer"
 import { useIsMobileTEST } from "@/hooks/use-media-query"
 import { customerColumns } from "./components/columns"
 import { MobileView } from "./components/mobile-view"
@@ -32,7 +32,7 @@ export default function CustomersPageWrapper() {
     pageIndex: 0,
     pageSize: 20,
   })
-  const [ activeFilters, setActiveFilters ] = useState<FilterState>({
+  const [ activeFilters, setActiveFilters ] = useState<CustomerFilterState>({
     types: [],
     customers: [],
     selectedItems: [],

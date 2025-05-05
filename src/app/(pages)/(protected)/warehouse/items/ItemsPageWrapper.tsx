@@ -12,7 +12,7 @@ import {
   useReactTable,
   FilterFn,
 } from "@tanstack/react-table"
-import { FilterState, ItemSchemaType } from "@/types/items"
+import { ItemFilterState, ItemSchemaType } from "@/types/items"
 import { useIsMobileTEST } from "@/hooks/use-media-query"
 import { useItemsQuery } from "@/hooks/data/useItems"
 import { itemColumns } from "./components/columns"
@@ -31,7 +31,7 @@ export default function ItemsPageWrapper() {
     pageIndex: 0,
     pageSize: 20,
   })
-  const [activeFilters, setActiveFilters] = useState<FilterState>({
+  const [activeFilters, setActiveFilters] = useState<ItemFilterState>({
     types: [],
     customers: [],
     selectedItems: [],
@@ -188,6 +188,7 @@ export default function ItemsPageWrapper() {
       const selectedItems = prev.selectedItems.includes(itemName)
         ? prev.selectedItems.filter((name) => name !== itemName)
         : [...prev.selectedItems, itemName]
+      console.log("selectedItems:", selectedItems)
 
       return {
         ...prev,

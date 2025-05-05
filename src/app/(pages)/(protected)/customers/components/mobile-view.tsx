@@ -5,7 +5,7 @@ import type React from "react"
 import type { Table } from "@tanstack/react-table"
 import { useRef, useState, useEffect } from "react"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import type { FilterState, ItemSchemaType } from "@/types/items"
+import { CustomerFilterState } from "@/types/customer"
 import { MobileHeader } from "./mobile/mobile-header"
 import { MobileTabs } from "./mobile/mobile-tabs"
 import { MobileItemCard } from "./mobile/mobile-item-card"
@@ -27,7 +27,7 @@ interface MobileViewProps {
   table: Table<EnrichedCustomer>
   globalFilter: string
   setGlobalFilter: (value: string) => void
-  activeFilters: FilterState
+  activeFilters: CustomerFilterState
   handleTypeFilter: (type: string) => void
   handleCustomerFilter: (customer: string) => void
   handleItemSelection: (itemId: string) => void
