@@ -69,4 +69,4 @@ src/scripts/copyCustomers.ts
 src/scripts/customerData.json
 src/scripts/customerData.json
 ai
-NGROK.env
+NGROK
