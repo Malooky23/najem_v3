@@ -16,7 +16,7 @@ export default async function ProtectedLayout({
 }) {
   const session = await auth();
 
-  if (!session?.user) {
+  if (session && !session.user) {
     redirect("/");
   }
   const cookieStore = await cookies()
