@@ -19,6 +19,7 @@ import { MobileView } from "./components/mobile-view"
 import { DesktopView } from "./components/desktop-view"
 import { useCustomers } from "@/hooks/data-fetcher"
 import { EnrichedCustomer } from "@/types/customer"
+import Loading from "@/components/ui/loading"
 
 
 
@@ -181,44 +182,51 @@ export default function CustomersPageWrapper() {
     refetch();
   };
 
+  if(isMobile){
+    return(
+      <MobileView
+        table={table}
+        globalFilter={globalFilter}
+        setGlobalFilter={setGlobalFilter}
+        activeFilters={activeFilters}
+        handleTypeFilter={handleTypeFilter}
+        handleCustomerFilter={handleCustomerFilter}
+        handleItemSelection={handleItemSelection}
+        clearAllFilters={clearAllFilters}
+        availableItemTypes={[ "INDIVIDUAL", "BUSINESS" ]}
+        availableCustomers={availableCustomers}
+        selectedItem={selectedItem}
+        setSelectedItem={setSelectedItem}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        refreshData={refreshData}
+        data={data}
+      />
+    )
+  }
+  if(!isMobile){
+    return(
+      <DesktopView
+        table={table}
+        isLoading={isLoading}
+        status={status}
+        globalFilter={globalFilter}
+        setGlobalFilter={setGlobalFilter}
+        activeFilters={activeFilters}
+        handleTypeFilter={handleTypeFilter}
+        handleCustomerFilter={handleCustomerFilter}
+        handleItemSelection={handleItemSelection}
+        clearAllFilters={clearAllFilters}
+        availableItemTypes={[ "INDIVIDUAL", "BUSINESS" ]}
+        availableCustomers={availableCustomers}
+        data={data}
+        refetch={refreshData}
+      />
+    )
+  }
 
 
-  return isMobile ? (
-    <MobileView
-      table={table}
-      globalFilter={globalFilter}
-      setGlobalFilter={setGlobalFilter}
-      activeFilters={activeFilters}
-      handleTypeFilter={handleTypeFilter}
-      handleCustomerFilter={handleCustomerFilter}
-      handleItemSelection={handleItemSelection}
-      clearAllFilters={clearAllFilters}
-      availableItemTypes={[ "INDIVIDUAL", "BUSINESS" ]}
-      availableCustomers={availableCustomers}
-      selectedItem={selectedItem}
-      setSelectedItem={setSelectedItem}
-      activeTab={activeTab}
-      setActiveTab={setActiveTab}
-      refreshData={refreshData}
-      data={data}
-    />
-  ) : (
-    <DesktopView
-      table={table}
-      isLoading={isLoading}
-      status={status}
-      globalFilter={globalFilter}
-      setGlobalFilter={setGlobalFilter}
-      activeFilters={activeFilters}
-      handleTypeFilter={handleTypeFilter}
-      handleCustomerFilter={handleCustomerFilter}
-      handleItemSelection={handleItemSelection}
-      clearAllFilters={clearAllFilters}
-      availableItemTypes={[ "INDIVIDUAL", "BUSINESS" ]}
-      availableCustomers={availableCustomers}
-      data={data}
-      refetch={refreshData}
-
-    />
+  return (
+    <Loading/>
   )
 }

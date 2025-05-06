@@ -4,7 +4,7 @@ import CustomersPageWrapper from "./CustomersPageWrapper";
 
 export default function CustomersPage(){
   return(
-    <Suspense fallback={<CustomersSkeleton />} >
+    <Suspense  >
       <CustomersPageWrapper/>
     </Suspense>
   )
