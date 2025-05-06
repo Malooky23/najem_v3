@@ -21,6 +21,7 @@ import { Item } from "@radix-ui/react-radio-group"
 import { useItemsStore } from "@/stores/items-store"
 import { EnrichedCustomer } from "@/types/customer"
 import { useCustomersStore } from "@/stores/customer-store"
+import Loading from "@/components/ui/loading"
 
 
 interface MobileViewProps {
@@ -40,6 +41,7 @@ interface MobileViewProps {
   setActiveTab: (tab: string) => void
   refreshData: () => void
   data: EnrichedCustomer[]
+  isLoading: boolean
 }
 
 export function MobileView({
@@ -59,6 +61,7 @@ export function MobileView({
   setActiveTab,
   refreshData,
   data,
+  isLoading
 }: MobileViewProps) {
   const [ isRefreshing, setIsRefreshing ] = useState(false)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
@@ -338,8 +341,27 @@ export function MobileView({
       >
         {/* Pull to refresh indicator */}
         {renderPullIndicator()}
-
-        {table.getFilteredRowModel().rows.length > 0 ? (
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <Loading/>
+          </div>
+        ):
+          table.getFilteredRowModel().rows.length > 0 ? (
+            table
+              .getFilteredRowModel()
+              .rows.map((row) => (
+                <MobileItemCard key={row.id} item={row.original} onClick={() => handleRowClick(row.original)} />
+              ))
+          ) : (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <Filter className="h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-medium">No items found</h3>
+              <p className="text-muted-foreground mb-4">Try adjusting your filters or search terms</p>
+              <Button onClick={clearAllFilters}>Clear Filters</Button>
+            </div>
+          )
+        }
+        {/* {table.getFilteredRowModel().rows.length > 0 ? (
           table
             .getFilteredRowModel()
             .rows.map((row) => (
@@ -352,7 +374,7 @@ export function MobileView({
             <p className="text-muted-foreground mb-4">Try adjusting your filters or search terms</p>
             <Button onClick={clearAllFilters}>Clear Filters</Button>
           </div>
-        )}
+        )} */}
       </ScrollArea>
 
       <MobileBottomNav />

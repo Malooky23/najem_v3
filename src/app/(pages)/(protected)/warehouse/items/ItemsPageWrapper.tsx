@@ -237,6 +237,7 @@ export default function ItemsPageWrapper() {
       setActiveTab={setActiveTab}
       refreshData={refreshData}
       data={data}
+      isLoading={isLoading}
     />
   ) : (
     <DesktopView

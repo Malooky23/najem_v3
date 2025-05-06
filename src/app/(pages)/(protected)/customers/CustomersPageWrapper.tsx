@@ -201,6 +201,8 @@ export default function CustomersPageWrapper() {
         setActiveTab={setActiveTab}
         refreshData={refreshData}
         data={data}
+        isLoading={isLoading}
+
       />
     )
   }
