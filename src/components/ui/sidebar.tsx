@@ -85,20 +85,21 @@ const SidebarProvider = React.forwardRef<
     },
     ref
   ) => {
-    // const isMobile = useIsMobile()
     const isMobile = useIsMobileTEST()
+    const [isClientMounted, setIsClientMounted] = React.useState(false)
+
+    React.useEffect(() => {
+      setIsClientMounted(true)
+    }, [])
 
     const [openMobile, setOpenMobile] = React.useState(false)
     const [isHovering, setIsHovering] = React.useState(false)
     const [hoverEnabled, setHoverEnabled] = React.useState(defaultHoverEnabled)
     const [initialState, setInitialState] = React.useState<"expanded" | "collapsed" | null>(null)
 
-    // This is the internal state of the sidebar.
-    // We use openProp and setOpenProp for control from outside the component.
     const [_open, _setOpen] = React.useState(defaultOpen)
     const open = openProp ?? _open
     
-    // State setter that also updates the cookie - for user-triggered changes
     const setOpen = React.useCallback(
       (value: boolean | ((value: boolean) => boolean)) => {
         const openState = typeof value === "function" ? value(open) : value
@@ -108,18 +109,19 @@ const SidebarProvider = React.forwardRef<
           _setOpen(openState)
         }
 
-        // This sets the cookie to keep the sidebar state.
-        document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`
+        if (isClientMounted) {
+          document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`
+        }
         
-        // Update initialState when manual toggling happens (not due to hover)
         if (!isHovering) {
-          setInitialState(openState ? "expanded" : "collapsed")
+          if (initialState !== (openState ? "expanded" : "collapsed")) {
+            setInitialState(openState ? "expanded" : "collapsed")
+          }
         }
       },
-      [setOpenProp, open, isHovering]
+      [setOpenProp, open, isHovering, isClientMounted, initialState]
     )
 
-    // State setter that doesn't update cookies - for hover-triggered changes
     const setOpenWithoutCookie = React.useCallback(
       (value: boolean) => {
         if (setOpenProp) {
@@ -131,51 +133,58 @@ const SidebarProvider = React.forwardRef<
       [setOpenProp]
     )
 
-    // Function to update hover enabled state and cookie
     const updateHoverEnabled = React.useCallback((enabled: boolean) => {
       setHoverEnabled(enabled);
-      document.cookie = `${SIDEBAR_HOVER_COOKIE_NAME}=${enabled}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
-    }, []);
+      if (isClientMounted) {
+        document.cookie = `${SIDEBAR_HOVER_COOKIE_NAME}=${enabled}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
+      }
+    }, [isClientMounted]);
 
-    // Helper to toggle the sidebar.
     const toggleSidebar = React.useCallback(() => {
       return isMobile
-        ? setOpenMobile((open) => !open)
-        : setOpen((open) => !open)
+        ? setOpenMobile((currentOpen) => !currentOpen)
+        : setOpen((currentOpen) => !currentOpen)
     }, [isMobile, setOpen, setOpenMobile])
 
-    // Initialize from cookies on mount
     React.useEffect(() => {
+      if (!isClientMounted) return;
+
       const cookies = document.cookie.split('; ');
       
-      // Read hover enabled state
       const hoverCookie = cookies.find(cookie => cookie.startsWith(`${SIDEBAR_HOVER_COOKIE_NAME}=`));
       if (hoverCookie) {
         const hoverValue = hoverCookie.split('=')[1];
-        setHoverEnabled(hoverValue === 'true');
+        if (hoverEnabled !== (hoverValue === 'true')) {
+          setHoverEnabled(hoverValue === 'true');
+        }
       }
       
-      // Read sidebar state
       const stateCookie = cookies.find(cookie => cookie.startsWith(`${SIDEBAR_COOKIE_NAME}=`));
       if (stateCookie) {
         const stateValue = stateCookie.split('=')[1];
         const isOpen = stateValue === 'true';
         
-        // Only set if not controlled externally
         if (!openProp) {
-          _setOpen(isOpen);
+          if (_open !== isOpen) {
+            _setOpen(isOpen);
+          }
         }
         
-        // Set initial state
-        setInitialState(isOpen ? "expanded" : "collapsed");
+        const newInitialState = isOpen ? "expanded" : "collapsed";
+        if (initialState !== newInitialState) {
+          setInitialState(newInitialState);
+        }
       } else {
-        // If no cookie exists, use the current state
-        setInitialState(open ? "expanded" : "collapsed");
+        const currentInitialState = open ? "expanded" : "collapsed";
+        if (initialState !== currentInitialState) {
+          setInitialState(currentInitialState);
+        }
       }
-    }, [openProp]);
+    }, [openProp, isClientMounted, _open, open, initialState, hoverEnabled]);
 
-    // Adds a keyboard shortcut to toggle the sidebar.
     React.useEffect(() => {
+      if (!isClientMounted) return;
+
       const handleKeyDown = (event: KeyboardEvent) => {
         if (
           event.key === SIDEBAR_KEYBOARD_SHORTCUT &&
@@ -188,10 +197,8 @@ const SidebarProvider = React.forwardRef<
 
       window.addEventListener("keydown", handleKeyDown)
       return () => window.removeEventListener("keydown", handleKeyDown)
-    }, [toggleSidebar])
+    }, [toggleSidebar, isClientMounted])
 
-    // We add a state so that we can do data-state="expanded" or "collapsed".
-    // This makes it easier to style the sidebar with Tailwind classes.
     const state = open ? "expanded" : "collapsed"
 
     const contextValue = React.useMemo<SidebarContext>(
@@ -210,7 +217,7 @@ const SidebarProvider = React.forwardRef<
         initialState,
         setInitialState,
         setOpenWithoutCookie,
-        closeMobileSidebar: () => setOpenMobile(false), // Add new function
+        closeMobileSidebar: () => setOpenMobile(false),
       }),
       [
         state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar,
@@ -277,14 +284,12 @@ const Sidebar = React.forwardRef<
       setInitialState
     } = useSidebar()
 
-    // Set initial state when component mounts
     React.useEffect(() => {
       if (initialState === null) {
         setInitialState(state);
       }
     }, [state, initialState, setInitialState]);
 
-    // Hover handlers - now using setOpenWithoutCookie to avoid persisting hover states
     const handleMouseEnter = React.useCallback(() => {
       if (!isMobile && state === "collapsed" && hoverEnabled) {
         setIsHovering(true);
@@ -349,10 +354,8 @@ const Sidebar = React.forwardRef<
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
-        {/* This is what handles the sidebar gap on desktop */}
         <div
           className={cn(
-            // "relative w-[--sidebar-width] bg-transparent transition-[width] duration-200 ease-linear",
             "relative w-[--sidebar-width] bg-transparent transition-[width] ",
             "group-data-[collapsible=offcanvas]:w-0",
             "group-data-[side=right]:rotate-180",
@@ -363,12 +366,10 @@ const Sidebar = React.forwardRef<
         />
         <div
           className={cn(
-            // "fixed inset-y-0 z-10 hidden h-svh w-[--sidebar-width] transition-[left,right,width] duration-200 ease-linear md:flex",
             "fixed inset-y-0 z-10 hidden h-svh w-[--sidebar-width] transition-[left,right,width]  md:flex",
             side === "left"
               ? "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]"
               : "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
-            // Adjust the padding for floating and inset variants.
             variant === "floating" || variant === "inset"
               ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4)_+2px)]"
               : "group-data-[collapsible=icon]:w-[--sidebar-width-icon] group-data-[side=left]:border-r group-data-[side=right]:border-l",
@@ -408,7 +409,6 @@ const SidebarTrigger = React.forwardRef<
       }}
       {...props}
     >
-      {/* <PanelLeft /> */}
       <Menu/>
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
@@ -886,7 +886,7 @@ const SidebarHoverToggle = React.forwardRef<
       >
         {children || `Hover to expand: ${hoverEnabled ? 'On' : 'Off'}`}
       </button> */}
-        {/* <Switch
+      {/* <Switch
           checked={hoverEnabled}
           onCheckedChange={() => setHoverEnabled(!hoverEnabled)}
         /> */}
@@ -898,9 +898,9 @@ const SidebarHoverToggle = React.forwardRef<
           {...props}
         />
         <span className={cn("text-xs text-nowrap animate-ease-in-out duration-500", className,
-    "group-data-[collapsible=icon]:hidden" // This hides when sidebar is collapsed
-  )}>
-            Expand on hover</span>
+          "group-data-[collapsible=icon]:hidden" // This hides when sidebar is collapsed
+        )}>
+          Expand on hover</span>
       </div>
 
 

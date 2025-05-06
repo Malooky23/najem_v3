@@ -1,10 +1,10 @@
 /* VERSION 3 */
-import { useState, useEffect, useCallback, useRef, use } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 
 const MOBILE_BREAKPOINT = 768
 
 export function useIsMobileTEST() {
-return useMediaQuery(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`)
+  return useMediaQuery(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`)
 }
 
 export function useMediaQuery(query: string): boolean {
@@ -15,28 +15,36 @@ export function useMediaQuery(query: string): boolean {
     return false
   }, [query])
 
-  const [matches, setMatches] = useState(getMatches)
-  const listenerRef = useRef<() => void | undefined>(null); // useRef for listener
+  // Initialize with a consistent value for SSR and initial client render
+  const [matches, setMatches] = useState<boolean>(false)
+  const listenerRef = useRef<() => void | undefined>(null);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return undefined
+    if (typeof window === 'undefined') return
+
+    // Set the correct initial value on the client after mount
+    const initialMatches = getMatches();
+    if (matches !== initialMatches) {
+        setMatches(initialMatches);
+    }
 
     const media = window.matchMedia(query)
 
-    // Store listener in ref to avoid recreating it on every render
     listenerRef.current = () => {
       const currentMatches = getMatches();
-      if (matches !== currentMatches) { // Double check before state update
-        setMatches(currentMatches);
-      }
+      // Only update state if the value has actually changed
+      setMatches(prevMatches => prevMatches !== currentMatches ? currentMatches : prevMatches);
     };
 
     const listener = listenerRef.current;
 
+    // Add event listener
     media.addEventListener('change', listener);
 
+    // Clean up event listener
     return () => media.removeEventListener('change', listener);
-  }, [query, getMatches, matches]); // matches is now kept as dependency for the double check
+    // Dependencies: query and getMatches. matches is removed to avoid re-running effect on every match change.
+  }, [query, getMatches]); 
 
   return matches
 }
