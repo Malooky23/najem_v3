@@ -39,7 +39,7 @@ export default function CreateItemForm({ children, disableMobileMode = false }: 
   const [ useKilograms, setUseKilograms ] = useState(false)
   const isMobile = useIsMobileTEST()
   const { data: session } = useSession()
-  if (!session) return null
+  
 
   // Get the createItem mutation
   const createItemMutation = useCreateItem()
@@ -60,7 +60,7 @@ export default function CreateItemForm({ children, disableMobileMode = false }: 
         length: undefined,
       },
       notes: "",
-      createdBy: session.user.id,
+      createdBy: session?.user?.id ?? "",
     },
   })
 
@@ -100,6 +100,7 @@ export default function CreateItemForm({ children, disableMobileMode = false }: 
       };
     }
   }, [ isMobile ]);
+  if (!session) return null;
 
   // Modified touch handler to not interfere with keyboard focus
   const handleInputTouchStart = (e: React.TouchEvent) => {
