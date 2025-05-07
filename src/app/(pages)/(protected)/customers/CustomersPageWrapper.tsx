@@ -17,7 +17,7 @@ import { CustomerFilterState } from "@/types/customer"
 import { customerColumns } from "./components/columns"
 // import { MobileView } from "./components/mobile-view" // Removed: MobileView is being deprecated
 import { DesktopView } from "./components/desktop-view"
-import { useCustomers } from "@/hooks/data-fetcher"
+import { useCustomers } from "@/hooks/data/useCustomers";
 import { EnrichedCustomer } from "@/types/customer"
 // import Loading from "@/components/ui/loading" // Removed: DesktopView handles its own loading state or this will be handled differently
 

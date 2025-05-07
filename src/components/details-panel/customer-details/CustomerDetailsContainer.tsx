@@ -9,7 +9,7 @@ import { CustomerContactsCard } from "./CustomerContactsCard";   // Create this
 import { Button } from '@/components/ui/button';
 import { useCustomersStore, useSelectedCustomerId, useSelectedCustomerData } from '@/stores/customer-store'; // Use customer store
 import Loading from '@/components/ui/loading';
-import { useCustomerByIdQuery } from '@/hooks/data/NEWuseCustomers'; // Use customer query hook
+import { useCustomerByIdQuery } from '@/hooks/data/useCustomers'; // Use customer query hook
 
 interface CustomerDetailsContainerProps {
     isMobile: boolean;

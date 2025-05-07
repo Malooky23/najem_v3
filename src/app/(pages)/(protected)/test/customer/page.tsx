@@ -1,8 +1,8 @@
 'use client'
 
 import { Input } from "@/components/ui/input";
-import { useCustomers } from "@/hooks/data-fetcher";
-import { useCustomerByIdQuery } from "@/hooks/data/NEWuseCustomers";
+import { useCustomers } from "@/hooks/data/useCustomers";
+import { useCustomerByIdQuery } from "@/hooks/data/useCustomers";
 import { useState } from "react";
 
 export default function CustomerPage() {

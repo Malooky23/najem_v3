@@ -8,7 +8,7 @@
 //   TableHeader,
 //   TableRow,
 // } from "@/components/ui/table";
-// import { useCustomers } from "@/hooks/data-fetcher";
+// import { useCustomers } from "@/hooks/data/useCustomers";
 // import { format } from "date-fns";
 // import { Skeleton } from "@/components/ui/skeleton";
 // import { useState } from "react";

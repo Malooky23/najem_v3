@@ -19,8 +19,9 @@ import {
 } from '@/components/ui/popover'
 import { EnrichedCustomer } from '@/types/customer'
 import { Loader2 } from 'lucide-react'
-import { useCustomers } from '@/hooks/data-fetcher'
+
 import { cn } from '@/lib/utils'
+import { useCustomers } from '@/hooks/data/useCustomers'
 
 interface CustomerDropdownProps {
   // New interface

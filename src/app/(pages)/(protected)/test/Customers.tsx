@@ -1,6 +1,6 @@
 
 'use client'
-import { useCustomers } from "@/hooks/data-fetcher"
+import { useCustomers } from "@/hooks/data/useCustomers";
 
 export default function Customers() {
     const {data:customers} = useCustomers()

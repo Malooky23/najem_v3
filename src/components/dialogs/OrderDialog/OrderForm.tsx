@@ -25,7 +25,6 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 // Removed useOrderUpdateMutation as it wasn't used
-import { useCustomers } from "@/hooks/data-fetcher";
 // Removed startTransition, useTransition as we'll use formState.isSubmitting
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQueryClient } from '@tanstack/react-query';

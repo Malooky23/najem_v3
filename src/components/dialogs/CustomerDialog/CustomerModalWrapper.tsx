@@ -60,7 +60,8 @@ export default function CustomerModalWrapper({
         <DrawerTrigger asChild>
           {children ? children
             :
-            <Button className="flex items-center gap-2 hidden">
+            // <Button className="flex items-center gap-2 hidden">
+            <Button className="items-center gap-2 hidden">
               <PlusIcon size={16} />
             </Button>
           }

@@ -1,7 +1,8 @@
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 // import { getCustomerById } from '@/server/actions/customers'; // Assuming you create this action
 import { getSingleCustomer } from '@/server/services/customer-services';
 import { EnrichedCustomer } from '@/types/customer';
+import { fetchCustomers } from "@/server/DB-Queries/customers-queries";
 
 export const useCustomerByIdQuery = (customerId: string | null) => {
     return useQuery<EnrichedCustomer, Error>({ // Specify return type and error type
@@ -28,3 +29,17 @@ export const useCustomerByIdQuery = (customerId: string | null) => {
         // Add other react-query options as needed (refetchOnWindowFocus, etc.)
     });
 };
+
+export function useCustomers(enabled: boolean = true) {
+    return useQuery<EnrichedCustomer[]>({
+        queryKey: [ 'customers' ],
+        queryFn: async () => {
+            return await fetchCustomers()
+        },
+        refetchOnMount: false,
+        refetchOnWindowFocus: false,
+        staleTime: 100 * 100 * 100 * 100,
+        placeholderData: keepPreviousData,
+        enabled: enabled
+    });
+}

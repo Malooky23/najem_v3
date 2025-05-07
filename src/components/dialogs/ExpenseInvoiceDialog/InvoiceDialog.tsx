@@ -31,7 +31,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { format } from "date-fns";
 import { InvoiceFormData, invoiceFormSchema, LineItemFormData } from "@/types/type.invoice";
-import { useCustomers } from "@/hooks/data-fetcher";
+import { useCustomers } from "@/hooks/data/useCustomers";
 import { generateInitialDescription } from "./InvoiceHelper";
 import { useCreateZohoInvoice } from "@/hooks/data/useZoho";
 import { toast } from "sonner";

@@ -2,7 +2,7 @@
 
 import { DataTable } from "./customer-data-table"
 import { columns } from "./customer-columns"
-import { useCustomers } from "@/hooks/data-fetcher"
+import { useCustomers } from "@/hooks/data/useCustomers";
 import type { EnrichedCustomer } from "@/types/customer"
 
 const generateFakeLoadingData = (count: number): EnrichedCustomer[] => {
