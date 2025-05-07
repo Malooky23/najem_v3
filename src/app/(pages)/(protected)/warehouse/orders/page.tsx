@@ -11,12 +11,21 @@ import { OrderDetailsContainer } from "@/components/details-panel/order-details/
 import { useUrlSync } from "@/hooks/useUrlSync"
 import { QuickAccess } from "@/components/quick-access"
 import { CreateOrderDialog } from "@/components/dialogs/OrderDialog/create-order-dialog"
+import { Font } from "@react-pdf/renderer"
 
 
 interface PageHeaderProps {
   isLoading: boolean;
   isMobile: boolean;
 }
+const ARABIC_FONT_FAMILY = 'NotoNaskhArabic'
+Font.register({
+  family: ARABIC_FONT_FAMILY,
+  fonts: [
+    { src: '/fonts/NotoSansArabic-Regular.ttf' }, // Path from root if served from public
+    { src: '/fonts/NotoSansArabic-Bold.ttf', fontWeight: 'bold' },
+  ],
+});
 
 
 

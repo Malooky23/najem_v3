@@ -171,9 +171,9 @@ function mapRawOrderToSchema(rawOrder: any): EnrichedOrderSchemaType {
         customerName: rawOrder.customerName || 'Unknown Customer',
         creator: {
             userId: rawOrder.createdBy,
-            firstName: rawOrder.creatorFirstName || '',
-            lastName: rawOrder.creatorLastName || '',
-            userType: rawOrder.creatorUserType || 'EMPLOYEE',
+            firstName: rawOrder.creatorFirstName || 'ERROR',
+            lastName: rawOrder.creatorLastName || 'ERROR',
+            userType: rawOrder.creatorUserType || 'ERROR',
         },
         items: itemsArray,
         expenses: expensesArray, // Include expenses in the mapped object
@@ -254,6 +254,7 @@ export async function fetchOrderById(orderId: string): Promise<ApiResponse<Enric
                         jsonb_build_object(
                             'itemId', ${items}.item_id,
                             'itemName', ${items}.item_name,
+                            'itemType', ${items}.item_type,
                             'quantity', ${orderItems}.quantity,
                             'itemLocationId', ${orderItems}.item_location_id
                         )
@@ -325,6 +326,7 @@ export async function fetchOrderById(orderId: string): Promise<ApiResponse<Enric
                 ? order.items.map((item: any) => ({
                     itemId: item.itemId || '',
                     itemName: item.itemName || '',
+                    itemType: item.itemType || 'error',
                     quantity: Number(item.quantity) || 0,
                     itemLocationId: item.itemLocationId
                 })).filter(item => item.itemId && item.quantity > 0)

@@ -19,6 +19,9 @@ import { data } from "./sidebar-data"
 import BackButton from "@/components/redirectBack";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { RefreshCcw } from "lucide-react";
+import { Button } from "../ui/button";
+import { useQueryClient, useIsFetching } from "@tanstack/react-query";
 
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
@@ -32,6 +35,9 @@ export function AppSidebar({ session, ...props }: AppSidebarProps) {
     avatar: session?.user?.image ?? "Error",
     id: session?.user?.id ?? "Error",
   }
+  const queryClient = useQueryClient()
+  const isFetching = useIsFetching() > 0
+
   const { isMobile, closeMobileSidebar, state } = useSidebar();
   const handleLinkClick = () => {
     if (isMobile) {
@@ -49,7 +55,7 @@ export function AppSidebar({ session, ...props }: AppSidebarProps) {
                 state === "expanded"
                   ? "opacity-100 scale-100"
                   : "opacity-0 scale-95",
-                  isMobile ? "opacity-100 scale-150" : ""
+                isMobile ? "opacity-100 scale-150" : ""
               )}
             >
               <Image
@@ -62,10 +68,10 @@ export function AppSidebar({ session, ...props }: AppSidebarProps) {
               />
             </div>
             <div
-              className={cn("absolute transition-all duration-300 ease-in-out", 
+              className={cn("absolute transition-all duration-300 ease-in-out",
                 state === "expanded"
-                ? "opacity-0 scale-105"
-                : "opacity-100 scale-100",
+                  ? "opacity-0 scale-105"
+                  : "opacity-100 scale-100",
                 isMobile ? "hidden" : ""
 
               )}
@@ -81,7 +87,21 @@ export function AppSidebar({ session, ...props }: AppSidebarProps) {
         </Link>
       </SidebarHeader>
 
-      <BackButton />
+      <div className="flex flex-row justify-center">
+        <BackButton />
+        <Button
+          variant={'ghost'}
+          onClick={
+            (() => {
+              // queryClient.invalidateQueries()
+              queryClient.refetchQueries()
+              
+            }
+            )
+          }>
+          <RefreshCcw className={cn(isFetching && "animate-spin transition")} />
+        </Button>
+      </div>
 
       <Separator />
       <SidebarContent>
@@ -93,8 +113,8 @@ export function AppSidebar({ session, ...props }: AppSidebarProps) {
         <SidebarHoverToggle />
         <NavUser user={user} />
       </SidebarFooter>
-      <SidebarRail className=" -translate-x-4"/>
-    </Sidebar>
+      <SidebarRail className=" -translate-x-4" />
+    </Sidebar >
   )
 }
 

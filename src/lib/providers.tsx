@@ -85,8 +85,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
           {/* <PostHogProvider> */}
           {children}
           {/* </PostHogProvider> */}
-          {/* Conditionally render Devtools only on client */}
-          {typeof window !== 'undefined' && <ReactQueryDevtools initialIsOpen={false} />}
+          <ReactQueryDevtools initialIsOpen={false}/>
         </SessionProvider>
       </TanstackQueryClientProvider>
     );
@@ -109,7 +108,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
          * Useful for when you make breaking changes to your data structures.
          * Consider using your app version here from an environment variable.
          */
-        buster: process.env.NEXT_PUBLIC_APP_VERSION || 'my-app-v1-beta', // Change this to invalidate cache
+        buster: process.env.NEXT_PUBLIC_CACHE_BUSTER, // Change this to invalidate cache
         // You can also add serialize and deserialize functions if you need custom logic,
         // but for simple JSON data, the defaults are usually fine.
       }}
@@ -123,7 +122,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         {/* <PostHogProvider> */}
         {children}
         {/* </PostHogProvider> */}
-        <ReactQueryDevtools initialIsOpen={false} />
+        <ReactQueryDevtools initialIsOpen={false}/>
       </SessionProvider>
     </PersistQueryClientProvider>
   );

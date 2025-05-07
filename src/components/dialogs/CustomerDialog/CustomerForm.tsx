@@ -76,39 +76,12 @@ async function submitCustomerForm(prevState: any, formData: FormData, options: {
   const isEditing = !!initialData?.customerId; // More reliable check for editing
   // try { // We might not need try-catch if useActionState handles errors
   const formObject: Record<string, any> = {};
-  // const addressFields: Record<string, string> = {};
-
-  // ORIGINAL Handle regular form data
-  // formData.forEach((value, key) => {
-  //   if (!key.startsWith('contacts') && key !== 'isTaxRegistered') {
-  //     if (key.startsWith('address.')) {
-  //       const addressField = key.split('.')[ 1 ];
-  //       addressFields[ addressField ] = value as string;
-  //     } else {
-  //       formObject[ key ] = value;
-  //     }
-  //   }
-  // });
-
-  // Check if all address fields are empty
-  // const hasAddressData = Object.values(addressFields).some(value => value.trim() !== '');
-  // formObject.address = hasAddressData ? addressFields : null;
 
   formData.forEach((value, key) => {
-    // if (!key.startsWith('contacts') && key !== 'isTaxRegistered') {
-    // if (key.startsWith('address.')) {
-    //   const addressField = key.split('.')[ 1 ];
-    //   addressFields[ addressField ] = value as string;
-    // } else {
-    //   formObject[ key ] = value;
-    // }
-    // Exclude contacts and address fields managed by RHF state
     if (!key.startsWith('contacts') && !key.startsWith('address.') && key !== 'isTaxRegistered') {
       formObject[ key ] = value;
     }
   });
-
-
 
   // Handle taxNumber based on state for business type
   if (type === 'BUSINESS') {
@@ -161,7 +134,6 @@ async function submitCustomerForm(prevState: any, formData: FormData, options: {
       return { success: true, message: "No changes detected." }; // Return a success-like state to prevent error display
     }
     console.log("UPDATE ACTION NEEDED", formObject);
-    // result = type === 'business' ? await updateBusinessCustomer(formObject) : await updateIndividualCustomer(formObject);
     result = type === 'BUSINESS' ? await updateBusinessCustomer(formObject) : await updateIndividualCustomer(formObject);
   } else {
     result = type === 'BUSINESS' ? await createBusinessCustomer(formObject) : await createIndividualCustomer(formObject);
@@ -184,9 +156,7 @@ async function submitCustomerForm(prevState: any, formData: FormData, options: {
     // Handle potential update errors (assuming update actions return similar structure)
     return { error: result?.error || "Failed to update customer" };
   }
-  return { error: "An unexpected state occurred." }; // Fallback
-  // } catch (error) { // Let useActionState handle promise rejections
-  //   return { error: error instanceof Error ? error.message : "An unexpected error occurred." };
+  return { error: "An unexpected state occurred." };
 }
 
 
@@ -202,13 +172,11 @@ export default function CustomerForm({
   onClose: () => void;
   initialData?: EnrichedCustomer | null;
 }) {
-  // Determine initial tax registration state based on initialData (only for business)
   const initialIsTaxRegistered = type === 'BUSINESS' && !!initialData?.business?.taxNumber;
   const [ isTaxRegistered, setIsTaxRegistered ] = useState(initialIsTaxRegistered);
   const { toast } = useToast()
   const queryClient = useQueryClient()
 
-  // Initialize country state from initialData if available
   const [ selectedCountry, setSelectedCountry ] = useState<any>(
     initialData?.country ? { name: initialData.country } : null // Adjust based on LocationSelector's expected format
   )
@@ -231,8 +199,6 @@ export default function CustomerForm({
     null
   );
 
-  // Map EnrichedCustomer contacts to FormContact structure
-  // This mapping needs to match the ContactDetailsSchema used in the form
   const defaultContacts = initialData?.contacts?.length
     ? initialData.contacts.map(c => {
       const detail = c.contactDetail || {}; // Access nested detail if needed
@@ -240,7 +206,6 @@ export default function CustomerForm({
         contactData: detail.contactData || "", // Use contactData
         contactType: (detail.contactType as "email" | "phone" | "mobile" | "other" | "landline") || "email", // Use contactType
         isPrimary: detail.isPrimary || false,
-        // Include other fields from ContactDetailsSchema with defaults if needed
         contactDetailsId: detail.contactDetailsId || crypto.randomUUID(), // Provide a default or existing ID
         createdAt: detail.createdAt ? new Date(detail.createdAt) : new Date(),
         updatedAt: detail.updatedAt ? new Date(detail.updatedAt) : null,
@@ -270,7 +235,7 @@ export default function CustomerForm({
     country: null,
     postalCode: null,
     addressType: null,
-    createdAt: new Date(), // Initialize with a valid Date
+    createdAt: new Date(),
     updatedAt: null
   }
 
@@ -317,20 +282,16 @@ export default function CustomerForm({
 
   });
 
-  
-
-
-  // Memoize the callback to prevent recreation on every render
   const handleCountryChange = useCallback((country: any) => {
     const countryName = country?.name || ''; // Get the string value
     setSelectedCountry(country)
-    form.setValue('country', countryName, { // *** Update RHF's state ***
-      shouldValidate: true, // Optional: trigger validation
-      shouldDirty: true,    // *** Mark the field as dirty ***
-      shouldTouch: true     // Optional: mark field as touched
+    form.setValue('country', countryName, { 
+      shouldValidate: true, 
+      shouldDirty: true,    
+      shouldTouch: true     
     });
 
-  }, [form])
+  }, [ form ])
 
   const [ focusCountry, setFocusCountry ] = useState(false)
   const [ focusContacts, setFocusContacts ] = useState(false)
@@ -338,10 +299,6 @@ export default function CustomerForm({
   const handleSubmit = (e: React.FormEvent) => {
     const formErrors = form.formState.errors;
 
-    // Prevent default form submission if client-side validation fails before RHF kicks in
-    // RHF's zodResolver should handle most of this, but keep checks for state-managed fields.
-
-    // 1. Check Country (managed by state)
     if (!selectedCountry) {
       e.preventDefault();
       toast({
@@ -356,7 +313,6 @@ export default function CustomerForm({
       return;
     }
 
-    // 2. Check Contacts (basic check, RHF/Zod handles detailed validation)
     const contactsValue = form.getValues('contacts');
     const addressValue = form.getValues('address');
     // Use contactData and ensure contact exists before trimming
@@ -372,8 +328,6 @@ export default function CustomerForm({
       return;
     }
 
-    // RHF/Zod handles the rest of the validation via the resolver
-
     if (Object.keys(formErrors).length > 0) {
       e.preventDefault();
       const errorMessages = Object.entries(formErrors)
@@ -388,17 +342,14 @@ export default function CustomerForm({
       return;
     }
   };
-  // Handler for Accordion changes
   const handleAccordionChange = (value: string[]) => {
-    // Check if 'address' is now open
     if (value.includes('address')) {
-      // Use setTimeout to ensure DOM has updated height after opening
       setTimeout(() => {
         scrollContainerRef.current?.scrollTo({
           top: scrollContainerRef.current.scrollHeight,
           behavior: 'smooth',
         });
-      }, 200); // Small delay might be needed
+      }, 200); 
     }
   };
   return (
@@ -408,10 +359,8 @@ export default function CustomerForm({
       onSubmit={handleSubmit}
     >
       <div ref={scrollContainerRef} className="max-h-[65vh] flex-1 overflow-y-auto px-2 sm:px-4 custom-scrollbar">
-        {/* <div className="max-h-[65vh] flex-1 overflow-y-auto px-2 sm:px-4 custom-scrollbar"> */}
         <div className="space-y-4 pb-4 relative">
 
-          {/* <pre>Dirty Fields: {JSON.stringify(form.formState.dirtyFields)}</pre> */}
           <pre hidden>isDirty: {JSON.stringify(form.formState.isDirty)}</pre>
           <div className="mb-4"></div>
           <Label htmlFor="displayName">
@@ -419,16 +368,13 @@ export default function CustomerForm({
           </Label>
           <Input
             id="displayName"
-            // name="displayName"
             placeholder="How the customer will appear in lists"
             required
-            {...form.register("displayName")} // Register field
+            {...form.register("displayName")}
           />
         </div>
 
-        {/* Basic Information */}
         <div className="space-y-4">
-          {/* Add hidden input for customerId if editing */}
           {initialData?.customerId && (
             <input type="hidden" name="customerId" value={initialData.customerId} />
           )}
@@ -463,8 +409,7 @@ export default function CustomerForm({
             <MemoizedLocationSelector
               isStateNeeded={false}
               onCountryChange={handleCountryChange}
-              initialCountry={initialCountry} // Pass initial country name
-            // onStateChange={() => { }}
+              initialCountry={initialCountry} 
             />
           </div>
 
@@ -473,10 +418,8 @@ export default function CustomerForm({
               <div className="flex items-center space-x-2">
                 <Switch
                   id="isTaxRegistered"
-                  // name="isTaxRegistered" // Not needed, state handles this
                   checked={isTaxRegistered}
                   onCheckedChange={setIsTaxRegistered}
-                // defaultChecked={initialIsTaxRegistered} // `checked` prop controls it
                 />
                 <Label htmlFor="isTaxRegistered">Tax Registered</Label>
               </div>
@@ -487,10 +430,9 @@ export default function CustomerForm({
                   </Label>
                   <Input
                     id="taxNumber"
-                    // name="taxNumber" // Use register
                     placeholder="Tax ID"
                     required={isTaxRegistered}
-                    {...form.register("taxNumber")} // Register field
+                    {...form.register("taxNumber")} 
                   />
                 </div>
               )}
@@ -501,9 +443,7 @@ export default function CustomerForm({
         {/* Contacts Section */}
         <div className={cn("py-2", focusContacts ? "animate-flash-red border-2 border-red-500 rounded-md" : "")}>
 
-          {/* <div className="py-2"> */}
-          {/* <h3 className="text-md font-medium mb-2">Contact Information <span className="text-red-500">*</span></h3> */}
-          <ContactsSection // Remove the generic type argument
+          <ContactsSection 
             fields={fields as any} // Use 'as any' for now to bypass complex type mismatch
             append={append as any} // Use 'as any'
             remove={remove}
@@ -519,7 +459,6 @@ export default function CustomerForm({
           <Accordion type="multiple" onValueChange={handleAccordionChange}  >
             <AccordionItem value="address">
               <AccordionTrigger >{form.getValues("address.country") ? "Edit Address" : "Add Address"}</AccordionTrigger>
-              {/* <AccordionContent forceMount={isForceMount || undefined}> */}
               <AccordionContent >
                 <AddressSection control={form.control} initialData={initialAddress} register={form.register} /> {/* Pass initial address - Adjust based on actual structure */}
               </AccordionContent>
@@ -538,20 +477,6 @@ export default function CustomerForm({
             </AccordionItem>
           </Accordion>
 
-          {/* <Accordion type="single" collapsible className="mt-2">
-            <AccordionItem value="notes">
-              <AccordionTrigger>{initialData?.notes ? "Edit Notes": "Add Notes"}</AccordionTrigger>
-              <AccordionContent>
-                <Textarea
-                  id="notes"
-                  // name="notes" // Use register
-                  placeholder="Additional information about this customer"
-                  rows={4}
-                  {...form.register("notes")} // Register field
-                />
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion> */}
         </div>
       </div>
 

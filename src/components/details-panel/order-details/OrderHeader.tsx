@@ -26,6 +26,8 @@ import { Dialog } from "@/components/ui/dialog";
 import { EnrichedOrderSchemaType } from "@/types/orders";
 import { OrderExpenseDialog } from "@/components/dialogs/ExpenseDialog/OrderExpenseDialog";
 import { useSession } from "next-auth/react";
+import { OrderDetailsPdfExportButton } from "@/components/pdf";
+import {GoodsReceivedPdfButton} from "@/lib/PDF/GoodsReceivedPdfButton";
 
 interface OrderHeaderProps {
   handleClose: () => void;
@@ -103,17 +105,33 @@ export function OrderHeader({
 
   const { data: session } = useSession()
 
-
+  const imageStaticValues = {
+    formDate: "07-05-2025",
+    receiveDate: "12-12-2024",
+    customerRef: "",
+    orderNoIntRef: "W1-794 - 797",
+    receiverName: "Mstala Khaled Abdulrah Man",
+    receiverMobile: "+971 501339234",
+    receiverEid: "784-2002-6867137-5",
+  };
   const actionButtons = (
     <>
-      <Button
-        className="gap-2 bg-blue-500 hover:bg-blue-600 transition-colors"
-        size="sm"
+      {/* <OrderDetailsPdfExportButton orderData={order}/> */}
+      <GoodsReceivedPdfButton
+        orderData={order}
+        imageStaticData={imageStaticValues}
       >
-        <Printer className="w-4 h-4" />
-      </Button>
-      {session?.user.userType === 'EMPLOYEE' &&
+        <Button
+          className="gap-2 bg-purple-500 hover:bg-purple-600 transition-colors"
+          size="sm"
+        >
 
+          <Printer className="w-4 h-4" />
+        </Button>
+
+      </GoodsReceivedPdfButton>
+
+      {session?.user.userType === 'EMPLOYEE' &&
         <OrderExpenseDialog>
           <Button
             className="gap-2 bg-blue-500 hover:bg-blue-600 transition-colors"
@@ -179,10 +197,12 @@ export function OrderHeader({
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="end">
 
-                <DropdownMenuItem>
-                  <Printer className="mr-2 h-4 w-4" />
-                  <p>Print</p>
-                </DropdownMenuItem>
+                <GoodsReceivedPdfButton orderData={order} imageStaticData={imageStaticValues}>
+                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                    <Printer className="mr-2 h-4 w-4" />
+                    <p>Print</p>
+                  </DropdownMenuItem>
+                </GoodsReceivedPdfButton>
 
                 <CreateOrderDialog
                   isEditMode={true}
@@ -216,6 +236,6 @@ export function OrderHeader({
 
         )}
       </div>
-    </div>
+    </div >
   );
 }

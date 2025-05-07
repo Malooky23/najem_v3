@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { addressDetails, items, orderItems, orders, userType, userTypeSchema } from '@/server/db/schema';
+import { addressDetails, items, itemTypes, itemTypesSchema, orderItems, orders, userType, userTypeSchema } from '@/server/db/schema';
 import { ItemSchema } from './items';
 import { orderTypeSchema, orderStatusSchema, movementTypeSchema, deliveryMethodSchema, packingTypeSchema } from '@/server/db/schema';
 import { createInsertSchema, createSelectSchema, createUpdateSchema } from 'drizzle-zod';
@@ -194,7 +194,8 @@ export const EnrichedOrderSchema1 = OrderSchema.extend({
             itemId: z.string().uuid(),
             itemName: z.string(),
             quantity: z.number().positive(),
-            itemLocationId: z.string().uuid()
+            itemLocationId: z.string().uuid(),
+            itemType: itemTypesSchema.optional().nullish()
         })),
     expenses: z.array(orderExpenseWithName).optional()
 });
