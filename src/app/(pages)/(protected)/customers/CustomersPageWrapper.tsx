@@ -13,15 +13,13 @@ import {
   FilterFn,
 } from "@tanstack/react-table"
 import { CustomerFilterState } from "@/types/customer"
-import { useIsMobileTEST } from "@/hooks/use-media-query"
+// import { useIsMobileTEST } from "@/hooks/use-media-query" // Removed: No longer needed
 import { customerColumns } from "./components/columns"
-import { MobileView } from "./components/mobile-view"
+// import { MobileView } from "./components/mobile-view" // Removed: MobileView is being deprecated
 import { DesktopView } from "./components/desktop-view"
 import { useCustomers } from "@/hooks/data-fetcher"
 import { EnrichedCustomer } from "@/types/customer"
-import Loading from "@/components/ui/loading"
-
-
+// import Loading from "@/components/ui/loading" // Removed: DesktopView handles its own loading state or this will be handled differently
 
 export default function CustomersPageWrapper() {
   const [ sorting, setSorting ] = useState<SortingState>([])
@@ -38,9 +36,9 @@ export default function CustomersPageWrapper() {
     customers: [],
     selectedItems: [],
   })
-  const [ selectedItem, setSelectedItem ] = useState<EnrichedCustomer | null>(null)
-  const [ activeTab, setActiveTab ] = useState("all")
-  const isMobile = useIsMobileTEST()
+  // const [ selectedItem, setSelectedItem ] = useState<EnrichedCustomer | null>(null) // Removed: Was for MobileView
+  // const [ activeTab, setActiveTab ] = useState("all") // Removed: Was for MobileView
+  // const isMobile = useIsMobileTEST() // Removed: No longer needed
 
   const { data: customerData, isLoading, status, error, refetch } = useCustomers();
   const [ data, setData ] = useState<EnrichedCustomer[]>([]);
@@ -95,7 +93,6 @@ export default function CustomersPageWrapper() {
       arrayIncludes: arrayIncludesFilter,
       stringContains: stringContainsFilter,
     },
-    // globalFilterFn: "stringContainsFilter", // Use our string contains filter for global filtering
     state: {
       sorting,
       columnFilters,
@@ -105,10 +102,10 @@ export default function CustomersPageWrapper() {
       globalFilter,
     },
 
-    defaultColumn:{
-      minSize:1
+    defaultColumn: {
+      minSize: 1
     }
-    
+
   })
 
   // Apply custom filters
@@ -120,11 +117,14 @@ export default function CustomersPageWrapper() {
     if (activeFilters.types.length > 0) {
       table.getColumn("customerType")?.setFilterValue(activeFilters.types)
     }
+    if (activeFilters.customers.length > 0) {
+      table.getColumn("displayName")?.setFilterValue(activeFilters.customers)
+    }
     // Set global filter if needed
     if (globalFilter) {
       // Global filter is already set in the state
     }
-  }, [ activeFilters, activeTab, table, globalFilter ])
+  }, [ activeFilters, table, globalFilter ]) // Removed activeTab from dependencies
 
   // Type filter handlers
   const handleTypeFilter = (type: string) => {
@@ -139,11 +139,11 @@ export default function CustomersPageWrapper() {
   }
 
   // Customer filter handlers
-  const handleCustomerFilter = (customerDisplayName: string) => {
+  const handleCustomerFilter = (displayName: string) => {
     setActiveFilters((prev) => {
-      const customers = prev.customers.includes(customerDisplayName)
-        ? prev.customers.filter((c) => c !== customerDisplayName)
-        : [ ...prev.customers, customerDisplayName ]
+      const customers = prev.customers.includes(displayName)
+        ? prev.customers.filter((c) => c !== displayName)
+        : [ ...prev.customers, displayName ]
 
       return {
         ...prev,
@@ -153,11 +153,11 @@ export default function CustomersPageWrapper() {
   }
 
   // Selected items filter handler
-  const handleItemSelection = (itemName: string) => {
+  const handleItemSelection = (displayName: string) => {
     setActiveFilters((prev) => {
-      const selectedItems = prev.selectedItems.includes(itemName)
-        ? prev.selectedItems.filter((name) => name !== itemName)
-        : [ ...prev.selectedItems, itemName ]
+      const selectedItems = prev.selectedItems.includes(displayName)
+        ? prev.selectedItems.filter((name) => name !== displayName)
+        : [ ...prev.selectedItems, displayName ]
 
       return {
         ...prev,
@@ -174,7 +174,7 @@ export default function CustomersPageWrapper() {
       selectedItems: [],
     })
     setGlobalFilter("")
-    setActiveTab("all")
+    // setActiveTab("all") // Removed: Was for MobileView
   }
 
   // Refresh data
@@ -182,53 +182,22 @@ export default function CustomersPageWrapper() {
     refetch();
   };
 
-  if(isMobile){
-    return(
-      <MobileView
-        table={table}
-        globalFilter={globalFilter}
-        setGlobalFilter={setGlobalFilter}
-        activeFilters={activeFilters}
-        handleTypeFilter={handleTypeFilter}
-        handleCustomerFilter={handleCustomerFilter}
-        handleItemSelection={handleItemSelection}
-        clearAllFilters={clearAllFilters}
-        availableItemTypes={[ "INDIVIDUAL", "BUSINESS" ]}
-        availableCustomers={availableCustomers}
-        selectedItem={selectedItem}
-        setSelectedItem={setSelectedItem}
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        refreshData={refreshData}
-        data={data}
-        isLoading={isLoading}
-
-      />
-    )
-  }
-  if(!isMobile){
-    return(
-      <DesktopView
-        table={table}
-        isLoading={isLoading}
-        status={status}
-        globalFilter={globalFilter}
-        setGlobalFilter={setGlobalFilter}
-        activeFilters={activeFilters}
-        handleTypeFilter={handleTypeFilter}
-        handleCustomerFilter={handleCustomerFilter}
-        handleItemSelection={handleItemSelection}
-        clearAllFilters={clearAllFilters}
-        availableItemTypes={[ "INDIVIDUAL", "BUSINESS" ]}
-        availableCustomers={availableCustomers}
-        data={data}
-        refetch={refreshData}
-      />
-    )
-  }
-
-
   return (
-    <Loading/>
+    <DesktopView
+      table={table}
+      isLoading={isLoading}
+      status={status}
+      globalFilter={globalFilter}
+      setGlobalFilter={setGlobalFilter}
+      activeFilters={activeFilters}
+      handleTypeFilter={handleTypeFilter}
+      handleCustomerFilter={handleCustomerFilter}
+      handleItemSelection={handleItemSelection}
+      clearAllFilters={clearAllFilters}
+      availableItemTypes={[ "INDIVIDUAL", "BUSINESS" ]}
+      availableCustomers={availableCustomers}
+      data={data}
+      refetch={refreshData}
+    />
   )
 }

@@ -456,13 +456,14 @@ import type { ItemFilterState, ItemSchemaType } from "@/types/items"
 import { FilterControls } from "./filter-controls"
 import { ActiveFilters } from "./active-filters"
 
-import { ItemDetailsContainer } from "@/components/item-details/ItemDetailsContainer" // NEW Import
+
 import { useItemsStore } from "@/stores/items-store"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import CreateItemForm from "@/components/dialogs/ItemDialog/CreateItem"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils" // Import cn
 import { memo } from "react"
+import { ItemDetailsContainer } from "@/components/details-panel/item-details/ItemDetailsContainer"
 
 
 interface DesktopViewProps {
@@ -704,10 +705,20 @@ export function DesktopView({
                           // Left align itemNumber specifically (though default is usually left)
                           cell.column.id === 'itemNumber' && "text-left"
                         );
+                        const cellStyles = { width: `${cell.column.getSize()}px` };
 
+                        // return (
+                        //   // TD gets the padding and text-align
+                        //   <TableCell key={cell.id} className={cellClasses}>
+                        //     {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        //   </TableCell>
+                        // );
                         return (
-                          // TD gets the padding and text-align
-                          <TableCell key={cell.id} className={cellClasses}>
+                          <TableCell
+                            key={cell.id}
+                            className={cellClasses}
+                            style={cellStyles} // APPLY STYLE HERE
+                          >
                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
                           </TableCell>
                         );

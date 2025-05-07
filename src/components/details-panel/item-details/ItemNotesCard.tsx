@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ItemSchemaType } from "@/types/items";
 import { StickyNote } from 'lucide-react';
-import { CollapsibleNotes } from '@/components/order-details/OrderInfoCard'; // Reuse or move CollapsibleNotes
+import { CollapsibleNotes } from '@/components/details-panel/order-details/OrderInfoCard'; // Reuse or move CollapsibleNotes
 
 interface ItemNotesCardProps {
   item: ItemSchemaType;

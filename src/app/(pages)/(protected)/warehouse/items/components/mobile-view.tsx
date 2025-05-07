@@ -17,9 +17,9 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Button } from "@/components/ui/button"
 import { ArrowDown, Filter, X } from "lucide-react"
 import { Item } from "@radix-ui/react-radio-group"
-import { DetailsPanel } from "./DetailsPanel"
+// import { DetailsPanel } from "./DetailsPanel"
 import { useItemsStore } from "@/stores/items-store"
-import { ItemDetailsContainer } from "@/components/item-details/ItemDetailsContainer"
+import { ItemDetailsContainer } from "@/components/details-panel/item-details/ItemDetailsContainer"
 import Loading from "@/components/ui/loading"
 
 
@@ -364,7 +364,7 @@ export function MobileView({
       </ScrollArea>
 
       <MobileBottomNav />
-      <DetailsPanel items={data} />
+      {/* <DetailsPanel items={data} /> */}
       {store.isDetailsOpen && (
         <ItemDetailsContainer isMobile={true} className="h-full" />
       )}

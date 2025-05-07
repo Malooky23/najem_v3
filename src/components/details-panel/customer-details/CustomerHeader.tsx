@@ -16,8 +16,8 @@ import { Dialog } from "@/components/ui/dialog";
 // import { CreateCustomerDialog } from "@/components/dialogs/CustomerDialog/create-customer-dialog"; // Assuming you have/will create this
 import { useSession } from "next-auth/react";
 import { useSelectedCustomerData } from "@/stores/customer-store";
-import CustomerModalWrapper from "../dialogs/CustomerDialog/CustomerModalWrapper";
-import DeleteCustomerDialog from "../dialogs/CustomerDialog/DeleteCustomer";
+import CustomerModalWrapper from "@/components/dialogs/CustomerDialog/CustomerModalWrapper";
+import DeleteCustomerDialog from "@/components/dialogs/CustomerDialog/DeleteCustomer";
 
 interface CustomerHeaderProps {
     handleClose: () => void;
@@ -96,7 +96,7 @@ export function CustomerHeader({
                 <>
                     <CustomerModalWrapper isEditMode={true}>
                         <Button className="gap-2 bg-purple-500 hover:bg-purple-600 transition-colors" size="sm" > {/* Placeholder Edit */}
-                            <Edit className="w-4 h-4" /> 
+                            <Edit className="w-4 h-4" />
                         </Button>
                     </CustomerModalWrapper>
                     <DeleteCustomerDialog>
@@ -114,10 +114,10 @@ export function CustomerHeader({
         <div className={cn("flex flex-row justify-between items-start md:items-center gap-4 w-full", isMobile && "px-4 pb-2")}>
             <div className="flex items-center gap-2 flex-wrap">
                 <User className="w-6 h-6 text-gray-600" />
-                <h2 className="text-lg font-semibold text-gray-800 truncate" title={displayName}>{displayName}</h2>
                 <Badge variant="secondary" className="h-6 px-2 text-xs font-medium">
                     #{customerNumber}
                 </Badge>
+                <h2 className="text-lg font-semibold text-gray-800 text-wrap" title={displayName}>{displayName}</h2>
             </div>
             <div className="flex flex-wrap gap-2">
                 {isWideScreen ? (
@@ -128,19 +128,31 @@ export function CustomerHeader({
                         </Button>
                     </>
                 ) : (
-                    <Dialog> {/* Keep Dialog wrapper if CreateCustomerDialog uses it */}
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild><Button variant="outline" size="sm"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
-                            <DropdownMenuContent className="w-40" align="end">
-                                <DropdownMenuItem><Printer className="mr-2 h-4 w-4" /> Print</DropdownMenuItem>
-                                {/* <CreateCustomerDialog isEditMode={true} initialData={customer}>
-                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}><Edit className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>
-                </CreateCustomerDialog> */}
-                                <DropdownMenuItem disabled><Edit className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem> {/* Placeholder Edit */}
-                                <DropdownMenuItem onClick={handleClose} className="text-red-500 focus:text-red-500"><X className="mr-2 h-4 w-4" /> Close</DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    </Dialog>
+                    <div className="flex gap-2">
+                        <Dialog> {/* Keep Dialog wrapper if CreateCustomerDialog uses it */}
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild><Button variant="outline" size="sm"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                                <DropdownMenuContent className="w-40" align="end">
+                                    {/* <DropdownMenuItem><Printer className="mr-2 h-4 w-4" /> Print</DropdownMenuItem> */}
+
+                                    <CustomerModalWrapper isEditMode={true}>
+                                        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                            <Edit className="mr-2 h-4 w-4" /> Edit
+                                        </DropdownMenuItem>
+                                    </CustomerModalWrapper>
+                                    <DeleteCustomerDialog>
+                                        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                            <Trash className="mr-2 h-4 w-4 text-red-500" /> Delete
+                                        </DropdownMenuItem>
+                                    </DeleteCustomerDialog>
+                                    <DropdownMenuItem onClick={handleClose} className="text-red-500 focus:text-red-500"><X className="mr-2 h-4 w-4" /> Close</DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </Dialog>
+                            <Button variant='outline' className="gap-2 bg-red-50 hover:bg-red-400 transition-colors" size="sm" onClick={handleClose}>
+                                <X className="w-4 h-4" /> {!isMobile && 'Close'}
+                            </Button>
+                    </div>
                 )}
             </div>
         </div>

@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { User, Building, Globe, Hash, Info, UserCircle2, FileText } from "lucide-react"; // Relevant icons
 import { Skeleton } from "@/components/ui/skeleton";
 
-import { CollapsibleNotes } from "@/components/order-details/OrderInfoCard"; // Re-use collapsible notes
+import { CollapsibleNotes } from "@/components/details-panel/order-details/OrderInfoCard"; // Re-use collapsible notes
 import { EnrichedCustomer } from "@/types/customer";
 
 interface CustomerInfoCardProps {

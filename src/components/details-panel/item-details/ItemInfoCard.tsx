@@ -6,7 +6,7 @@ import { ItemSchemaType } from "@/types/items";
 import { format } from 'date-fns';
 import { Package2, Box, Barcode, MapPin, User2, CalendarClock, Info } from 'lucide-react';
 import { FieldItem } from './FieldItem'; // Assuming FieldItem is moved here or imported globally
-import { Separator } from "../ui/separator";
+import { Separator } from "@/components//ui/separator";
 
 interface ItemInfoCardProps {
   item: ItemSchemaType;

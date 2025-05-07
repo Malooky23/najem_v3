@@ -17,7 +17,7 @@ interface FilterControlsProps {
   activeFilters: CustomerFilterState
   handleTypeFilter: (type: string) => void
   handleCustomerFilter: (customer: string) => void
-  handleItemSelection: (itemId: string) => void
+  handleItemSelection: (displayName: string) => void
   clearAllFilters: () => void
   availableItemTypes: string[]
   availableCustomers: string[]
@@ -42,11 +42,13 @@ export function FilterControls({
   const filteredItems = data.filter(
     (item) =>
       item.displayName.toLowerCase().includes(itemSearchQuery.toLowerCase()) ||
+      // item.customerId.toLowerCase().includes(itemSearchQuery.toString()) ||
+      // item.customerType.toLowerCase().includes(itemSearchQuery.toString()) ||
       item.customerNumber.toString().includes(itemSearchQuery.toLowerCase()),
   )
 
   return (
-    <Popover>
+    <Popover modal>
       <PopoverTrigger asChild>
         {children ? children :
           <Button variant="outline" size="sm" className="h-9 gap-1">
@@ -57,10 +59,10 @@ export function FilterControls({
       </PopoverTrigger>
       <PopoverContent className="w-[350px] p-4" align="end">
         <div className="space-y-4">
-          <h4 className="font-medium">Filter Items</h4>
+          <h4 className="font-medium">Filter Customers</h4>
           <Accordion type="multiple" className="w-full">
             <AccordionItem value="type">
-              <AccordionTrigger>Item Type</AccordionTrigger>
+              <AccordionTrigger>Customer Type</AccordionTrigger>
               <AccordionContent>
                 <div className="space-y-2">
                   {availableItemTypes.map((type) => (
@@ -77,26 +79,9 @@ export function FilterControls({
               </AccordionContent>
             </AccordionItem>
 
-            <AccordionItem value="customer">
-              <AccordionTrigger>Customer</AccordionTrigger>
-              <AccordionContent>
-                <div className="space-y-2">
-                  {availableCustomers.map((customer) => (
-                    <div key={customer} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`customer-${customer}`}
-                        checked={activeFilters.customers.includes(customer)}
-                        onCheckedChange={() => handleCustomerFilter(customer)}
-                      />
-                      <Label htmlFor={`customer-${customer}`}>{customer}</Label>
-                    </div>
-                  ))}
-                </div>
-              </AccordionContent>
-            </AccordionItem>
 
             <AccordionItem value="specific-items">
-              <AccordionTrigger>Specific Items</AccordionTrigger>
+              <AccordionTrigger>Select Customers</AccordionTrigger>
               <AccordionContent>
                 <div className="space-y-3">
                   <Input
@@ -112,7 +97,9 @@ export function FilterControls({
                           <Checkbox
                             id={`item-${item.displayName}`}
                             checked={activeFilters.selectedItems.includes(item.displayName)}
-                            onCheckedChange={() => handleItemSelection(item.displayName)}
+                            onCheckedChange={() => 
+                              handleItemSelection(item.displayName)
+                            }
                           />
                           <Label htmlFor={`item-${item.displayName}`} className="flex flex-col">
                             <span>{item.displayName}</span>

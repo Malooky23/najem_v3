@@ -1,11 +1,12 @@
 // src/app/(pages)/(protected)/warehouse/items/components/columns.tsx
-import type { ColumnDef, FilterFn, Row, SortingFn } from "@tanstack/react-table"
+import type { Column, ColumnDef, FilterFn, Row, SortingFn } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import type { ItemSchemaType } from "@/types/items"
 import { Button } from "@/components/ui/button"
 import { RefreshCcw } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { useEffect, useRef, useState } from "react"
 
 // / Custom filter functions with proper implementation
 const arrayIncludesFilter: FilterFn<ItemSchemaType> = (row, columnId, filterValue) => {
@@ -50,98 +51,6 @@ const stockLevelFilter: FilterFn<ItemSchemaType> = (row, columnId, filterValue) 
   return true
 }
 
-// export const itemColumns: ColumnDef<ItemSchemaType>[] = [
-//   {
-//     accessorKey: "itemNumber",
-//     header: "Item #",
-//     cell: ({ row }) => {
-//       const itemNumber = row.getValue("itemNumber") as string
-//       // Apply w-fit to make the container only as wide as the content
-//       // Add whitespace-nowrap to prevent wrapping
-//       return <span className={cn("block text-left pl-1 whitespace-nowrap text-gray-800 font-semibold",
-//         " truncate whitespace-normal text-nowrap max-w-[50px] bg-red-100 "
-//       )}>#{itemNumber}</span>
-//     },
-//     size:10,
-//     maxSize:10,
-//     enableSorting: true,
-//     filterFn: stringContainsFilter,
-//     // size: 'auto', // Use size: 'auto' or let CSS handle it via w-fit
-//     // Or remove size completely if w-fit works well
-//   },
-//   {
-//     accessorKey: "itemType",
-//     header: () => <span className="text-center">Type</span>,
-//     cell: ({ row }) => {
-//       const type = row.getValue("itemType") as string | null
-//       // TypeCell already enforces w-24
-//       return type ? <TypeCell type={type} /> : null
-//     },
-//     enableSorting: true,
-//     filterFn: arrayIncludesFilter,
-//     size: 50, // Explicit size corresponding to w-24 (6rem = 96px)
-//     maxSize: 50, // Enforce max width at the table level too
-//   },
-//   {
-//     accessorKey: "itemName",
-//     header: "Item Name",
-//     cell: ({ row }) => {
-//       // Removed fixed width classes, let the column size dictate width
-//       // Keep whitespace-nowrap and text-ellipsis if desired (though truncate is better for ellipsis)
-//       // Using truncate here might be better if you expect overflow even in the largest column
-//       // return <span className="whitespace-nowrap overflow-hidden text-ellipsis">{row.original.itemName}</span>
-//       // Or simply let it wrap if needed:
-//       return <span>{row.original.itemName}</span>
-//     },
-//     enableSorting: true,
-//     filterFn: stringContainsFilter,
-//   },
-//   {
-//     accessorKey: "itemStock",
-//     header: () => <div className="text-center">Total Stock</div>,
-//     cell: ({ row }) => {
-//       const stockData = row.getValue("itemStock") as ItemSchemaType[ "itemStock" ];
-//       const stockLevel = stockData ? stockData.reduce((acc, curr) => acc + curr.currentQuantity, 0) : 0;
-//       // Center the text using text-center on the parent TD already handles this.
-//       // If not, add text-center here.
-//       return <p className="text-center">{stockLevel.toString()}</p>
-//     },
-//     enableSorting: false, // Sorting might be complex/slow depending on data shape
-//     filterFn: stockLevelFilter,
-//     size: 100, // A reasonable fixed size for stock numbers
-//     maxSize: 100,
-//   },
-//   {
-//     accessorKey: "customerDisplayName",
-//     header: "Customer",
-//     cell: ({ row }) => {
-//       const customer = row.getValue("customerDisplayName") as string
-//       // Apply truncate for fixed width and ellipsis on overflow
-//       return <span className="block truncate whitespace-normal text-nowrap max-w-[300px] bg-red-200">{customer}</span> // Use block or inline-block with truncate
-//     },
-//     enableSorting: true,
-//     filterFn: arrayIncludesFilter,
-//     size: 50, // Set a fixed size (e.g., 180px) - adjust as needed
-//     minSize: 10,
-//     maxSize: 60
-//   },
-// ]
-
-
-// export const TypeCell = ({ type }: { type: string }) => {
-//   // w-24 ensures the max width. inline-block allows width to apply.
-//   // text-center centers the content within the badge.
-//   const baseStyles = "w-24 px-2 py-1 rounded-full text-xs font-semibold text-center inline-block whitespace-nowrap"
-
-//   // Simple mapping for demonstration; replace with actual logic if needed
-//   const typeColor = type === 'Finished Good' ? 'bg-green-100 text-green-800' :
-//     type === 'Raw Material' ? 'bg-blue-100 text-blue-800' :
-//       'bg-gray-100 text-gray-800'; // Default
-
-//   return (
-//     <span className={cn(baseStyles, typeColor)}>{type}</span>
-//   )
-// }
 const stockLevelSortFn: SortingFn<ItemSchemaType> = (
   rowA: Row<ItemSchemaType>,
   rowB: Row<ItemSchemaType>,
@@ -188,31 +97,195 @@ export const itemColumns: ColumnDef<ItemSchemaType>[] = [
     enableSorting: true,
     filterFn: arrayIncludesFilter,
   },
+  // {
+  //   accessorKey: "itemName",
+  //   header: "Item Name",
+  //   // cell: ({ row }) => {
+  //   //   // Use truncate for ellipsis on overflow
+  //   //   // return <span className="block truncate">{row.original.itemName}</span>
+  //   //   return <TooltipProvider disableHoverableContent={row.original.itemName.length < 90} delayDuration={100}>
+  //   //     <Tooltip>
+  //   //       <TooltipTrigger asChild>
+  //   //         <span className="block truncate">{row.original.itemName}</span>
+  //   //       </TooltipTrigger>
+  //   //       <TooltipContent className={cn("bg-white border-1 border-slate-200 max-w-xl text-black text-lg ",
+  //   //         row.original.itemName.length < 90 && "hidden"
+  //   //       )}>
+  //   //        {/* <h3 className="font-bold">Item Name:</h3> */}
+  //   //         <span className="text-justify">{row.original.itemName}</span>
+  //   //       </TooltipContent>
+  //   //     </Tooltip>
+  //   //   </TooltipProvider>
+  //   cell: ({ row }) => {
+  //     const [ isOpen, setIsOpen ] = useState(false);
+  //     // State to track if the text is actually truncated
+  //     const [ isTruncated, setIsTruncated ] = useState(false);
+  //     // Ref to the span element
+  //     const textRef = useRef<HTMLSpanElement>(null);
+
+  //     const itemName = row.original.itemName;
+
+  //     // Effect to check for truncation after render
+  //     useEffect(() => {
+  //       // Use a setTimeout to ensure the element is fully rendered and laid out
+  //       const timer = setTimeout(() => {
+  //         if (textRef.current) {
+  //           const element = textRef.current;
+  //           // Check if scrollWidth (full content width) is greater than clientWidth (visible width)
+  //           const truncated = element.scrollWidth > element.clientWidth;
+  //           setIsTruncated(truncated);
+
+  //           // Log the values to debug
+  //           console.log(
+  //             itemName,
+  //             "Truncated check:",
+  //             truncated,
+  //             "clientWidth:",
+  //             element.clientWidth,
+  //             "scrollWidth:",
+  //             element.scrollWidth
+  //           );
+  //         } else {
+  //           console.log(itemName, "Ref not available in useEffect");
+  //         }
+  //       }, 0); // Delay by 0ms
+
+  //       // Cleanup the timer if the component unmounts or dependencies change
+  //       return () => clearTimeout(timer);
+
+  //     }, [ itemName ]); // Re-run check if item name changes
+  //     // Only render tooltip logic if the text is potentially long/needs check
+  //     // We can still render the span unconditionally and let useEffect determine truncation
+  //     return (
+  //       <TooltipProvider disableHoverableContent={false} delayDuration={100}>
+  //         <Tooltip open={isOpen} onOpenChange={setIsOpen}>
+  //           <TooltipTrigger asChild>
+  //             <span
+  //               ref={textRef}
+  //               className={cn("truncate cursor-pointer")}
+  //             >
+  //               {itemName}
+  //             </span>
+  //           </TooltipTrigger>
+  //             {isTruncated&&             
+  //             <TooltipContent className="bg-white border-1 border-slate-200 max-w-xl text-black text-lg text-justify">
+  //             {isTruncated}-{itemName}
+  //             </TooltipContent>
+  //   }
+  //         </Tooltip>
+  //       </TooltipProvider>
+  //     );
+  //   },
+  //   // Let this column take up remaining space
+  //   size: 350, // A large initial size, it will grow/shrink based on available space
+  //   maxSize: 350, // A large initial size, it will grow/shrink based on available space
+  //   minSize: 50, // Ensure it doesn't become too small
+  //   enableResizing: false, // Disable manual resizing but allow flexibility via minSize/size
+  //   enableSorting: true,
+  //   filterFn: arrayIncludesFilter,
+  // },
   {
     accessorKey: "itemName",
     header: "Item Name",
-    cell: ({ row }) => {
-      // Use truncate for ellipsis on overflow
-      // return <span className="block truncate">{row.original.itemName}</span>
-      return <TooltipProvider delayDuration={100}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="block truncate">{row.original.itemName}</span>
-          </TooltipTrigger>
-          <TooltipContent className="bg-white border-1 border-slate-200 max-w-xl text-black text-lg ">
-           {/* <h3 className="font-bold">Item Name:</h3> */}
-            <span className="text-justify">{row.original.itemName}</span>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+    cell: ({ row, column }: { row: Row<ItemSchemaType>; column: Column<ItemSchemaType, unknown> }) => { // Get column for size
+      const [ isTooltipOpen, setIsTooltipOpen ] = useState(false);
+      const [ isTextTruncated, setIsTextTruncated ] = useState(false);
+      const textRef = useRef<HTMLSpanElement>(null);
+      const itemName = row.original.itemName;
+      const columnSize = column.getSize(); // Get column size for dependency and debugging
+
+      useEffect(() => {
+        const element = textRef.current;
+        if (!element) return;
+
+        const checkTruncation = () => {
+          // Ensure element is in layout and has dimensions
+          if (element.offsetParent === null && element.offsetWidth === 0 && element.offsetHeight === 0) {
+            // console.log(`Item: "${itemName}" - Element not in layout (offsetWidth is 0). Deferring or skipping.`);
+            return; // Not in layout, skip or defer
+          }
+
+          const currentClientWidth = element.clientWidth;
+          const currentScrollWidth = element.scrollWidth;
+
+          // Truncation happens if scrollWidth is greater than clientWidth,
+          // AND clientWidth is actually greater than 0 (meaning element is visible and has space)
+          const truncated = currentScrollWidth > currentClientWidth && currentClientWidth > 0;
+
+          // console.log(
+          //   `Item: "${itemName}" (Col ID: ${column.id}, ColSize: ${columnSize}px)`,
+          //   `Truncated: ${truncated}`,
+          //   `ClientWidth: ${currentClientWidth}`,
+          //   `ScrollWidth: ${currentScrollWidth}`
+          // );
+
+          // Only update state if it actually changed to prevent potential loops
+          // and unnecessary re-renders.
+          setIsTextTruncated(prevIsTruncated => {
+            if (prevIsTruncated !== truncated) {
+              return truncated;
+            }
+            return prevIsTruncated;
+          });
+        };
+
+        // Initial check after a brief delay to allow layout to settle
+        const initialCheckTimeoutId = setTimeout(checkTruncation, 100); // Small delay
+
+        // Use ResizeObserver to detect size changes of the span itself
+        // This is more reliable for dynamic width changes or late-settling layouts
+        const observer = new ResizeObserver(() => {
+          checkTruncation(); // Re-check on any resize of the observed element
+        });
+        observer.observe(element);
+
+        // Cleanup
+        return () => {
+          clearTimeout(initialCheckTimeoutId);
+          observer.unobserve(element);
+          observer.disconnect(); // Important to prevent memory leaks
+        };
+        // Dependencies: itemName and columnSize.
+        // If the itemName changes, or the column's defined size changes, re-run the effect.
+      }, [ itemName, columnSize, column.id ]); // Added column.id for stability if column instance changes
+
+      const handleOpenChange = (open: boolean) => {
+        if (isTextTruncated) { // Only open if text is actually truncated
+          setIsTooltipOpen(open);
+        } else {
+          setIsTooltipOpen(false); // Otherwise, ensure it's closed
+        }
+      };
+
+      return (
+        <TooltipProvider delayDuration={100}>
+          <Tooltip open={isTooltipOpen} onOpenChange={handleOpenChange}>
+            <TooltipTrigger asChild>
+              <span
+                ref={textRef}
+                className={cn(
+                  "block truncate", // `block` makes it take full width of parent TD, `truncate` applies ellipsis
+                  isTextTruncated ? "cursor-pointer" : "cursor-default"
+                )}
+              // title={itemName} // Useful for debugging - see if span has content
+              >
+                {itemName}
+              </span>
+            </TooltipTrigger>
+            {/* TooltipContent will only be rendered by ShadCN if Tooltip's `open` is true */}
+            <TooltipContent className="bg-white border-1 border-slate-200 max-w-xl text-black text-lg text-justify">
+              {itemName}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
     },
-    // Let this column take up remaining space
-    size: 350, // A large initial size, it will grow/shrink based on available space
-    maxSize: 350, // A large initial size, it will grow/shrink based on available space
-    minSize: 50, // Ensure it doesn't become too small
-    enableResizing: false, // Disable manual resizing but allow flexibility via minSize/size
+    size: 350,
+    maxSize: 350,
+    minSize: 50,
+    enableResizing: false,
     enableSorting: true,
-    filterFn: arrayIncludesFilter,
+    filterFn: stringContainsFilter,
   },
   {
     accessorKey: "itemStock",

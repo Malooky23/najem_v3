@@ -15,7 +15,8 @@ import { useCustomersStore } from "@/stores/customer-store"
 
 export default function CustomerModalWrapper({
   children,
-  isEditMode = false // Default to false
+  isEditMode = false,
+
 }: { children?: ReactNode, isEditMode?: boolean }) { // Add isEditMode prop
 
   const store = useCustomersStore()
@@ -59,7 +60,7 @@ export default function CustomerModalWrapper({
         <DrawerTrigger asChild>
           {children ? children
             :
-            <Button className="flex items-center gap-2">
+            <Button className="flex items-center gap-2 hidden">
               <PlusIcon size={16} />
             </Button>
           }

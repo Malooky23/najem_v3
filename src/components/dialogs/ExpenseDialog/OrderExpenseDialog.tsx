@@ -29,7 +29,7 @@ import { useExpenseItems } from "@/hooks/data/useExpenses";
 import { Spinner } from "@heroui/spinner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { OrderItemsTable } from "@/components/order-details/OrderItemsTable";
+import { OrderItemsTable } from "@/components/details-panel/order-details/OrderItemsTable";
 import { ExpenseItemRow } from "./ExpenseItemRow";
 import { sackSizeTypeSchema } from "@/server/db/schema";
 import { SackSizeDialog } from "./SackSizeDialog";
