@@ -102,8 +102,6 @@ export default function OrdersPageWrapper() {
           "flex flex-col rounded-md  overflow-hidden",
           isMobile ? "w-full" : "w-[40%] h-full",
           store.isDetailsOpen ? "ml-2" : "hidden",
-          // !isMobile && !store.isDetailsOpen && "hidden", // Hide on desktop when details are closed
-          // "transition-width duration-100", // Enable transition for width
           "origin-right", // Animate from right to left
         )}
         >

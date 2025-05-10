@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { MoveLeft } from 'lucide-react';
+import { MoveLeft, MoveRight } from 'lucide-react';
 import { Button } from './ui/button';
 
 interface BackButtonProps {
@@ -15,14 +15,25 @@ const BackButton: React.FC<BackButtonProps> = ({ className }) => {
   const handleGoBack = () => {
     router.back();
   };
+  const handleGoBackForward = () => {
+    router.forward();
+  };
 
   return (
+    <>
     <Button
       onClick={handleGoBack}
       variant={'ghost'}
       className={className}>
       <MoveLeft/>
     </Button>
+    <Button
+      onClick={handleGoBackForward}
+      variant={'ghost'}
+      className={className}>
+      <MoveRight/>
+    </Button>
+    </>
   );
 };
 

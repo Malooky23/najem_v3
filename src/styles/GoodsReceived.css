@@ -1,0 +1,329 @@
+/* --- Font Definitions --- */
+@font-face {
+  font-family: "Tajawal";
+  src: url("/fonts/Tajawal-Regular.ttf") format("truetype"); /* Adjust path if your fonts are elsewhere */
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Tajawal";
+  src: url("/fonts/Tajawal-Bold.ttf") format("truetype"); /* Adjust path */
+  font-weight: bold;
+  font-style: normal;
+}
+
+/* You might want a default English font too, e.g., Open Sans or system default */
+/* @font-face {
+    font-family: 'Open Sans';
+    src: url('/fonts/OpenSans-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+@font-face {
+    font-family: 'Open Sans';
+    src: url('/fonts/OpenSans-Bold.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+} */
+
+/* --- Base Document Styles --- */
+body {
+  /* Apply to body if this is the only content, or to .grn-document */
+  font-family: "Helvetica", "Arial", sans-serif; /* Default English font */
+  font-size: 10pt;
+  line-height: 1.5;
+  color: #333;
+  margin: 0;
+  padding: 0;
+}
+
+.grn-document {
+  width: 210mm; /* A4 width */
+  min-height: 297mm; /* A4 height */
+  margin: 0 auto; /* Center on screen for preview */
+  padding: 15mm 12mm; /* Roughly 30pt top/bottom, 35pt sides */
+  box-sizing: border-box;
+  background-color: #fff; /* For screen preview */
+}
+
+/* Specific fields that need Tajawal for Arabic, and directionality */
+.grn-info-value, /* For customerName, receiverName */
+.grn-items-table td:nth-child(2), /* itemName */
+.grn-items-table td:nth-child(3) /* itemType (if it can be Arabic) */ {
+  font-family: "Tajawal", "Helvetica", "Arial", sans-serif; /* Tajawal first for Arabic */
+}
+
+/* Handle potential right-to-left text within specific values */
+[dir="rtl"] .grn-info-value,
+.grn-info-value:lang(ar), /* You might need to set lang attribute in JS if needed */
+.grn-items-table td:nth-child(2):lang(ar),
+.grn-items-table td:nth-child(3):lang(ar) {
+  text-align: right;
+  direction: rtl;
+}
+/* A simpler way for specific fields if you know they are mixed or Arabic */
+.grn-document [data-arabic-field="true"] {
+  font-family: "Tajawal", "Helvetica", "Arial", sans-serif;
+  /* direction and text-align can be handled by browser's bidi or explicitly set */
+}
+
+/* --- Header --- */
+.grn-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eaeaea;
+}
+.grn-company-details h1 {
+  font-family: "Helvetica", "Arial", sans-serif; /* Ensure English font for company name */
+  font-size: 14pt;
+  font-weight: bold;
+  color: #222222;
+  margin: 0 0 2px 0;
+}
+.grn-document-title-container {
+  text-align: right;
+}
+.grn-document-title-container h2 {
+  font-family: "Helvetica", "Arial", sans-serif;
+  font-size: 18pt;
+  font-weight: bold;
+  color: #222222;
+  margin: 0;
+}
+.grn-document-subtitle {
+  font-family: "Helvetica", "Arial", sans-serif;
+  font-size: 9pt;
+  color: #555555;
+  margin: 0;
+}
+
+/* --- Top Section & Info Boxes --- */
+.grn-top-section {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 15px;
+  gap: 10px; /* Space between columns */
+}
+.grn-info-column-left {
+  flex-basis: 60%;
+}
+.grn-info-column-right {
+  flex-basis: 40%;
+}
+
+.grn-info-box {
+  border: 1px solid #cccccc;
+  border-radius: 3px;
+  margin-bottom: 10px;
+}
+.grn-info-box-title {
+  font-family: "Helvetica", "Arial", sans-serif;
+  background-color: #f5f5f5;
+  padding: 6px;
+  font-size: 11pt;
+  font-weight: bold;
+  border-bottom: 1px solid #cccccc;
+  color: #333333;
+  margin: 0;
+}
+.grn-info-row {
+  display: flex;
+  padding: 6px;
+  border-bottom: 1px solid #eeeeee;
+}
+.grn-info-row:last-child {
+  border-bottom: none;
+}
+.grn-info-label {
+  font-family: "Helvetica", "Arial", sans-serif;
+  flex-basis: 38%; /* Default label width */
+  font-weight: bold;
+  font-size: 9pt;
+  color: #555555;
+  padding-right: 6px; /* Space before value */
+  border-right: 1px solid #eeeeee;
+  margin-right: 6px; /* Space after border */
+  word-break: break-word;
+}
+.grn-info-label.short-label {
+  /* For right column where labels are shorter */
+  flex-basis: 40%;
+}
+.grn-info-value {
+  flex-basis: 62%; /* Default value width */
+  font-size: 9pt;
+  color: #333333;
+  word-break: break-word; /* Allow long values to wrap */
+}
+
+/* --- Items Table --- */
+.grn-items-table-section {
+  margin-top: 10px;
+  margin-bottom: 15px;
+}
+.grn-items-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #cccccc;
+  border-radius: 3px; /* Note: border-radius on table might need overflow:hidden on parent or specific cell styling */
+}
+.grn-items-table th,
+.grn-items-table td {
+  font-family: "Helvetica", "Arial", sans-serif; /* Default for table cells */
+  padding: 8px 6px; /* Increased padding a bit */
+  font-size: 9pt;
+  border-right: 1px solid #eeeeee;
+  border-bottom: 1px solid #eeeeee;
+  text-align: left;
+}
+.grn-items-table th:last-child,
+.grn-items-table td:last-child {
+  border-right: none;
+}
+.grn-items-table thead tr {
+  background-color: #f5f5f5;
+}
+.grn-items-table thead th {
+  font-weight: bold;
+  text-align: center;
+  border-bottom: 1px solid #cccccc;
+  font-size: 10pt;
+}
+.grn-items-table tbody tr:last-child td {
+  border-bottom: none;
+}
+.grn-items-table tfoot tr {
+  font-weight: bold;
+  background-color: #fafafa;
+  border-top: 1px solid #cccccc;
+}
+.grn-items-table .cell-center {
+  text-align: center;
+}
+.grn-items-table .total-label {
+  text-align: right;
+  font-size: 10pt;
+}
+.grn-items-table .total-value {
+  font-size: 10pt;
+}
+
+/* --- Confirmation Section --- */
+.grn-confirmation-section {
+  border: 1px solid #dddddd;
+  padding: 10px;
+  margin-top: 10px;
+  margin-bottom: 15px;
+  border-radius: 3px;
+  font-size: 7.5pt; /* Base for this section */
+  line-height: 1.3;
+}
+.grn-section-title {
+  /* Re-using for confirmation title */
+  font-family: "Helvetica", "Arial", sans-serif;
+  font-weight: bold;
+  font-size: 10pt;
+  text-align: center;
+  padding-bottom: 5px;
+  border-bottom: 1px solid #eeeeee;
+  margin: 0 0 8px 0;
+  color: #444444;
+}
+.grn-confirmation-intro {
+  margin-bottom: 6px;
+}
+.grn-confirmation-points {
+  list-style-type: decimal;
+  padding-left: 20px; /* Indent for numbers */
+  margin: 0;
+}
+.grn-confirmation-points li {
+  margin-bottom: 4px;
+  text-align: justify;
+}
+.grn-confirmation-points li strong {
+  font-family: "Helvetica", "Arial", sans-serif; /* Ensure bold parts use English font if that's the intent */
+  color: #555555;
+}
+
+/* --- Receiver Details Section --- */
+.grn-receiver-details-section {
+  margin-top: 10px;
+}
+.signature-line {
+  display: inline-block;
+  width: 100%;
+  border-bottom: 1px solid #999;
+  height: 1.2em; /* To allow space above line */
+}
+.signature-box {
+  display: inline-block;
+  width: 100%;
+  height: 40px; /* Ample space for signature */
+  /* border: 1px solid #ccc; Optional border */
+}
+
+/* --- Footer for Print --- */
+.grn-footer {
+  display: none;
+} /* Hidden by default, shown in print */
+
+/* --- Print-Specific Styles --- */
+@media print {
+  body {
+    font-size: 9pt; /* Adjust base font for print if needed */
+    margin: 0;
+    padding: 0;
+    background-color: #fff;
+    -webkit-print-color-adjust: exact; /* Ensures backgrounds print in Chrome/Safari */
+    print-color-adjust: exact; /* Standard */
+  }
+  .grn-document {
+    width: auto; /* Take full printable width */
+    min-height: 0;
+    margin: 0;
+    padding: 10mm; /* Adjust print margins */
+    box-shadow: none;
+    border: none;
+  }
+  .no-print {
+    display: none !important; /* Hide elements like print buttons */
+  }
+  .print-only {
+    display: block !important;
+  }
+
+  /* Page break control (examples, might need fine-tuning) */
+  .grn-items-table-section,
+  .grn-confirmation-section,
+  .grn-receiver-details-section {
+    page-break-inside: avoid;
+  }
+  .grn-header,
+  .grn-footer {
+    /* Forcing headers/footers on each page is complex with CSS only.
+           Browsers handle this somewhat with @page, but support varies.
+           Simpler for now to just have one footer. */
+  }
+  .grn-footer {
+    display: block;
+    position: fixed; /* Attempt to fix footer, browser support varies */
+    bottom: 5mm;
+    left: 10mm;
+    right: 10mm;
+    text-align: center;
+    font-size: 8pt;
+    color: #aaaaaa;
+  }
+  /* Basic page numbering via CSS counters (limited but can work for simple cases) */
+  /* This is tricky and often better handled by browser's print dialog if it offers it */
+  /* @page {
+        @bottom-center {
+            content: "Page " counter(page) " of " counter(pages);
+        }
+    } */
+}
